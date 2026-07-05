@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080810">
+  <meta name="description" content="LinuxDojo — Apprends Linux en jouant">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192-v2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="style.css">
+  <title>LinuxDojo</title>
+</head>
+<body>
+
+  <!-- ══ NAVIGATION GLOBALE ══════════════════════════════════ -->
+  <nav id="global-nav">
+    <button id="nav-hamburger">☰</button>
+    <div class="nav-logo" id="nav-logo">
+      <span class="nav-logo-icon">$_</span>
+      <span class="nav-logo-text">Linux<em>Dojo</em></span>
+    </div>
+    <div class="nav-links" id="nav-links">
+      <button class="nav-btn active" data-page="home">Accueil</button>
+      <button class="nav-btn" data-page="learn">Apprendre</button>
+      <button class="nav-btn" data-page="explore">Explorer</button>
+      <button class="nav-btn" data-page="challenge">Défis</button>
+      <button class="nav-btn" data-page="bandit">Infiltration</button>
+      <button class="nav-btn" data-page="sandbox">Bac à sable</button>
+      <button class="nav-btn" data-page="glossary">Glossaire</button>
+      <button class="nav-btn" data-page="profile">Profil</button>
+    </div>
+    <div class="nav-right">
+      <div id="nav-rank"><span class="rank-icon">🥚</span><span id="nav-rank-name">Bleu</span></div>
+      <div class="nav-xp">
+        <div id="nav-xp-bar"><div id="nav-xp-fill"></div></div>
+        <span id="nav-lv">Lv 1</span>
+        <span id="nav-xp-label">0 XP</span>
+      </div>
+      <button id="sound-toggle" title="Son on/off">🔊</button>
+    </div>
+  </nav>
+
+  <!-- ══ PAGE ACCUEIL ════════════════════════════════════════ -->
+  <div id="page-home" class="page active">
+
+    <div id="daily-banner" class="daily-banner">
+      <div class="daily-banner-left">
+        <span class="daily-banner-icon">📅</span>
+        <div>
+          <div class="daily-banner-title">Défi du jour <span id="daily-banner-status"></span></div>
+          <div class="daily-banner-sub" id="daily-banner-sub">Résous le défi quotidien pour +50 XP bonus</div>
+        </div>
+      </div>
+      <button class="btn-hero" id="daily-banner-btn" style="padding:9px 20px;font-size:13px">Relever le défi</button>
+    </div>
+    <div class="home-hero">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="hero-badge">Terminal · Linux · Hacking</div>
+        <h1 class="hero-title">Linux<span>Dojo</span></h1>
+        <p class="hero-sub">Apprends Linux comme un pro.<br>En jouant. Pour de vrai.</p>
+        <div class="hero-btns">
+          <button class="btn-hero" data-page="learn">▶ Commencer</button>
+          <button class="btn-hero-ghost" data-page="explore">🗺 Explorer le monde</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-modes">
+      <div class="mode-card" data-page="learn">
+        <div class="mode-icon">📖</div>
+        <h3>Apprendre</h3>
+        <p>Leçons + scénarios réels. Tu comprends pourquoi avant de taper.</p>
+        <div class="mode-tag">5 scénarios · 30 missions</div>
+      </div>
+      <div class="mode-card" data-page="explore">
+        <div class="mode-icon">🗺</div>
+        <h3>Explorer</h3>
+        <p>Un monde ouvert : inventaire, PNJ, portes verrouillées. Réunis les 3 gemmes.</p>
+        <div class="mode-tag">18 zones · Aventure</div>
+      </div>
+      <div class="mode-card" data-page="challenge">
+        <div class="mode-icon">⚡</div>
+        <h3>Défis</h3>
+        <p>Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à x5.</p>
+        <div class="mode-tag">15 défis · Combo & record</div>
+      </div>
+      <div class="mode-card" data-page="bandit">
+        <div class="mode-icon">🔐</div>
+        <h3>Infiltration</h3>
+        <p>Trouve le mot de passe caché. Fouille, filtre, et décode (base64, ROT13, hex).</p>
+        <div class="mode-tag">Style Bandit · 13 niveaux</div>
+      </div>
+      <div class="mode-card" data-page="sandbox">
+        <div class="mode-icon">🧪</div>
+        <h3>Bac à sable</h3>
+        <p>Un terminal libre, sans objectif. Teste toutes les commandes tranquillement.</p>
+        <div class="mode-tag">Libre · Toutes commandes</div>
+      </div>
+      <div class="mode-card" data-page="profile">
+        <div class="mode-icon">👤</div>
+        <h3>Profil</h3>
+        <p>Ta progression, tes 8 rangs, tes badges et tes commandes préférées.</p>
+        <div class="mode-tag">Rangs · Badges · Stats</div>
+      </div>
+    </div>
+
+    <div class="home-stats-row" id="home-stats-row" style="display:none">
+      <div class="hstat"><span id="hs-xp">0</span><label>XP total</label></div>
+      <div class="hstat"><span id="hs-done">0</span><label>Missions</label></div>
+      <div class="hstat"><span id="hs-lv">1</span><label>Niveau</label></div>
+      <div class="hstat"><span id="hs-badges">0</span><label>Badges</label></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE APPRENDRE ══════════════════════════════════════ -->
+  <div id="page-learn" class="page">
+    <div id="learn-layout">
+      <aside id="learn-sidebar">
+        <div class="sidebar-title">Scénarios</div>
+        <div id="chapter-list"></div>
+      </aside>
+      <div id="learn-main">
+
+        <!-- Vue leçon -->
+        <div id="view-lesson">
+          <div id="lesson-scroll">
+            <div id="lesson-header">
+              <div id="lesson-step-badge">📖 Leçon</div>
+              <h2 id="lesson-title"></h2>
+            </div>
+            <p id="lesson-intro"></p>
+            <div class="lesson-block" id="lesson-syntax-block">
+              <div class="lesson-block-label">SYNTAXE</div>
+              <pre id="lesson-syntax"></pre>
+            </div>
+            <div class="lesson-block" id="lesson-options-block">
+              <div class="lesson-block-label">OPTIONS</div>
+              <div id="lesson-options"></div>
+            </div>
+            <div class="lesson-block">
+              <div class="lesson-block-label">EXEMPLES</div>
+              <div id="lesson-examples"></div>
+            </div>
+            <div class="lesson-tip" id="lesson-tip-block">
+              <span class="tip-icon">💡</span>
+              <span id="lesson-tip"></span>
+            </div>
+          </div>
+          <div id="lesson-footer">
+            <button class="btn-primary" id="btn-go-exercise">Je comprends — À moi de jouer →</button>
+          </div>
+        </div>
+
+        <!-- Vue exercice -->
+        <div id="view-exercise" style="display:none">
+          <div id="mission-panel">
+            <div id="mp-top">
+              <button id="btn-back-lesson">← Leçon</button>
+              <span id="mp-name"></span>
+              <span id="mp-xp-tag"></span>
+            </div>
+            <p id="mp-desc"></p>
+            <div id="mp-bottom">
+              <button id="btn-hint">💡 Indice <span class="cost">−5 XP</span></button>
+              <span id="hint-text"></span>
+            </div>
+          </div>
+          <div id="terminal" role="log" aria-live="polite"></div>
+          <div id="input-bar">
+            <span id="prompt">user@dojo:~$</span>
+            <input id="cmd-input" type="text" autocomplete="off" spellcheck="false" placeholder="tape une commande...">
+            <button id="run-btn">↵</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE EXPLORER (GameShell) ═══════════════════════════ -->
+  <div id="page-explore" class="page">
+    <div id="explore-mtabs">
+      <button class="explore-mtab" data-tab="world">🗺️ Monde</button>
+      <button class="explore-mtab active" data-tab="term">💻 Terminal</button>
+    </div>
+    <div id="explore-layout" class="mtab-term">
+      <div id="explore-world-panel">
+        <div class="explore-header">
+          <h2 id="explore-location-name">🌍 Le Monde</h2>
+          <p id="explore-location-desc"></p>
+        </div>
+        <div id="explore-visual"></div>
+        <div id="explore-exits"></div>
+      </div>
+      <div id="explore-terminal-panel">
+        <div id="explore-terminal" role="log"></div>
+        <div id="explore-input-bar">
+          <span class="explore-prompt">explorer@monde:~$</span>
+          <input id="explore-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="ls, cd, cat, read...">
+          <button id="explore-run">↵</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE DÉFIS (cmdchallenge) ═══════════════════════════ -->
+  <div id="page-challenge" class="page">
+    <div id="challenge-layout">
+      <div id="challenge-header">
+        <div class="challenge-meta">
+          <span id="ch-num">Défi 1</span>
+          <span id="ch-category"></span>
+          <span id="ch-xp-reward"></span>
+          <span id="ch-combo"></span>
+          <span id="ch-best"></span>
+        </div>
+        <div id="ch-timer-wrap">
+          <div id="ch-timer-bar"><div id="ch-timer-fill"></div></div>
+          <span id="ch-timer-label">60s</span>
+        </div>
+      </div>
+      <div id="challenge-desc-box">
+        <p id="ch-desc"></p>
+        <div id="ch-expected" style="display:none">
+          <span class="lesson-block-label">RÉSULTAT ATTENDU</span>
+          <pre id="ch-expected-out"></pre>
+        </div>
+      </div>
+      <div id="challenge-terminal" role="log"></div>
+      <div id="challenge-input-bar">
+        <span class="ch-prompt">user@défi:~$</span>
+        <input id="ch-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="tape ta commande...">
+        <button id="ch-run">↵</button>
+      </div>
+      <div id="challenge-nav">
+        <button class="btn-ghost" id="ch-skip">Passer →</button>
+        <div id="ch-dots"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE INFILTRATION (Bandit-style) ════════════════════ -->
+  <div id="page-bandit" class="page">
+    <div id="bandit-layout">
+      <div id="bandit-left">
+        <div id="bandit-story"></div>
+        <div id="bandit-levels-list"></div>
+      </div>
+      <div id="bandit-right">
+        <div id="bandit-briefing">
+          <div class="bandit-level-badge" id="bl-badge">Niveau 0</div>
+          <h3 id="bl-title"></h3>
+          <p id="bl-desc"></p>
+          <div class="lesson-block" id="bl-hints-block">
+            <div class="lesson-block-label">COMMANDES UTILES</div>
+            <div id="bl-hints"></div>
+          </div>
+        </div>
+        <div id="bandit-terminal" role="log"></div>
+        <div id="bandit-input-bar">
+          <span class="bandit-prompt">bandit@serveur:~$</span>
+          <input id="bandit-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="explore et trouve le mot de passe...">
+          <button id="bandit-run">↵</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE PROFIL ═════════════════════════════════════════ -->
+  <div id="page-profile" class="page">
+    <div id="profile-wrap">
+      <div class="profile-hero">
+        <div class="profile-avatar" id="pf-avatar">🥚</div>
+        <div class="profile-info">
+          <div class="profile-rank-name" id="pf-rank">Newbie</div>
+          <div class="profile-rank-sub" id="pf-sub">0 XP · Niveau 1</div>
+          <div class="profile-rank-bar"><div class="profile-rank-fill" id="pf-rank-fill"></div></div>
+          <div class="profile-rank-next" id="pf-next"></div>
+        </div>
+      </div>
+
+      <div class="profile-rings" id="pf-rings"></div>
+
+      <div class="profile-section-title">🏅 Badges</div>
+      <div class="badges-grid" id="pf-badges"></div>
+
+      <div class="profile-section-title">📊 Tes commandes les plus utilisées</div>
+      <div id="pf-stats"></div>
+
+      <div class="profile-section-title">🎨 Thèmes</div>
+      <div id="pf-themes"></div>
+
+      <div class="profile-section-title">⚙️ Options</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-ghost" id="pf-sound">🔊 Son : ON</button>
+        <button class="btn-ghost" id="pf-reset">↺ Réinitialiser la progression</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE BAC À SABLE ═════════════════════════════════════ -->
+  <div id="page-sandbox" class="page">
+    <div id="sandbox-layout">
+      <div id="sandbox-header">
+        <div>
+          <h2 style="font-size:16px;font-weight:600">🧪 Bac à sable</h2>
+          <p style="font-size:12px;color:var(--text-md);margin-top:2px">Terminal libre. Aucun objectif — expérimente toutes les commandes. Tape <code style="color:var(--orange)">help</code> pour la liste.</p>
+        </div>
+        <button class="btn-ghost" id="sandbox-reset">↺ Réinitialiser</button>
+      </div>
+      <div id="sandbox-terminal" role="log"></div>
+      <div id="sandbox-input-bar">
+        <span class="sandbox-prompt">user@sandbox:~$</span>
+        <input id="sandbox-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="ls, cat, grep, base64, rot13, sed, awk...">
+        <button id="sandbox-run">↵</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE GLOSSAIRE ══════════════════════════════════════ -->
+  <div id="page-glossary" class="page">
+    <div id="glossary-wrap">
+      <div class="glossary-head">
+        <h2>📖 Glossaire des commandes</h2>
+        <p>La référence complète. Clique sur une commande pour voir sa syntaxe, ses options et des exemples.</p>
+        <input id="glossary-search" type="text" placeholder="🔍 Rechercher une commande (ls, grep, permissions...)" autocomplete="off">
+        <div id="glossary-cats"></div>
+      </div>
+      <div id="glossary-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL DÉFI DU JOUR ══════════════════════════════════ -->
+  <div id="modal-daily" class="modal">
+    <div class="modal-box daily-box">
+      <div class="quiz-head">
+        <span id="daily-date"></span>
+        <span id="daily-reward">+50 XP bonus</span>
+      </div>
+      <h2 id="daily-title">🎯 Défi du jour</h2>
+      <p id="daily-desc"></p>
+      <div id="daily-terminal" role="log"></div>
+      <div id="daily-input-bar">
+        <span class="daily-prompt">user@jour:~$</span>
+        <input id="daily-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="tape ta commande...">
+        <button id="daily-run">↵</button>
+      </div>
+      <div id="daily-status"></div>
+      <div class="win-btns" style="margin-top:14px">
+        <button id="daily-close" class="btn-ghost">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL SUCCÈS ════════════════════════════════════════ -->
+  <div id="modal-win" class="modal">
+    <div class="modal-box win-box">
+      <div class="win-icon">✅</div>
+      <h2 id="win-title">Mission accomplie !</h2>
+      <p id="win-xp"></p>
+      <div class="lesson-block" id="win-explanation-block">
+        <div class="lesson-block-label">POURQUOI ÇA A MARCHÉ</div>
+        <p id="win-explanation"></p>
+      </div>
+      <div id="win-badge-row"></div>
+      <div class="win-btns">
+        <button id="win-next" class="btn-primary">Suite →</button>
+        <button id="win-close" class="btn-ghost">Rester ici</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL BANDIT SUCCÈS ═════════════════════════════════ -->
+  <div id="modal-bandit-win" class="modal">
+    <div class="modal-box win-box">
+      <div class="win-icon">🔓</div>
+      <h2>Mot de passe trouvé !</h2>
+      <p id="bandit-win-msg"></p>
+      <div class="win-btns">
+        <button id="bandit-win-next" class="btn-primary">Niveau suivant →</button>
+        <button id="bandit-win-close" class="btn-ghost">Rester</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL QUIZ ══════════════════════════════════════════ -->
+  <div id="modal-quiz" class="modal">
+    <div class="modal-box quiz-box">
+      <div class="quiz-head">
+        <span id="quiz-chapter"></span>
+        <span id="quiz-progress"></span>
+      </div>
+      <h2 id="quiz-question"></h2>
+      <div id="quiz-options"></div>
+      <div id="quiz-result" style="display:none"></div>
+      <div class="win-btns" style="margin-top:16px">
+        <button id="quiz-close" class="btn-ghost">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOASTS ══════════════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+  <script src="levels.js"></script>
+  <script src="terminal.js"></script>
+  <script src="fx.js"></script>
+  <script src="gameshell.js"></script>
+  <script src="challenges.js"></script>
+  <script src="bandit.js"></script>
+  <script src="quizzes.js"></script>
+  <script src="glossary.js"></script>
+  <script src="daily.js"></script>
+  <script src="profile.js"></script>
+  <script src="game.js"></script>
+  <script src="sw-register.js"></script>
+</body>
+</html>
