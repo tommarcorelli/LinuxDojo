@@ -50,6 +50,7 @@ const BADGES = [
   { id: "chapter2",    label: "✏️ Artisan",        cond: g => [7,8,9,10,11,12].every(id => g.completed.has(id)) },
   { id: "chapter3",    label: "🔍 Détective",     cond: g => [13,14,15,16,17,18].every(id => g.completed.has(id)) },
   { id: "chapter4",    label: "🔐 Gardien",       cond: g => [19,20,21,22,23,24].every(id => g.completed.has(id)) },
+  { id: "chapter6",    label: "🛡️ Défenseur",     cond: g => [31,32,33,34,35,36].every(id => g.completed.has(id)) },
   { id: "master",      label: "⚡ Maître Linux",  cond: g => g.completed.size >= 30 },
   { id: "xp100",       label: "💯 Centurion",     cond: g => g.xp >= 100 },
   { id: "xp500",       label: "🔥 Inferno",       cond: g => g.xp >= 500 },
@@ -274,7 +275,8 @@ function loadExercise() {
   $("hint-text").style.display = "none";
   term.clear();
   term.loadFS(m.fs);
-  term.printInfo("══ Mission " + m.id + "/30 ══");
+  $("prompt").textContent = term.promptStr();
+  term.printInfo("══ Mission " + m.id + "/" + CHAPTERS.flatMap(c => c.missions).length + " ══");
   term.printOut("");
   $("cmd-input").focus();
 }
@@ -284,6 +286,7 @@ function runLearnCommand(raw) {
   cmdHistory.unshift(raw); histIdx = -1;
   bumpStat(raw.split(/\s+/)[0]);
   const result = term.run(raw);
+  $("prompt").textContent = term.promptStr();
   const output = result.output || "";
   if (currentMission) {
     let ok = false;
@@ -454,9 +457,12 @@ const SANDBOX_FS = {
 };
 function initSandbox() {
   sbTerm = new Terminal($("sandbox-terminal"));
-  sbTerm.loadFS(SANDBOX_FS);
+  sbTerm.ps1User = "user@sandbox";
+  sbTerm.loadFS(SANDBOX_FS, { system: true });
   sbTerm.printInfo("🧪 Bac à sable — tape 'help' pour la liste des commandes.");
+  sbTerm.printInfo("Le système est explorable : cd / · ls /etc · cat /etc/passwd · tree /var ... (et /root est verrouillé 😏)");
   sbTerm.printOut("");
+  const sbPrompt = document.querySelector(".sandbox-prompt");
   const input = $("sandbox-cmd");
   let hist = [], hi = -1;
   const run = () => {
@@ -464,6 +470,7 @@ function initSandbox() {
     hist.unshift(v); hi = -1; input.value = "";
     bumpStat(v.split(/\s+/)[0]);
     sbTerm.run(v);
+    if (sbPrompt) sbPrompt.textContent = sbTerm.promptStr();
   };
   $("sandbox-run").addEventListener("click", run);
   input.addEventListener("keydown", e => {
@@ -473,8 +480,9 @@ function initSandbox() {
     else if (e.key === "ArrowDown") { e.preventDefault(); if (hi > 0) { hi--; input.value = hist[hi]||""; } else { hi=-1; input.value=""; } }
   });
   $("sandbox-reset").addEventListener("click", () => {
-    sbTerm.loadFS(SANDBOX_FS); sbTerm.clear();
+    sbTerm.loadFS(SANDBOX_FS, { system: true }); sbTerm.clear();
     sbTerm.printInfo("🧪 Bac à sable réinitialisé.");
+    if (sbPrompt) sbPrompt.textContent = sbTerm.promptStr();
     if (typeof SFX !== "undefined") SFX.glitch();
   });
 }

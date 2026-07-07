@@ -943,6 +943,191 @@ const CHAPTERS = [
         explanation: "Tu as extrait seulement les noms de serveurs. Tu peux voir que <code>prod-db-01</code> est en WARNING avec 95% CPU et 88% mémoire — c'est probablement lui qui ralentit tout. <code>awk</code> t'a permis d'isoler cette information en une ligne."
       }
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 6,
+    title: "🚨 Scénario 6 — Intrusion détectée",
+    scenario: "Lundi, 7h02. Le monitoring hurle : quelqu'un s'est introduit dans le serveur pendant le week-end. Tu es l'analyste de garde. Traces, IP, processus véreux — mène l'enquête et rédige le rapport.",
+    missions: [
+
+      {
+        id: 31,
+        name: "Étape 1 — Les dernières traces",
+        cmd: "tail",
+        xp: 40,
+        lesson: {
+          title: "La commande <code>tail</code> — La fin des logs",
+          intro: "Dans un fichier de log, les lignes les plus récentes sont <strong>à la fin</strong>. <code>tail</code> (queue) affiche les dernières lignes — c'est LE réflexe de l'analyste : « qu'est-ce qui vient de se passer ? ». Et grâce aux <strong>chemins</strong>, pas besoin de se déplacer : <code>tail logs/auth.log</code> vise directement le fichier.",
+          syntax: "tail [-n N] chemin/fichier",
+          options: [
+            { flag: "-n 5",  desc: "Affiche les 5 dernières lignes (10 par défaut)" },
+            { flag: "-f",    desc: "Mode « follow » : affiche les nouvelles lignes en direct (irremplaçable en prod)" },
+          ],
+          examples: [
+            { cmd: "tail -n 5 logs/auth.log",   comment: "# les 5 derniers événements d'authentification" },
+            { cmd: "tail -n 20 /var/log/syslog", comment: "# chemin absolu : la fin du log système" },
+            { cmd: "tail -f app.log",            comment: "# suivre le log en temps réel (Ctrl+C pour quitter)" },
+          ],
+          tip: "`head` = le début, `tail` = la fin. Pour une enquête, on commence toujours par `tail` : l'incident est récent, donc en bas du fichier."
+        },
+        desc: "Le journal d'authentification est dans <code>logs/auth.log</code>. Sans te déplacer, affiche ses <strong>5 dernières lignes</strong> — c'est là que l'intrusion s'est jouée.",
+        fs: {
+          "readme.txt":    { type: "file", content: "Alerte monitoring 07:02 — activité SSH anormale cette nuit.\nLes journaux sont dans logs/." },
+          "logs":          { type: "dir" },
+          "logs/auth.log": { type: "file", content: "06:58:01 OK alice 10.0.0.3\n07:12:44 OK bob 192.168.1.20\n23:41:02 FAILED root 203.0.113.66\n23:41:05 FAILED root 203.0.113.66\n23:41:09 FAILED admin 203.0.113.66\n23:41:14 FAILED root 203.0.113.66\n23:41:20 FAILED admin 203.0.113.66\n23:41:27 FAILED root 203.0.113.66\n23:41:33 FAILED root 203.0.113.66\n23:41:40 ACCEPTED root 203.0.113.66\n23:42:01 OK root session-ouverte" },
+        },
+        hint: "tail -n 5 logs/auth.log  (le chemin remplace le déplacement)",
+        check: (out) => /accepted/.test(out) && !/alice/.test(out),
+        explanation: "Regarde la dernière tentative : après une rafale de <code>FAILED</code>, un <code>ACCEPTED root</code> à 23:41:40. Quelqu'un a fini par <strong>entrer en root</strong> depuis 203.0.113.66. C'est officiellement une intrusion — l'enquête commence."
+      },
+
+      {
+        id: 32,
+        name: "Étape 2 — Mesurer l'attaque",
+        cmd: "grep -c",
+        xp: 45,
+        lesson: {
+          title: "<code>grep -c</code> et <code>grep -v</code> — Compter et exclure",
+          intro: "Tu connais <code>grep</code> pour filtrer. Deux options le transforment en outil d'analyse : <code>-c</code> (count) donne directement le <strong>nombre</strong> de lignes trouvées, <code>-v</code> (invert) garde les lignes qui ne contiennent <strong>PAS</strong> le motif.",
+          syntax: "grep -c MOTIF chemin/fichier",
+          options: [
+            { flag: "-c",  desc: "Compte les lignes correspondantes (au lieu de les afficher)" },
+            { flag: "-v",  desc: "Inverse : lignes SANS le motif" },
+            { flag: "-i",  desc: "Ignore majuscules/minuscules" },
+          ],
+          examples: [
+            { cmd: "grep -c FAILED logs/auth.log",  comment: "# combien d'échecs de connexion ?" },
+            { cmd: "grep -v OK logs/auth.log",      comment: "# tout ce qui n'est pas normal" },
+            { cmd: "grep FAILED f.log | wc -l",     comment: "# équivalent de -c, en pipeline" },
+          ],
+          tip: "Un rapport d'incident exige des chiffres précis. « Beaucoup de tentatives » ne veut rien dire ; « 7 tentatives en 31 secondes » qualifie un brute-force."
+        },
+        desc: "Pour le rapport, il faut du chiffre : <strong>combien de tentatives échouées</strong> (lignes <code>FAILED</code>) contient <code>logs/auth.log</code> ?",
+        fs: {
+          "logs":          { type: "dir" },
+          "logs/auth.log": { type: "file", content: "06:58:01 OK alice 10.0.0.3\n07:12:44 OK bob 192.168.1.20\n23:41:02 FAILED root 203.0.113.66\n23:41:05 FAILED root 203.0.113.66\n23:41:09 FAILED admin 203.0.113.66\n23:41:14 FAILED root 203.0.113.66\n23:41:20 FAILED admin 203.0.113.66\n23:41:27 FAILED root 203.0.113.66\n23:41:33 FAILED root 203.0.113.66\n23:41:40 ACCEPTED root 203.0.113.66\n23:42:01 OK root session-ouverte" },
+        },
+        hint: "grep -c FAILED logs/auth.log  (ou grep FAILED logs/auth.log | wc -l)",
+        check: (out) => /\b7\b/.test(out),
+        explanation: "<strong>7 tentatives échouées en 31 secondes</strong>, puis une réussie : c'est la signature d'un brute-force (un robot qui essaie des mots de passe en boucle). Un humain ne tape pas 7 mots de passe en 31 secondes."
+      },
+
+      {
+        id: 33,
+        name: "Étape 3 — Identifier l'attaquant",
+        cmd: "awk / cut",
+        xp: 50,
+        lesson: {
+          title: "Extraire une colonne d'un log — <code>awk</code> / <code>cut</code>",
+          intro: "Chaque ligne du log a 4 colonnes : <code>heure statut utilisateur ip</code>. Pour isoler les IP, on enchaîne : <code>grep</code> filtre les lignes intéressantes, puis <code>awk '{print $4}'</code> (ou <code>cut -d' ' -f4</code>) extrait la 4e colonne. C'est LE pipeline d'analyse de logs.",
+          syntax: "grep MOTIF fichier | awk '{print $N}'",
+          options: [
+            { flag: "$4",        desc: "awk : la 4e colonne (séparateur = espaces)" },
+            { flag: "-d' ' -f4", desc: "cut : même chose, séparateur espace explicite" },
+          ],
+          examples: [
+            { cmd: "grep FAILED logs/auth.log | awk '{print $4}'", comment: "# les IP des échecs" },
+            { cmd: "grep FAILED logs/auth.log | cut -d' ' -f4",    comment: "# pareil avec cut" },
+            { cmd: "ps aux | awk '{print $2}'",                     comment: "# tous les PID" },
+          ],
+          tip: "filtrer (`grep`) PUIS découper (`awk`/`cut`) : retiens ce duo, il résout 80 % des analyses de logs."
+        },
+        desc: "D'où vient l'attaque ? Extrais <strong>uniquement les IP</strong> (4e colonne) des lignes <code>FAILED</code> de <code>logs/auth.log</code>.",
+        fs: {
+          "logs":          { type: "dir" },
+          "logs/auth.log": { type: "file", content: "06:58:01 OK alice 10.0.0.3\n07:12:44 OK bob 192.168.1.20\n23:41:02 FAILED root 203.0.113.66\n23:41:05 FAILED root 203.0.113.66\n23:41:09 FAILED admin 203.0.113.66\n23:41:14 FAILED root 203.0.113.66\n23:41:20 FAILED admin 203.0.113.66\n23:41:27 FAILED root 203.0.113.66\n23:41:33 FAILED root 203.0.113.66\n23:41:40 ACCEPTED root 203.0.113.66\n23:42:01 OK root session-ouverte" },
+        },
+        hint: "grep FAILED logs/auth.log | awk '{print $4}'",
+        check: (out) => /203\.0\.113\.66/.test(out) && !/failed/.test(out) && !/root|admin/.test(out),
+        explanation: "Une seule IP derrière les 7 échecs : <strong>203.0.113.66</strong>. Toutes les tentatives viennent de la même machine. Tu tiens ton suspect — reste à confirmer que c'est bien lui le plus agressif."
+      },
+
+      {
+        id: 34,
+        name: "Étape 4 — Le top des IP",
+        cmd: "sort | uniq -c",
+        xp: 55,
+        lesson: {
+          title: "<code>sort | uniq -c</code> — Le compteur d'occurrences",
+          intro: "Le pipeline le plus célèbre du sysadmin : <code>sort</code> regroupe les lignes identiques (uniq ne voit que les doublons <strong>adjacents</strong> !), puis <code>uniq -c</code> compte chaque groupe. Résultat : un histogramme instantané.",
+          syntax: "sort fichier | uniq -c",
+          options: [
+            { flag: "uniq -c",   desc: "Préfixe chaque ligne par son nombre d'occurrences" },
+            { flag: "sort -n",   desc: "(bonus) retrie le résultat par nombre croissant" },
+          ],
+          examples: [
+            { cmd: "sort ips.txt | uniq -c",            comment: "# combien de fois chaque IP ?" },
+            { cmd: "sort ips.txt | uniq -c | sort -n",  comment: "# classement final, pire en bas" },
+          ],
+          tip: "Sans `sort` d'abord, `uniq` rate les doublons éloignés. sort → uniq, TOUJOURS dans cet ordre."
+        },
+        desc: "Le pare-feu a extrait toutes les IP de la semaine dans <code>ips.txt</code>. Compte les occurrences de chaque IP pour prouver laquelle domine.",
+        fs: {
+          "ips.txt": { type: "file", content: "203.0.113.66\n10.0.0.3\n203.0.113.66\n192.168.1.20\n203.0.113.66\n10.0.0.3\n203.0.113.66\n192.168.1.20\n203.0.113.66\n192.168.1.20\n203.0.113.66" },
+        },
+        hint: "sort ips.txt | uniq -c",
+        check: (out) => /6 203\.0\.113\.66/.test(out),
+        explanation: "<strong>6 occurrences pour 203.0.113.66</strong>, loin devant les IP internes légitimes. Le doute n'est plus permis. Cette IP sera bannie — mais d'abord, vérifions ce que l'intrus a laissé derrière lui."
+      },
+
+      {
+        id: 35,
+        name: "Étape 5 — La porte dérobée",
+        cmd: "ps / kill",
+        xp: 55,
+        lesson: {
+          title: "Traquer un processus — <code>ps aux | grep</code> puis <code>kill</code>",
+          intro: "Un intrus laisse souvent un processus qui tourne (une « backdoor ») pour revenir plus tard. <code>ps aux</code> liste tout ce qui tourne ; on filtre avec <code>grep</code>, on repère le <strong>PID</strong> (2e colonne), et on tue avec <code>kill</code>.",
+          syntax: "ps aux | grep MOTIF   puis   kill PID",
+          options: [
+            { flag: "ps aux",   desc: "Tous les processus de la machine" },
+            { flag: "kill PID", desc: "Arrêt propre (SIGTERM)" },
+            { flag: "kill -9",  desc: "Arrêt forcé (SIGKILL) — en dernier recours" },
+          ],
+          examples: [
+            { cmd: "ps aux | grep python",  comment: "# les processus python en cours" },
+            { cmd: "kill 1235",             comment: "# arrêt propre du PID 1235" },
+            { cmd: "kill -9 1235",          comment: "# s'il résiste" },
+          ],
+          tip: "Avant de tuer un processus, note son nom et son PID pour le rapport. Sur une vraie machine compromise, on capture d'abord les preuves."
+        },
+        desc: "L'intrus a laissé tourner un processus <code>python3 app.py</code> suspect. Repère son <strong>PID</strong> avec <code>ps aux</code> (filtre avec grep si tu veux), puis <strong>tue-le</strong>.",
+        fs: {},
+        hint: "ps aux | grep python  → repère le PID (2e colonne) →  kill 1235",
+        check: (out, s) => s.kill === "1235",
+        explanation: "La backdoor est morte. Le processus <code>python3 app.py</code> (PID 1235) était le moyen de retour de l'intrus. Sur un vrai incident, on aurait aussi vérifié <code>crontab -l</code> et les clés SSH ajoutées — les intrus adorent laisser plusieurs portes."
+      },
+
+      {
+        id: 36,
+        name: "Étape 6 — Le rapport d'incident",
+        cmd: "echo > + chmod",
+        xp: 70,
+        lesson: {
+          title: "Consigner et protéger — <code>echo ></code> puis <code>chmod 600</code>",
+          intro: "Un incident sans rapport n'existe pas. On consigne les faits dans un fichier (<code>echo \"...\" > rapport</code>), puis on le <strong>protège</strong> : <code>chmod 600</code> = lecture/écriture pour toi seul. Un rapport d'incident contient des infos sensibles — il ne doit pas traîner en 644.",
+          syntax: 'echo "texte" > fichier   puis   chmod 600 fichier',
+          options: [
+            { flag: "600", desc: "rw------- : toi seul (secrets, rapports, clés)" },
+            { flag: "644", desc: "rw-r--r-- : lisible par tous (fichiers normaux)" },
+            { flag: "755", desc: "rwxr-xr-x : exécutable par tous (scripts)" },
+          ],
+          examples: [
+            { cmd: 'echo "IP 203.0.113.66 bannie" > rapport-incident.txt', comment: "# consigner" },
+            { cmd: "chmod 600 rapport-incident.txt",                        comment: "# protéger" },
+            { cmd: "ls -l rapport-incident.txt",                            comment: "# vérifier : -rw-------" },
+          ],
+          tip: "Retiens le trio : 600 pour les secrets, 644 pour les fichiers, 755 pour les scripts. 777, lui, n'est JAMAIS la bonne réponse."
+        },
+        desc: "Dernière étape : crée le rapport (<code>echo \"IP 203.0.113.66 bannie - brute force\" > rapport-incident.txt</code>), puis <strong>protège-le en 600</strong> pour que toi seul puisses le lire.",
+        fs: {},
+        hint: 'echo "IP 203.0.113.66 bannie" > rapport-incident.txt  puis  chmod 600 rapport-incident.txt',
+        check: (out, s) => s.chmod === "rapport-incident.txt",
+        explanation: "Enquête bouclée : intrusion identifiée (brute-force SSH), attaquant confirmé (203.0.113.66), backdoor éliminée (PID 1235), rapport rédigé et protégé en <code>-rw-------</code>. C'est exactement le déroulé d'une vraie réponse à incident. 🛡️ Beau travail, analyste."
+      }
+    ]
   }
 ];
 

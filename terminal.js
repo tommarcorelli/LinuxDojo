@@ -1,22 +1,125 @@
 // terminal.js — Simulateur de terminal Linux
 
+/* Squelette système en lecture seule (fusionné dans le bac à sable) */
+const SYSTEM_FS = {
+  "/etc":            { type:"dir" },
+  "/etc/hostname":   { type:"file", content:"dojo" },
+  "/etc/os-release": { type:"file", content:'NAME="DojoLinux"\nVERSION="4.0 (Kata)"\nID=dojolinux\nPRETTY_NAME="DojoLinux 4.0"' },
+  "/etc/passwd":     { type:"file", content:"root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:Apprenti:/home/user:/bin/bash\nsensei:x:1001:1001:Le Sensei:/home/sensei:/bin/zsh" },
+  "/etc/motd":       { type:"file", content:"Bienvenue sur DojoLinux.\nLa voie du shell est longue, mais chaque commande te rapproche du sommet." },
+  "/var":            { type:"dir" },
+  "/var/log":        { type:"dir" },
+  "/var/log/syslog": { type:"file", content:"kernel: DojoLinux boot ok\nsystemd: Started Terminal Simulator.\ncron: session opened for user\nkernel: tout est fichier" },
+  "/tmp":            { type:"dir" },
+  "/tmp/.rien":      { type:"file", content:"Il n'y a rien ici. Vraiment. Retourne t'entraîner." },
+  "/usr":            { type:"dir" },
+  "/usr/bin":        { type:"dir" },
+  "/usr/bin/cowsay": { type:"file", perms:"-rwxr-xr-x", content:"(binaire ELF simulé — tape juste 'cowsay meuh')" },
+  "/root":           { type:"dir", denied:true },
+};
+
 class Terminal {
   constructor(outputEl) {
     this.el = outputEl;
-    this.cwd = "/home/user";
-    this.fs = {};       // filesystem virtuel de la mission
-    this.state = {};    // état interne (mkdir créé, cp, etc.)
+    this.root = "/home/user"; // racine de la mission
+    this.cwd = this.root;
+    this.ps1User = "user@dojo";
+    this.fs = {};       // filesystem virtuel : clés = chemins ABSOLUS normalisés
+    this.state = {};    // état interne (mkdir créé, cp, etc.) — valeurs telles que tapées
     this.cmdLog = [];   // historique de session (commande history)
     this._envVars = {}; // variables d'environnement injectées (bandit, etc.)
   }
 
-  // Charge le filesystem d'une mission
-  loadFS(fs) {
-    this.fs = JSON.parse(JSON.stringify(fs || {}));
-    this.cwd = "/home/user";
+  // Charge le filesystem d'une mission.
+  // Les clés relatives ("notes.txt", "data/pass.txt") sont ancrées sous /home/user ;
+  // les clés absolues ("/etc/hostname") sont gardées telles quelles.
+  // opts.system = true → fusionne le squelette système (/etc, /var, /tmp, /root…).
+  loadFS(fs, opts) {
+    this.fs = {};
+    const src = fs || {};
+    if (opts && opts.system) {
+      for (const [k, node] of Object.entries(SYSTEM_FS)) this.fs[k] = JSON.parse(JSON.stringify(node));
+    }
+    for (const [k, node] of Object.entries(src)) {
+      const abs = k.startsWith("/") ? k : this.root + "/" + k;
+      this.fs[this._normPath(abs)] = JSON.parse(JSON.stringify(node));
+    }
+    // La racine de mission existe toujours (même avec un FS vide)
+    if (!this.fs[this.root]) this.fs[this.root] = { type: "dir", implied: true };
+    // Crée les dossiers parents implicites (ex: "data/pass.txt" sans entrée "data")
+    Object.keys(this.fs).forEach(k => this._ensureParents(k));
+    this.cwd = this.root;
     this.state = {};
     this._envVars = {};
   }
+
+  /* ── Chemins ───────────────────────────────────────────────── */
+  // Normalise un chemin absolu : gère ".", "..", "//" — clampé à "/"
+  _normPath(p) {
+    const out = [];
+    for (const seg of p.split("/")) {
+      if (!seg || seg === ".") continue;
+      if (seg === "..") { out.pop(); continue; }
+      out.push(seg);
+    }
+    return "/" + out.join("/");
+  }
+  // Résout un argument utilisateur en chemin absolu normalisé
+  _resolve(arg) {
+    if (!arg || arg === "~") return this.root;
+    let p;
+    if (arg.startsWith("/"))       p = arg;
+    else if (arg.startsWith("~/")) p = this.root + arg.slice(1);
+    else                           p = this.cwd + "/" + arg;
+    return this._normPath(p);
+  }
+  _parentOf(p) { const i = p.lastIndexOf("/"); return i <= 0 ? "/" : p.slice(0, i); }
+  _baseOf(p)   { return p === "/" ? "/" : p.slice(p.lastIndexOf("/") + 1); }
+  _isDir(p)    { if (p === "/") return true; const n = this.fs[p]; return !!n && n.type === "dir"; }
+  _exists(p)   { return p === "/" || !!this.fs[p]; }
+  // Enfants directs d'un dossier (noms de base, ordre d'insertion)
+  _children(p) {
+    const base = p === "/" ? "/" : p + "/";
+    const seen = [];
+    for (const k of Object.keys(this.fs)) {
+      if (!k.startsWith(base) || k === p) continue;
+      const rest = k.slice(base.length);
+      if (!rest || rest.includes("/")) continue;
+      seen.push(rest);
+    }
+    return seen;
+  }
+  // Un ancêtre (ou le chemin lui-même) est-il interdit d'accès ?
+  _denied(p) {
+    let cur = p;
+    while (cur !== "/") {
+      const n = this.fs[cur];
+      if (n && n.denied) return cur;
+      cur = this._parentOf(cur);
+    }
+    return null;
+  }
+  _ensureParents(p) {
+    let cur = this._parentOf(p);
+    while (cur !== "/" && !this.fs[cur]) {
+      this.fs[cur] = { type: "dir", implied: true };
+      cur = this._parentOf(cur);
+    }
+  }
+  // Résout un argument fichier → { path, node } ou null
+  _file(arg) {
+    const p = this._resolve(arg);
+    if (this._denied(p)) return { path: p, node: null, denied: true };
+    const node = this.fs[p];
+    return node ? { path: p, node } : null;
+  }
+  // Affichage du cwd : /home/user/logs → ~/logs
+  _display(p) {
+    if (p === this.root) return "~";
+    if (p.startsWith(this.root + "/")) return "~" + p.slice(this.root.length);
+    return p;
+  }
+  promptStr() { return this.ps1User + ":" + this._display(this.cwd) + "$"; }
 
   clear() {
     this.el.innerHTML = "";
@@ -35,7 +138,7 @@ class Terminal {
   printPrompt(cmd) {
     const d = document.createElement("div");
     d.className = "t-line t-prompt-line";
-    d.innerHTML = `<span class="t-ps1">user@dojo:~$</span><span class="t-cmd"> ${this._esc(cmd)}</span>`;
+    d.innerHTML = `<span class="t-ps1">${this._esc(this.promptStr())}</span><span class="t-cmd"> ${this._esc(cmd)}</span>`;
     this.el.appendChild(d);
   }
 
@@ -52,7 +155,7 @@ class Terminal {
 
   // ── Suggestion de fichier (si faute de frappe) ─────────────
   _suggestFile(name) {
-    const files = Object.keys(this.fs);
+    const files = this._children(this.cwd);
     if (!files.length) return null;
     // Cherche un fichier qui commence pareil
     const startsWith = files.find(f => f.startsWith(name.slice(0, 3)));
@@ -149,19 +252,24 @@ class Terminal {
       return;
     }
 
-    // Complétion de fichier/dossier (arguments)
+    // Complétion de fichier/dossier (arguments) — gère les chemins (logs/ap<Tab>)
     if (!last) return;
-    const files = Object.keys(this.fs);
-    const matches2 = files.filter(f => f.startsWith(last));
+    const slash = last.lastIndexOf("/");
+    const dirPart = slash >= 0 ? last.slice(0, slash + 1) : "";     // préfixe tapé (gardé tel quel)
+    const namePart = slash >= 0 ? last.slice(slash + 1) : last;      // segment à compléter
+    const dirPath = dirPart ? this._resolve(dirPart) : this.cwd;
+    if (!this._isDir(dirPath) || this._denied(dirPath)) return;
+    const files = this._children(dirPath).map(n => this._isDir(dirPath === "/" ? "/" + n : dirPath + "/" + n) ? n + "/" : n);
+    const matches2 = files.filter(f => f.startsWith(namePart));
     if (matches2.length === 1) {
-      parts[parts.length - 1] = matches2[0];
-      inputEl.value = parts.join(" ");
+      parts[parts.length - 1] = dirPart + matches2[0];
+      inputEl.value = parts.join(" ") + (matches2[0].endsWith("/") ? "" : " ");
     } else if (matches2.length > 1) {
       this.printOut("");
       this.printOut(matches2.join("  "), "t-info");
       const prefix = this._commonPrefix(matches2);
-      if (prefix.length > last.length) {
-        parts[parts.length - 1] = prefix;
+      if (prefix.length > namePart.length) {
+        parts[parts.length - 1] = dirPart + prefix;
         inputEl.value = parts.join(" ");
       }
     }
@@ -257,11 +365,13 @@ class Terminal {
     const parts = this._parse(left.trim());
     const res = this._exec(parts, "", true);
     if (fname) {
-      if (append && this.fs[fname] && this.fs[fname].type === "file") {
-        this.fs[fname].content = (this.fs[fname].content || "") + "\n" + res.output;
+      const abs = this._resolve(fname);
+      if (append && this.fs[abs] && this.fs[abs].type === "file") {
+        this.fs[abs].content = (this.fs[abs].content || "") + "\n" + res.output;
         this.state.append = fname;
       } else {
-        this.fs[fname] = { type: "file", content: res.output };
+        this.fs[abs] = { type: "file", content: res.output };
+        this._ensureParents(abs);
         if (append) this.state.append = fname;
       }
       this.state.redirect = fname;
@@ -270,11 +380,20 @@ class Terminal {
     return { output: res.output, error: false };
   }
 
-  // ── Expansion de glob (*.txt → fichiers correspondants) ────
+  // ── Expansion de glob (*.txt, logs/*.log → fichiers correspondants) ────
+  // Retourne des chemins utilisables comme arguments (préfixe dossier conservé).
   _globList(pattern) {
     if (!pattern.includes("*")) return null;
-    const rx = new RegExp("^" + pattern.split("*").map(s => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$");
-    const matches = Object.keys(this.fs).filter(f => rx.test(f) && this.fs[f].type !== "dir");
+    const slash = pattern.lastIndexOf("/");
+    const dirPart = slash >= 0 ? pattern.slice(0, slash + 1) : "";
+    const patSeg  = slash >= 0 ? pattern.slice(slash + 1) : pattern;
+    if (patSeg.includes("/") || !patSeg.includes("*")) return null;
+    const dirPath = dirPart ? this._resolve(dirPart) : this.cwd;
+    if (!this._isDir(dirPath) || this._denied(dirPath)) return null;
+    const rx = new RegExp("^" + patSeg.split("*").map(s => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$");
+    const matches = this._children(dirPath)
+      .filter(n => rx.test(n) && !this._isDir(dirPath === "/" ? "/" + n : dirPath + "/" + n))
+      .map(n => dirPart + n);
     return matches.length ? matches : null;
   }
   // Étend chaque argument non-option contenant * (si au moins un fichier correspond)
@@ -304,22 +423,38 @@ class Terminal {
         const hasA = args.some(a => a.startsWith("-") && a.includes("a"));
         const hasL = args.some(a => a.startsWith("-") && a.includes("l"));
         const target = args.find(a => !a.startsWith("-"));
-        let files = Object.keys(this.fs);
-        if (target && this.fs[target] && this.fs[target].type === "dir") {
-          // ls dossier → liste les fichiers "dossier/xxx"
-          files = files.filter(f => f.startsWith(target + "/")).map(f => f.slice(target.length + 1));
-          if (!files.length) { out = ""; break; }
-        } else if (target && !this.fs[target]) {
+
+        let dirPath = this.cwd;       // dossier dont on liste le contenu
+        let files;                    // noms affichés
+        let nodeFor;                  // name → node (pour -l)
+
+        if (target && target.includes("*")) {
           const g = this._globList(target);
-          if (g) files = g;
-          else { out = `ls: ${target}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!g) { out = `ls: ${target}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          files = g;
+          nodeFor = n => this.fs[this._resolve(n)];
+        } else if (target) {
+          const p = this._resolve(target);
+          const deniedAt = this._denied(p);
+          if (deniedAt) { out = `ls: impossible d'ouvrir '${target}': Permission non accordée 🔒`; err = true; break; }
+          if (!this._exists(p)) { out = `ls: ${target}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!this._isDir(p)) { files = [target]; nodeFor = () => this.fs[p]; }
+          else { dirPath = p; }
         }
-        if (!hasA) files = files.filter(f => !f.startsWith("."));
+        if (!files) {
+          files = this._children(dirPath);
+          nodeFor = n => this.fs[dirPath === "/" ? "/" + n : dirPath + "/" + n];
+        }
+
+        if (!hasA) files = files.filter(f => !this._baseOf(f).startsWith("."));
+        else if (!target || this._isDir(this._resolve(target))) files = [".", "..", ...files];
+
+        if (!files.length) { out = ""; break; }
         if (hasL) {
           out = files.map(f => {
-            const node = this.fs[f] || this.fs[(target || "") + "/" + f] || { type: "file" };
+            const node = (f === "." || f === "..") ? { type: "dir" } : (nodeFor(f) || { type: "file" });
             const perms = node.perms || (node.type === "dir" ? "drwxr-xr-x" : "-rw-r--r--");
-            const size = node.content ? node.content.length : 0;
+            const size = node.content ? node.content.length : (node.type === "dir" ? 4096 : 0);
             return `${perms}  1 user user ${String(size).padStart(6)}  ${f}`;
           }).join("\n");
         } else {
@@ -337,14 +472,15 @@ class Terminal {
         }
         const chunks = [];
         for (const fname of fnames) {
-          const node = this.fs[fname];
-          if (!node) {
+          const f = this._file(fname);
+          if (f && f.denied) { out = `cat: ${fname}: Permission non accordée 🔒`; err = true; break; }
+          if (!f) {
             const sugg = this._suggestFile(fname);
             out = `cat: ${fname}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : " + sugg + " ?" : "\n\nTape 'ls' pour voir les fichiers disponibles."}`;
             err = true; break;
           }
-          if (node.type === "dir") { out = `cat: ${fname}: est un dossier\nPour lister son contenu : ls ${fname}`; err = true; break; }
-          chunks.push(node.content || "");
+          if (f.node.type === "dir") { out = `cat: ${fname}: est un dossier\nPour lister son contenu : ls ${fname}`; err = true; break; }
+          chunks.push(f.node.content || "");
         }
         if (err) break;
         out = chunks.join("\n");
@@ -355,9 +491,9 @@ class Terminal {
       case "more": {
         const fname = args[0];
         if (!fname) { out = `${cmd}: manque le nom de fichier`; err = true; break; }
-        const node = this.fs[fname];
-        if (!node) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
-        out = node.content || "";
+        const f = this._file(fname);
+        if (!f || !f.node) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        out = f.node.content || "";
         break;
       }
 
@@ -369,33 +505,39 @@ class Terminal {
       case "cd": {
         const target = args[0] || "~";
         if (target === "~" || target === "") {
-          this.cwd = "/home/user";
+          this.cwd = this.root;
           this.state.cwd = "home";
           out = "";
-        } else if (target === "..") {
-          this.cwd = "/home";
-          out = "";
-        } else {
-          const node = this.fs[target];
-          if (node && node.type === "dir") {
-            this.cwd = "/home/user/" + target;
-            this.state.cwd = target;
-            out = "";
-          } else if (!node) {
-            const sugg = this._suggestFile(target);
-            out = `cd: ${target}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : cd " + sugg + " ?" : "\n\nTape 'ls' pour voir les dossiers disponibles."}`;
-            err = true;
-          } else {
-            out = `cd: ${target}: N'est pas un dossier`; err = true;
-          }
+          break;
         }
+        const p = this._resolve(target);
+        const deniedAt = this._denied(p);
+        if (deniedAt) { out = `cd: ${target}: Permission non accordée 🔒\n(Il faudrait être root pour entrer dans ${deniedAt}.)`; err = true; break; }
+        if (!this._exists(p)) {
+          const sugg = this._suggestFile(this._baseOf(p));
+          out = `cd: ${target}: Aucun fichier ou dossier de ce type${sugg && this._isDir(this._resolve(sugg)) ? "\nVoulais-tu dire : cd " + sugg + " ?" : "\n\nTape 'ls' pour voir les dossiers disponibles."}`;
+          err = true; break;
+        }
+        if (!this._isDir(p)) { out = `cd: ${target}: N'est pas un dossier`; err = true; break; }
+        this.cwd = p;
+        this.state.cwd = p === this.root ? "home" : this._baseOf(p);
+        out = "";
         break;
       }
 
       case "mkdir": {
+        const hasP = args.includes("-p");
         const p = args.filter(a => !a.startsWith("-"))[0];
         if (!p) { out = "mkdir: manque un opérande\nUsage : mkdir NOM_DOSSIER\nExemple : mkdir projets"; err = true; break; }
-        this.fs[p] = { type: "dir" };
+        const abs = this._resolve(p);
+        if (this._exists(abs)) { out = `mkdir: impossible de créer '${p}': Le fichier existe`; err = true; break; }
+        const parent = this._parentOf(abs);
+        if (!this._isDir(parent) && !hasP) {
+          out = `mkdir: impossible de créer '${p}': le dossier parent n'existe pas\n💡 Utilise -p pour créer toute l'arborescence : mkdir -p ${p}`;
+          err = true; break;
+        }
+        this.fs[abs] = { type: "dir" };
+        this._ensureParents(abs);
         this.state.mkdir = p;
         out = "";
         break;
@@ -404,22 +546,36 @@ class Terminal {
       case "touch": {
         const p = args[0];
         if (!p) { out = "touch: manque le nom du fichier"; err = true; break; }
-        if (!this.fs[p]) this.fs[p] = { type: "file", content: "" };
+        const abs = this._resolve(p);
+        if (!this._isDir(this._parentOf(abs))) { out = `touch: '${p}': le dossier parent n'existe pas`; err = true; break; }
+        if (!this.fs[abs]) this.fs[abs] = { type: "file", content: "" };
         this.state.touch = p;
         out = "";
         break;
       }
 
       case "cp": {
+        const hasR = args.some(a => a.startsWith("-") && a.includes("r"));
         const noFlag = args.filter(a => !a.startsWith("-"));
         if (noFlag.length < 2) { out = "cp: manque les arguments\nUsage : cp SOURCE DESTINATION\nExemple : cp config.json config.backup.json\n\nPour copier un dossier entier : cp -r dossier/ copie/"; err = true; break; }
         const [src, dst] = noFlag;
-        if (!this.fs[src]) {
+        const srcAbs = this._resolve(src);
+        if (!this._exists(srcAbs)) {
           const sugg = this._suggestFile(src);
           out = `cp: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : cp " + sugg + " " + (dst||"destination") + " ?" : ""}`;
           err = true; break;
         }
-        this.fs[dst] = JSON.parse(JSON.stringify(this.fs[src]));
+        if (this._isDir(srcAbs) && !hasR) { out = `cp: -r non spécifié ; omission du dossier '${src}'\n💡 Pour copier un dossier : cp -r ${src} ${dst}`; err = true; break; }
+        let dstAbs = this._resolve(dst);
+        if (this._isDir(dstAbs)) dstAbs = dstAbs + "/" + this._baseOf(srcAbs);   // cp fichier dossier/
+        this.fs[dstAbs] = JSON.parse(JSON.stringify(this.fs[srcAbs]));
+        if (this._isDir(srcAbs)) {
+          // copie récursive du sous-arbre
+          for (const k of Object.keys(this.fs)) {
+            if (k.startsWith(srcAbs + "/")) this.fs[dstAbs + k.slice(srcAbs.length)] = JSON.parse(JSON.stringify(this.fs[k]));
+          }
+        }
+        this._ensureParents(dstAbs);
         this.state.cp = dst;
         out = "";
         break;
@@ -428,13 +584,21 @@ class Terminal {
       case "mv": {
         const [src, dst] = args.filter(a => !a.startsWith("-"));
         if (!src || !dst) { out = "mv: manque les arguments\nUsage : mv SOURCE DESTINATION\nExemple (renommer) : mv ancien.txt nouveau.txt\nExemple (déplacer) : mv fichier.txt dossier/"; err = true; break; }
-        if (!this.fs[src]) {
+        const srcAbs = this._resolve(src);
+        if (!this._exists(srcAbs)) {
           const sugg = this._suggestFile(src);
           out = `mv: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : mv " + sugg + " " + dst + " ?" : ""}`;
           err = true; break;
         }
-        this.fs[dst] = this.fs[src];
-        delete this.fs[src];
+        let dstAbs = this._resolve(dst);
+        if (this._isDir(dstAbs)) dstAbs = dstAbs + "/" + this._baseOf(srcAbs);   // mv fichier dossier/
+        // déplace le nœud + son sous-arbre éventuel
+        const moves = [[srcAbs, dstAbs]];
+        for (const k of Object.keys(this.fs)) {
+          if (k.startsWith(srcAbs + "/")) moves.push([k, dstAbs + k.slice(srcAbs.length)]);
+        }
+        for (const [from, to] of moves) { this.fs[to] = this.fs[from]; delete this.fs[from]; }
+        this._ensureParents(dstAbs);
         this.state.mv = dst;
         out = "";
         break;
@@ -449,12 +613,20 @@ class Terminal {
         }
         const p = targets[0];
         if (!p) { out = "rm: manque le nom du fichier\nUsage : rm FICHIER\nExemple : rm temp.log\n\n⚠️  Attention : pas de corbeille sous Linux, la suppression est définitive !"; err = true; break; }
-        if (!this.fs[p]) {
+        const firstAbs = this._resolve(p);
+        if (!this._exists(firstAbs)) {
           const sugg = this._suggestFile(p);
           out = `rm: impossible de supprimer '${p}': Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : rm " + sugg + " ?" : ""}`;
           err = true; break;
         }
-        targets.forEach(t => { if (this.fs[t]) delete this.fs[t]; });
+        const hasR = flags.includes("r");
+        if (this._isDir(firstAbs) && !hasR) { out = `rm: impossible de supprimer '${p}': est un dossier\n💡 Pour supprimer un dossier et son contenu : rm -r ${p}`; err = true; break; }
+        targets.forEach(t => {
+          const abs = this._resolve(t);
+          if (!this.fs[abs]) return;
+          if (this._isDir(abs)) { for (const k of Object.keys(this.fs)) if (k.startsWith(abs + "/")) delete this.fs[k]; }
+          delete this.fs[abs];
+        });
         this.state.rm = p;
         out = "";
         break;
@@ -462,9 +634,11 @@ class Terminal {
 
       case "chmod": {
         const target = args[args.length - 1];
-        if (!target) { out = "chmod: manque les arguments"; err = true; break; }
-        if (this.fs[target]) {
-          this.fs[target].perms = "-rwxr-xr-x";
+        if (!target || args.length < 2) { out = "chmod: manque les arguments\nUsage : chmod DROITS FICHIER\nExemples : chmod +x script.sh · chmod 600 secret.key"; err = true; break; }
+        const abs = this._resolve(target);
+        if (this.fs[abs]) {
+          const mode = args[0];
+          this.fs[abs].perms = mode === "600" ? "-rw-------" : mode === "644" ? "-rw-r--r--" : "-rwxr-xr-x";
         }
         this.state.chmod = target;
         out = "";
@@ -482,13 +656,16 @@ class Terminal {
         let   fname    = noFlag[1];
         if (!pattern) { out = "grep: manque le motif de recherche\nUsage : grep MOTIF FICHIER\nExemple : grep ERROR app.log\n\nOptions utiles :\n  -i  ignorer la casse\n  -n  afficher les numéros de ligne\n  -v  inverser (lignes SANS le motif)\n  -c  compter les résultats"; err = true; break; }
 
-        if (fname && !this.fs[fname] && fname.includes("*")) {
+        if (fname && fname.includes("*")) {
           const g = this._globList(fname);
           if (g) fname = g[0];
         }
         let content = stdin;
-        if (fname && this.fs[fname]) content = this.fs[fname].content || "";
-        else if (fname && !this.fs[fname]) { out = `grep: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `grep: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          content = f.node.content || "";
+        }
 
         const lines = content.split("\n");
         let matched = lines
@@ -505,10 +682,28 @@ class Terminal {
 
       case "find": {
         const nameIdx = args.indexOf("-name");
-        let pat = nameIdx >= 0 ? (args[nameIdx + 1] || "").replace(/[*'"]/g, "") : "";
-        let files = Object.keys(this.fs);
-        if (pat) files = files.filter(f => f.endsWith(pat));
-        out = files.map(f => "./" + f).join("\n");
+        const pat = nameIdx >= 0 ? (args[nameIdx + 1] || "").replace(/['"]/g, "") : "";
+        const typeIdx = args.indexOf("-type");
+        const typeWanted = typeIdx >= 0 ? args[typeIdx + 1] : "";
+        // point de départ : premier argument non-option (par défaut ".")
+        const startArg = args.find((a, i) => !a.startsWith("-") && args[i-1] !== "-name" && args[i-1] !== "-type") || ".";
+        const startAbs = startArg === "." ? this.cwd : this._resolve(startArg);
+        if (!this._isDir(startAbs)) { out = `find: '${startArg}': Aucun dossier de ce type`; err = true; break; }
+        const rx = pat ? new RegExp("^" + pat.split("*").map(s => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$") : null;
+        const results = [];
+        const prefix = startAbs === "/" ? "" : startAbs;
+        for (const k of Object.keys(this.fs).sort()) {
+          if (k !== startAbs && !k.startsWith(prefix + "/")) continue;
+          if (this._denied(k)) continue;
+          const isDir = this._isDir(k);
+          if (typeWanted === "f" && isDir) continue;
+          if (typeWanted === "d" && !isDir) continue;
+          const base = this._baseOf(k);
+          if (rx && !rx.test(base)) continue;
+          const rel = k === startAbs ? "." : "." + k.slice(prefix.length);
+          results.push(startArg === "." || startArg.startsWith(".") ? rel : k);
+        }
+        out = results.join("\n");
         break;
       }
 
@@ -529,8 +724,9 @@ class Terminal {
         if (!fnames.length) { out = count(stdin, ""); break; }
         const rows = [];
         for (const fname of fnames) {
-          if (!this.fs[fname]) { out = `wc: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
-          rows.push(count(this.fs[fname].content || "", fname));
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `wc: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          rows.push(count(f.node.content || "", fname));
         }
         if (err) break;
         out = rows.join("\n");
@@ -538,12 +734,16 @@ class Terminal {
       }
 
       case "sort": {
-        const fname = args.filter(a => !a.startsWith("-"))[0];
+        const fname = this._expandFileArgs(args.filter(a => !a.startsWith("-")))[0];
         const rev  = args.includes("-r");
         const num  = args.includes("-n");
         const uniq = args.includes("-u");
         let content = stdin;
-        if (fname && this.fs[fname]) content = this.fs[fname].content || "";
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `sort: impossible de lire: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          content = f.node.content || "";
+        }
         let lines = content.split("\n").filter(Boolean);
         if (uniq) lines = [...new Set(lines)];
         lines.sort(num ? (a, b) => parseFloat(a) - parseFloat(b) : (a, b) => a.localeCompare(b));
@@ -654,7 +854,10 @@ class Terminal {
         const expr = args.find(a => a.startsWith("s/"));
         const fname3 = args.filter(a => !a.startsWith("-") && !a.startsWith("s/")).pop();
         let content2 = stdin;
-        if (fname3 && this.fs[fname3]) content2 = this.fs[fname3].content || "";
+        if (fname3) {
+          const f3 = this._file(fname3);
+          if (f3 && f3.node) content2 = f3.node.content || "";
+        }
         if (expr) {
           const m = expr.match(/^s\/([^\/]+)\/([^\/]*)\/([g]?)$/);
           if (m) {
@@ -685,7 +888,10 @@ class Terminal {
         const prog = args.find(a => a.includes("{print"));
         const fname4 = args.filter(a => !a.startsWith("-F") && a !== "-F" && !a.startsWith("{") && a !== fSep).pop();
         let content3 = stdin;
-        if (fname4 && this.fs[fname4]) content3 = this.fs[fname4].content || "";
+        if (fname4) {
+          const f4 = this._file(fname4);
+          if (f4 && f4.node) content3 = f4.node.content || "";
+        }
         if (prog) {
           const colM = prog.match(/\$(\d+)/);
           const col = colM ? parseInt(colM[1]) - 1 : 0;
@@ -700,8 +906,11 @@ class Terminal {
         const dec = args.includes("-d") || args.includes("--decode");
         const fname = args.filter(a => !a.startsWith("-"))[0];
         let src = stdin;
-        if (fname && this.fs[fname]) src = this.fs[fname].content || "";
-        else if (fname && !this.fs[fname]) { out = `base64: ${fname}: Fichier introuvable`; err = true; break; }
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `base64: ${fname}: Fichier introuvable`; err = true; break; }
+          src = f.node.content || "";
+        }
         src = (src || "").trim();
         try {
           if (dec) out = this._b64decode(src);
@@ -713,7 +922,10 @@ class Terminal {
       case "rot13": {
         const fname = args.filter(a => !a.startsWith("-"))[0];
         let src = stdin;
-        if (fname && this.fs[fname]) src = this.fs[fname].content || "";
+        if (fname) {
+          const f = this._file(fname);
+          if (f && f.node) src = f.node.content || "";
+        }
         out = (src || "").replace(/[a-zA-Z]/g, c => {
           const base = c <= "Z" ? 65 : 97;
           return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base);
@@ -726,7 +938,10 @@ class Terminal {
         const plain = args.includes("-p");
         const fname = args.filter(a => !a.startsWith("-"))[0];
         let src = stdin;
-        if (fname && this.fs[fname]) src = this.fs[fname].content || "";
+        if (fname) {
+          const f = this._file(fname);
+          if (f && f.node) src = f.node.content || "";
+        }
         src = src || "";
         if (rev && plain) {
           // hex → texte
@@ -756,8 +971,11 @@ class Terminal {
         const realNames = this._expandFileArgs(args.filter((a, i) => !a.startsWith("-") && !(args[i-1] === "-n" && /^\d+$/.test(a))));
         const fname = realNames[0];
         let content = stdin;
-        if (fname && this.fs[fname]) content = this.fs[fname].content || "";
-        else if (fname && !this.fs[fname]) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          content = f.node.content || "";
+        }
         const lines = content.split("\n");
         out = (cmd === "head" ? lines.slice(0, n) : lines.slice(-n)).join("\n");
         break;
@@ -767,8 +985,11 @@ class Terminal {
         const cFlag = args.includes("-c");
         const fname = this._expandFileArgs(args.filter(a => !a.startsWith("-")))[0];
         let content = stdin;
-        if (fname && this.fs[fname]) content = this.fs[fname].content || "";
-        else if (fname && !this.fs[fname]) { out = `uniq: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `uniq: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          content = f.node.content || "";
+        }
         const lines = content.split("\n");
         const res = [];
         let prev = null, cnt = 0;
@@ -793,8 +1014,11 @@ class Terminal {
         const wanted = fields.split(",").map(x => parseInt(x)).filter(x => !isNaN(x));
         const fname = this._expandFileArgs(args.filter((a, i) => !a.startsWith("-") && args[i-1] !== "-d" && args[i-1] !== "-f"))[0];
         let content = stdin;
-        if (fname && this.fs[fname]) content = this.fs[fname].content || "";
-        else if (fname && !this.fs[fname]) { out = `cut: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (fname) {
+          const f = this._file(fname);
+          if (!f || !f.node) { out = `cut: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          content = f.node.content || "";
+        }
         out = content.split("\n").map(l => {
           const cols = l.split(sep);
           return wanted.map(w => cols[w-1] ?? "").join(sep);
@@ -834,23 +1058,24 @@ class Terminal {
       }
 
       case "tree": {
-        const files = Object.keys(this.fs).sort();
-        const roots = files.filter(f => !f.includes("/"));
-        const res = ["."];
-        roots.forEach((f, i) => {
-          const isLast = i === roots.length - 1;
-          const node = this.fs[f];
-          res.push((isLast ? "└── " : "├── ") + f + (node.type === "dir" ? "/" : ""));
-          if (node.type === "dir") {
-            const children = files.filter(k => k.startsWith(f + "/"));
-            children.forEach((c, j) => {
-              const cl = j === children.length - 1;
-              res.push((isLast ? "    " : "│   ") + (cl ? "└── " : "├── ") + c.slice(f.length + 1));
-            });
-          }
-        });
-        const nd = files.filter(f => this.fs[f].type === "dir").length;
-        const nf = files.length - nd;
+        const startArg = args.find(a => !a.startsWith("-"));
+        const startAbs = startArg ? this._resolve(startArg) : this.cwd;
+        if (!this._isDir(startAbs)) { out = `tree: ${startArg}: N'est pas un dossier`; err = true; break; }
+        let nd = 0, nf = 0;
+        const res = [startArg || "."];
+        const walk = (dir, indent) => {
+          const kids = this._children(dir);
+          kids.forEach((name, i) => {
+            const full = dir === "/" ? "/" + name : dir + "/" + name;
+            const isLast = i === kids.length - 1;
+            const isDir = this._isDir(full);
+            const deniedHere = this.fs[full] && this.fs[full].denied;
+            res.push(indent + (isLast ? "└── " : "├── ") + name + (isDir ? "/" : "") + (deniedHere ? " 🔒" : ""));
+            if (isDir) nd++; else nf++;
+            if (isDir && !deniedHere) walk(full, indent + (isLast ? "    " : "│   "));
+          });
+        };
+        walk(startAbs, "");
         res.push("");
         res.push(`${nd} répertoire${nd>1?"s":""}, ${nf} fichier${nf>1?"s":""}`);
         out = res.join("\n");
@@ -858,11 +1083,13 @@ class Terminal {
       }
 
       case "du": {
-        const files = Object.keys(this.fs).filter(f => this.fs[f].type !== "dir");
-        out = files.map(f => {
-          const size = (this.fs[f].content || "").length;
+        const files = Object.keys(this.fs).filter(k =>
+          (k === this.cwd || k.startsWith(this.cwd === "/" ? "/" : this.cwd + "/")) && !this._isDir(k) && !this._denied(k));
+        out = files.map(k => {
+          const size = (this.fs[k].content || "").length;
           const h = args.includes("-h") ? (size > 1024 ? (size/1024).toFixed(1)+"K" : size+"B") : Math.max(1, Math.ceil(size/512));
-          return `${h}\t./${f}`;
+          const rel = "." + k.slice(this.cwd === "/" ? 0 : this.cwd.length);
+          return `${h}\t${rel}`;
         }).join("\n") || "0\t.";
         break;
       }
@@ -1049,8 +1276,9 @@ class Terminal {
           "Aide         : man CMD, whatis CMD, help",
           "",
           "Pipes & redirections :  cmd1 | cmd2   ·   cmd > fichier   ·   cmd >> fichier (ajout)",
-          "Jokers :  cat *.txt  ·  rm *.log",
-          "Astuces : Tab autocomplète · ↑/↓ historique · man grep pour le manuel",
+          "Jokers :  cat *.txt  ·  rm *.log  ·  ls logs/*.log",
+          "Chemins RÉELS : cd logs/2024 · cd .. · cd / · cd ~ · cat /etc/hostname · find /var -name '*.log'",
+          "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
           "",
           "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)"
         ].join("\n");
@@ -1074,4 +1302,4 @@ class Terminal {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Terminal };
+if (typeof module !== "undefined") module.exports = { Terminal, SYSTEM_FS };

@@ -26,6 +26,11 @@ const QUIZZES = {
     { q: "Quelle commande remplace du texte dans un flux ?", options: ["sed", "wc", "cat", "ls"], answer: 0 },
     { q: "Comment extraire la 1ère colonne d'un CSV ?", options: ["grep ',' data.csv", "sort data.csv", "awk -F',' '{print $1}' data.csv", "wc -l data.csv"], answer: 2 },
   ],
+  6: [
+    { q: "Pour voir les événements les PLUS RÉCENTS d'un log ?", options: ["head auth.log", "tail auth.log", "cat auth.log", "sort auth.log"], answer: 1 },
+    { q: "Compter les lignes FAILED d'un fichier ?", options: ["wc FAILED f.log", "grep -c FAILED f.log", "count FAILED f.log", "grep -v FAILED f.log"], answer: 1 },
+    { q: "chmod 600 rapport.txt, ça donne quoi ?", options: ["Lisible par tout le monde", "Exécutable par tous", "Lecture/écriture pour le propriétaire seul", "Fichier supprimé"], answer: 2 },
+  ],
 };
 
 const Quiz = {

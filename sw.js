@@ -1,5 +1,5 @@
-// sw.js — Service Worker LinuxDojo v9
-const CACHE = "linuxdojo-v9";
+// sw.js — Service Worker LinuxDojo v10
+const CACHE = "linuxdojo-v10";
 const ASSETS = [
   "./","./index.html","./style.css",
   "./levels.js","./terminal.js","./fx.js","./gameshell.js",

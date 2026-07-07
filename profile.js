@@ -88,7 +88,7 @@ function renderProfile() {
   const rings = document.getElementById("pf-rings");
   if (rings) {
     const learnDone = GAME.completed.size;
-    const learnTotal = 30;
+    const learnTotal = (typeof CHAPTERS !== "undefined") ? CHAPTERS.flatMap(c => c.missions).length : 36;
     const bossTotal = (typeof BOSS_FIGHTS !== "undefined") ? BOSS_FIGHTS.length : 5;
     const bossDone  = (typeof bossKills === "function") ? bossKills() : 0;
     const data = [

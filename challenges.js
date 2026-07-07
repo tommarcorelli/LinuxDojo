@@ -227,6 +227,7 @@ class ChallengeMode {
     this.BEST_KEY = "linuxdojo_challenge_best";
     this.best     = this._loadBest();
     this.term     = new Terminal(this.termEl);
+    this.term.ps1User = "user@défi";
 
     this._bindEvents();
   }

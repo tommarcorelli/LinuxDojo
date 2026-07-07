@@ -208,6 +208,7 @@ class BanditMode {
     this.SAVE        = "linuxdojo_bandit";
     this.completed   = new Set(this._load());
     this.term        = new Terminal(this.termEl);
+    this.term.ps1User = "bandit@serveur";
 
     this._bindEvents();
   }

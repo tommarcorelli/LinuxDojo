@@ -375,6 +375,7 @@ class BossMode {
     this.over      = false;
 
     this.term = new Terminal(this.termEl);
+    this.term.ps1User = "ronin@arene";
     this._bindEvents();
   }
 

@@ -197,6 +197,7 @@ function openDaily() {
   const termEl = document.getElementById("daily-terminal");
   termEl.innerHTML = "";
   _dailyTerm = new Terminal(termEl);
+  _dailyTerm.ps1User = "user@jour";
   _dailyTerm.loadFS(ch.fs);
   _dailyTerm.printInfo("🎯 " + ch.title);
   _dailyTerm.printOut("");
