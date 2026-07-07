@@ -51,7 +51,8 @@ const BADGES = [
   { id: "chapter3",    label: "🔍 Détective",     cond: g => [13,14,15,16,17,18].every(id => g.completed.has(id)) },
   { id: "chapter4",    label: "🔐 Gardien",       cond: g => [19,20,21,22,23,24].every(id => g.completed.has(id)) },
   { id: "chapter6",    label: "🛡️ Défenseur",     cond: g => [31,32,33,34,35,36].every(id => g.completed.has(id)) },
-  { id: "master",      label: "⚡ Maître Linux",  cond: g => g.completed.size >= 30 },
+  { id: "chapter7",    label: "🤖 Automate",      cond: g => [37,38,39,40,41,42].every(id => g.completed.has(id)) },
+  { id: "master",      label: "⚡ Maître Linux",  cond: g => g.completed.size >= 36 },
   { id: "xp100",       label: "💯 Centurion",     cond: g => g.xp >= 100 },
   { id: "xp500",       label: "🔥 Inferno",       cond: g => g.xp >= 500 },
   { id: "xp1000",      label: "👑 Légende",       cond: g => g.xp >= 1000 },
@@ -461,6 +462,7 @@ const SANDBOX_FS = {
   "config.json":  { type:"file", content:'{\n  "env": "sandbox",\n  "debug": true,\n  "port": 3000\n}' },
   "logs":         { type:"dir" },
   "logs/app.log": { type:"file", content:"INFO boot ok\nWARN mémoire à 80%\nERROR timeout DB\nINFO retry\nERROR disque plein" },
+  "backup.sh":    { type:"file", perms:"-rwxr-xr-x", content:'# Petit script d\'exemple — lance-le avec : bash backup.sh\necho "=== sauvegarde ==="\nfor f in *.txt; do\n  echo "-> copie de $f"\ndone\nif [ -f config.json ]; then\n  echo "config trouvee, on la garde aussi"\nfi\necho "=== termine ==="' },
   ".env":         { type:"file", content:"API_KEY=demo\nSECRET=change_me" },
 };
 function initSandbox() {
@@ -469,6 +471,7 @@ function initSandbox() {
   sbTerm.loadFS(SANDBOX_FS, { system: true });
   sbTerm.printInfo("🧪 Bac à sable — tape 'help' pour la liste des commandes.");
   sbTerm.printInfo("Le système est explorable : cd / · ls /etc · cat /etc/passwd · tree /var ... (et /root est verrouillé 😏)");
+  sbTerm.printInfo("Scripting : x=5 · echo $x · for f in *.txt; do echo $f; done · bash backup.sh");
   sbTerm.printOut("");
   const sbPrompt = document.querySelector(".sandbox-prompt");
   const input = $("sandbox-cmd");

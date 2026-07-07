@@ -172,9 +172,35 @@ const GLOSSARY = [
     syntax:"xxd -r -p [fichier]",
     options:[["-p","texte → hex compact"],["-r -p","hex → texte"]],
     examples:[["xxd -r -p hex.txt","hex → texte"],["echo hi | xxd -p","texte → hex"]] },
+
+  // ── Scripting ──
+  { cmd:"variables", cat:"Scripting", desc:"Mémorise une valeur pour la réutiliser.",
+    syntax:"nom=valeur      puis      $nom",
+    options:[["x=5","affecte (aucun espace autour du =)"],["$x","lit la valeur"],['"$x"','lu dans les doubles quotes'],["'$x'","littéral dans les simples quotes"]],
+    examples:[["serveur=web-01","mémoriser"],["echo $serveur","→ web-01"]] },
+  { cmd:"$( )", cat:"Scripting", desc:"Substitution : remplace par la sortie d'une commande.",
+    syntax:"variable=$(commande)   ·   \"... $(commande) ...\"",
+    options:[["$(ls)","liste des fichiers"],["$(cat f)","contenu de f"],["$(ls *.log | wc -l)","un pipeline entier"]],
+    examples:[["n=$(ls | wc -l)","compter dans une variable"],['echo "le $(date)"',"injecter la date"]] },
+  { cmd:"for", cat:"Scripting", desc:"Boucle : répète un bloc pour chaque élément.",
+    syntax:"for VAR in liste; do  …  ; done",
+    options:[["for f in *.txt","boucle sur les .txt"],["do … done","le corps répété"],["$f","l'élément courant"]],
+    examples:[["for f in *.log; do wc -l $f; done","compter chaque log"],["for i in 1 2 3; do echo $i; done","1 2 3"]] },
+  { cmd:"if", cat:"Scripting", desc:"Condition : n'exécute un bloc que si c'est vrai.",
+    syntax:"if [ condition ]; then … else … ; fi",
+    options:[["[ -f f ]","le fichier existe"],["[ -d d ]","le dossier existe"],["[ $a = $b ]","égalité (texte)"],["[ $n -gt 3 ]","n > 3 (-lt -eq -ge…)"]],
+    examples:[["if [ -f cfg ]; then echo ok; fi","teste un fichier"],["if [ $x -gt 10 ]; then echo grand; fi",""]] },
+  { cmd:"test / [ ]", cat:"Scripting", desc:"Évalue une condition (vrai/faux) pour if et while.",
+    syntax:"[ expression ]   (espaces obligatoires)",
+    options:[["-f / -d / -e","fichier / dossier / existe"],["-z / -n","chaîne vide / non vide"],["-eq -ne -lt -gt","comparaisons numériques"],["= / !=","comparaisons de texte"]],
+    examples:[["[ -f app.js ]","app.js existe ?"],["[ 5 -gt 3 ]","vrai"]] },
+  { cmd:"bash", cat:"Scripting", desc:"Exécute un script .sh (suite de commandes dans un fichier).",
+    syntax:"bash script.sh    ou    ./script.sh",
+    options:[["bash s.sh","exécute avec bash"],["./s.sh","exécute si +x (chmod)"],["cat s.sh","à lire AVANT de lancer !"]],
+    examples:[["cat deploy.sh","lire le script"],["bash deploy.sh","l'exécuter"]] },
 ];
 
-const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage","Aide"];
+const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage","Scripting","Aide"];
 
 let glossaryFilter = "Tout";
 let glossarySearch = "";

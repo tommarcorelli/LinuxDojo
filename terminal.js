@@ -27,7 +27,9 @@ class Terminal {
     this.fs = {};       // filesystem virtuel : clés = chemins ABSOLUS normalisés
     this.state = {};    // état interne (mkdir créé, cp, etc.) — valeurs telles que tapées
     this.cmdLog = [];   // historique de session (commande history)
-    this._envVars = {}; // variables d'environnement injectées (bandit, etc.)
+    this._envVars = {}; // variables (shell + env) — lues par $VAR, echo, env
+    this._blockLines = []; // buffer d'un bloc for/if/while en cours de saisie
+    this._lastCode = 0; // code de retour de la dernière commande ($?)
   }
 
   // Charge le filesystem d'une mission.
@@ -51,6 +53,8 @@ class Terminal {
     this.cwd = this.root;
     this.state = {};
     this._envVars = {};
+    this._blockLines = [];
+    this._lastCode = 0;
   }
 
   /* ── Chemins ───────────────────────────────────────────────── */
@@ -119,7 +123,10 @@ class Terminal {
     if (p.startsWith(this.root + "/")) return "~" + p.slice(this.root.length);
     return p;
   }
-  promptStr() { return this.ps1User + ":" + this._display(this.cwd) + "$"; }
+  promptStr() {
+    if (this._blockLines.length) return ">";   // continuation d'un bloc for/if/while
+    return this.ps1User + ":" + this._display(this.cwd) + "$";
+  }
 
   clear() {
     this.el.innerHTML = "";
@@ -238,7 +245,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -299,25 +306,240 @@ class Terminal {
   }
 
   // ── Exécution ──────────────────────────────────────────────────
+  // Point d'entrée : affiche le prompt, gère les blocs multi-lignes
+  // (for/if/while), puis délègue à _execScript ou _execSimple.
   run(raw) {
-    if (!raw.trim()) return { output: "", error: false };
+    if (!raw.trim() && !this._blockLines.length) return { output: "", error: false };
     this.printPrompt(raw);
-    this.cmdLog.push(raw.trim());
+    if (raw.trim()) this.cmdLog.push(raw.trim());
 
-    // Pipe
-    if (raw.includes("|")) {
-      return this._runPipe(raw);
-    }
-    // Redirection >> (ajout) puis > (écrasement)
-    if (raw.includes(">>")) {
-      return this._runRedirect(raw, true);
-    }
-    if (raw.includes(">")) {
-      return this._runRedirect(raw, false);
+    // Accumulation d'un bloc for/if/while jusqu'à équilibre (do…done / if…fi)
+    if (this._blockLines.length || this._hasShellKeyword(raw)) {
+      this._blockLines.push(raw);
+      if (this._blockBalance(this._blockLines.join("\n")) > 0) {
+        return { output: "", error: false, pending: true };
+      }
+      const script = this._blockLines.join("\n");
+      this._blockLines = [];
+      return this._execScript(script);
     }
 
-    const parts = this._parse(raw);
-    return this._exec(parts);
+    return this._execSimple(raw, false);
+  }
+
+  // Exécute une commande simple (avec pipes/redirections/affectations),
+  // après expansion des variables et substitutions de commande.
+  _execSimple(raw, silent) {
+    const line = this._expandLine(this._stripComment(raw)).trim();
+    if (!line) return { output: "", error: false };
+
+    // Affectation de variable : NAME=valeur (toute la ligne)
+    const asg = line.match(/^([A-Za-z_]\w*)=(.*)$/);
+    if (asg) {
+      this._envVars[asg[1]] = this._stripQuotes(asg[2]);
+      this.state.assign = asg[1];
+      this._lastCode = 0;
+      return { output: "", error: false };
+    }
+
+    let res;
+    if (this._hasUnquoted(line, "|") >= 0)       res = this._runPipe(line, silent);
+    else if (this._hasUnquoted(line, ">>") >= 0) res = this._runRedirect(line, true);
+    else if (this._hasUnquoted(line, ">") >= 0)  res = this._runRedirect(line, false);
+    else                                         res = this._exec(this._parse(line), "", silent);
+    this._lastCode = res.error ? 1 : 0;
+    return res;
+  }
+
+  // Index de la 1re occurrence NON entre guillemets de `sep` (ou -1)
+  _hasUnquoted(line, sep) {
+    let q = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === q) q = ""; continue; }
+      if (c === "'" || c === '"') { q = c; continue; }
+      if (line.startsWith(sep, i)) return i;
+    }
+    return -1;
+  }
+  // Découpe sur les occurrences NON entre guillemets de `sep`
+  _splitUnquoted(line, sep) {
+    const parts = []; let cur = "", q = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { cur += c; if (c === q) q = ""; continue; }
+      if (c === "'" || c === '"') { q = c; cur += c; continue; }
+      if (line.startsWith(sep, i)) { parts.push(cur); cur = ""; i += sep.length - 1; continue; }
+      cur += c;
+    }
+    parts.push(cur);
+    return parts;
+  }
+
+  // ── Interpréteur de scripts (for / if / while / test) ──────────
+  _hasShellKeyword(raw) {
+    return this._splitStatements(raw).some(s => /^(for|while|if)\b/.test(s.trim()));
+  }
+  // Solde des ouvreurs (for/while/if) moins les fermeurs (done/fi)
+  _blockBalance(text) {
+    let bal = 0;
+    for (const s of this._splitStatements(text)) {
+      const w = s.trim().split(/\s+/)[0];
+      if (w === "for" || w === "while" || w === "if") bal++;
+      else if (w === "done" || w === "fi") bal--;
+    }
+    return bal;
+  }
+  // Découpe un script en instructions (séparées par ; ou newline),
+  // en respectant les guillemets et $( … ), et en ôtant les commentaires #.
+  _splitStatements(text) {
+    const out = [];
+    let cur = "", q = "", sub = 0;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { cur += c; if (c === q) q = ""; continue; }
+      if (c === '"' || c === "'") { q = c; cur += c; continue; }
+      if (c === "$" && text[i + 1] === "(") { sub++; cur += "$("; i++; continue; }
+      if (c === ")" && sub > 0) { sub--; cur += c; continue; }
+      if (c === "#" && (i === 0 || /\s/.test(text[i - 1])) && sub === 0) { while (i < text.length && text[i] !== "\n") i++; continue; }
+      if ((c === ";" || c === "\n") && sub === 0) { if (cur.trim()) out.push(cur.trim()); cur = ""; continue; }
+      cur += c;
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out;
+  }
+  _execScript(text) {
+    let nodes;
+    try { nodes = this._parseBlocks(this._splitStatements(text)); }
+    catch (e) { this.printErr("bash: erreur de syntaxe : " + e.message); return { output: "", error: true }; }
+    const prev = this._scriptOut;
+    this._scriptOut = [];
+    try { this._evalNodes(nodes); }
+    catch (e) { this.printErr("bash: " + e.message); this._scriptOut = prev; return { output: "", error: true }; }
+    const out = this._scriptOut.join("\n");
+    this._scriptOut = prev;
+    return { output: out, error: false };
+  }
+  // Construit un arbre {cmd|for|while|if} à partir des instructions
+  _parseBlocks(stmts) {
+    const root = [];
+    const stack = [];
+    const body = () => stack.length ? stack[stack.length - 1].body : root;
+    const pushCmd = (arr, s) => { if (s && s.trim()) arr.push({ type: "cmd", cmd: s.trim() }); };
+    for (const raw of stmts) {
+      const s = raw.trim();
+      const w = s.split(/\s+/)[0];
+      if (w === "for") {
+        const m = s.match(/^for\s+([A-Za-z_]\w*)\s+in\s+(.*)$/);
+        if (!m) throw new Error("for : syntaxe attendue « for x in … »");
+        const node = { type: "for", name: m[1], itemsRaw: m[2], body: [] };
+        body().push(node); stack.push({ node, body: node.body });
+      } else if (w === "while") {
+        const node = { type: "while", cond: s.slice(5).trim(), body: [] };
+        body().push(node); stack.push({ node, body: node.body });
+      } else if (w === "if") {
+        const node = { type: "if", branches: [{ cond: s.slice(2).trim(), body: [] }], elseBody: null };
+        body().push(node); stack.push({ node, body: node.branches[0].body });
+      } else if (w === "do") { pushCmd(body(), s.slice(2).trim()); }
+      else if (w === "then") { pushCmd(body(), s.slice(4).trim()); }
+      else if (w === "elif") {
+        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error("elif sans if");
+        const br = { cond: s.slice(4).trim(), body: [] }; fr.node.branches.push(br); fr.body = br.body;
+      } else if (w === "else") {
+        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error("else sans if");
+        fr.node.elseBody = []; fr.body = fr.node.elseBody; pushCmd(fr.body, s.slice(4).trim());
+      } else if (s === "done" || s === "fi") {
+        if (!stack.length) throw new Error("« " + s + " » sans bloc ouvert"); stack.pop();
+      } else { pushCmd(body(), s); }
+    }
+    if (stack.length) throw new Error("bloc non fermé (il manque done/fi)");
+    return root;
+  }
+  _evalNodes(nodes) {
+    for (const n of nodes) {
+      if (n.type === "cmd") { const r = this._execSimple(n.cmd, false); if (this._scriptOut && r && r.output) this._scriptOut.push(r.output); }
+      else if (n.type === "for") {
+        const items = this._expandWords(n.itemsRaw);
+        for (const it of items) { this._envVars[n.name] = it; this._evalNodes(n.body); }
+      } else if (n.type === "while") {
+        let guard = 0;
+        while (this._condTrue(n.cond)) { this._evalNodes(n.body); if (++guard >= 1000) { this.printErr("while : arrêt de sécurité (1000 tours)"); break; } }
+      } else if (n.type === "if") {
+        let taken = false;
+        for (const br of n.branches) { if (this._condTrue(br.cond)) { this._evalNodes(br.body); taken = true; break; } }
+        if (!taken && n.elseBody) this._evalNodes(n.elseBody);
+      }
+    }
+  }
+  _condTrue(cond) { return !this._execSimple(cond, true).error; }
+
+  // ── Expansion (variables, $( … ), guillemets, jokers) ──────────
+  _stripQuotes(s) {
+    s = s.trim();
+    if ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'")) return this._expandLine(s.slice(1, -1));
+    return this._expandLine(s);
+  }
+  // Substitution de commande $( … ) puis expansion des variables (quote-aware)
+  _expandLine(str) {
+    // 1. $( … ) → sortie de la commande
+    let out = "", i = 0;
+    while (i < str.length) {
+      if (str[i] === "$" && str[i + 1] === "(") {
+        let depth = 1, j = i + 2, inner = "";
+        while (j < str.length && depth > 0) {
+          if (str[j] === "(") depth++;
+          else if (str[j] === ")") { depth--; if (depth === 0) break; }
+          inner += str[j]; j++;
+        }
+        const r = this._execSimple(inner, true);
+        out += (r.output || "").replace(/\n+/g, " ").trim();
+        i = j + 1;
+      } else { out += str[i]; i++; }
+    }
+    // 2. $VAR / ${VAR} / $? — expansé partout SAUF dans les guillemets simples
+    let res = "", q = "";
+    for (let k = 0; k < out.length; k++) {
+      const c = out[k];
+      if (c === "'" || c === '"') {        // suivi de l'état de guillemet (les chars sont conservés)
+        if (q === c) q = ""; else if (!q) q = c;
+        res += c; continue;
+      }
+      if (c === "$" && q !== "'") {         // pas d'expansion dans les single quotes
+        if (out[k + 1] === "?") { res += String(this._lastCode); k++; continue; }
+        let name = "", br = out[k + 1] === "{";
+        let m = k + (br ? 2 : 1);
+        while (m < out.length && /[A-Za-z0-9_]/.test(out[m])) { name += out[m]; m++; }
+        if (br && out[m] === "}") m++;
+        if (name) { res += this._varValue(name); k = m - 1; continue; }
+      }
+      res += c;
+    }
+    return res;
+  }
+  // Retire un commentaire # en fin de ligne (hors guillemets)
+  _stripComment(s) {
+    let q = "";
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (q) { if (c === q) q = ""; continue; }
+      if (c === "'" || c === '"') { q = c; continue; }
+      if (c === "#" && (i === 0 || /\s/.test(s[i - 1]))) return s.slice(0, i);
+    }
+    return s;
+  }
+  _varValue(name) {
+    if (this._envVars && this._envVars[name] !== undefined) return this._envVars[name];
+    const std = { HOME: "/home/user", USER: "user", SHELL: "/bin/bash", PWD: this.cwd, HOSTNAME: "dojo",
+                  PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" };
+    return std[name] !== undefined ? std[name] : "";
+  }
+  // Développe une liste de mots (pour « for x in … ») : expansion + split + jokers
+  _expandWords(raw) {
+    const expanded = this._expandLine(raw);
+    const words = this._parse(expanded);
+    const out = [];
+    words.forEach(w => { const g = w.includes("*") ? this._globList(w) : null; if (g) out.push(...g); else out.push(w); });
+    return out;
   }
 
   _parse(s) {
@@ -343,23 +565,25 @@ class Terminal {
     return parts;
   }
 
-  _runPipe(raw) {
-    const segments = raw.split("|").map(s => s.trim()).filter(Boolean);
+  _runPipe(raw, silent) {
+    const segments = this._splitUnquoted(raw, "|").map(s => s.trim()).filter(Boolean);
     let prevOut = "";
     let lastOut = "";
+    let lastErr = false;
     for (let i = 0; i < segments.length; i++) {
       const parts = this._parse(segments[i]);
       const res = this._exec(parts, prevOut, true);
       prevOut = res.output;
       lastOut = res.output;
+      lastErr = res.error;
     }
-    if (lastOut) lastOut.split("\n").forEach(l => this.printOut(l));
-    return { output: lastOut, error: false };
+    if (!silent && lastOut) lastOut.split("\n").forEach(l => this.printOut(l));
+    return { output: lastOut, error: lastErr };
   }
 
   _runRedirect(raw, append) {
     const sep = append ? ">>" : ">";
-    const idx = raw.indexOf(sep);
+    const idx = this._hasUnquoted(raw, sep);
     const left  = raw.slice(0, idx);
     const fname = raw.slice(idx + sep.length).trim();
     const parts = this._parse(left.trim());
@@ -414,10 +638,79 @@ class Terminal {
     const [cmd, ...args] = parts;
     if (!cmd) return { output: "", error: false };
 
+    // Exécution d'un script par chemin : ./script.sh, /home/user/x.sh, dossier/x.sh
+    if (cmd.includes("/")) {
+      const p = this._resolve(cmd);
+      if (this._exists(p) && !this._isDir(p)) {
+        if (!silent) return this._execScript(this.fs[p].content || "");
+        // en contexte silencieux (condition), on n'exécute pas de sous-script
+        return { output: "", error: false };
+      }
+      if (this._exists(p) && this._isDir(p)) { if (!silent) this.printErr(`${cmd}: ${cmd}: est un dossier`); return { output: "", error: true }; }
+    }
+
     let out = "";
     let err = false;
 
     switch (cmd) {
+
+      case "bash":
+      case "sh":
+      case "source":
+      case ".": {
+        const file = args.filter(a => !a.startsWith("-"))[0];
+        if (!file) { out = `${cmd}: indique un script à exécuter\nExemple : bash deploy.sh`; err = true; break; }
+        const f = this._file(file);
+        if (!f || !f.node) { out = `${cmd}: ${file}: fichier introuvable`; err = true; break; }
+        if (f.node.type === "dir") { out = `${cmd}: ${file}: est un dossier`; err = true; break; }
+        if (silent) return { output: "", error: false };
+        return this._execScript(f.node.content || "");
+      }
+
+      case "test":
+      case "[": {
+        let a = args.slice();
+        if (cmd === "[") { if (a[a.length - 1] === "]") a.pop(); else return { output: "[: manque le « ] » final", error: true }; }
+        let truth = false;
+        if (a.length === 3) {
+          const [x, op, y] = a;
+          const nx = parseFloat(x), ny = parseFloat(y);
+          if (op === "=" || op === "==") truth = x === y;
+          else if (op === "!=") truth = x !== y;
+          else if (op === "-eq") truth = nx === ny;
+          else if (op === "-ne") truth = nx !== ny;
+          else if (op === "-lt") truth = nx < ny;
+          else if (op === "-le") truth = nx <= ny;
+          else if (op === "-gt") truth = nx > ny;
+          else if (op === "-ge") truth = nx >= ny;
+        } else if (a.length === 2) {
+          const [op, v] = a;
+          if (op === "-z") truth = !v;
+          else if (op === "-n") truth = !!v;
+          else if (op === "-f") { const p = this._resolve(v); truth = this._exists(p) && !this._isDir(p); }
+          else if (op === "-d") truth = this._isDir(this._resolve(v));
+          else if (op === "-e") truth = this._exists(this._resolve(v));
+        } else if (a.length === 1) {
+          truth = !!a[0];
+        }
+        return { output: "", error: !truth };   // code de retour : 0 = vrai
+      }
+
+      case "seq": {
+        const nums = args.filter(a => !a.startsWith("-")).map(Number);
+        let start = 1, end = 0, step = 1;
+        if (nums.length === 1) { end = nums[0]; }
+        else if (nums.length === 2) { start = nums[0]; end = nums[1]; }
+        else if (nums.length >= 3) { start = nums[0]; step = nums[1]; end = nums[2]; }
+        const res = [];
+        if (step > 0) for (let i = start; i <= end; i += step) res.push(i);
+        else if (step < 0) for (let i = start; i >= end; i += step) res.push(i);
+        out = res.join("\n");
+        break;
+      }
+
+      case "true":  return { output: "", error: false };
+      case "false": return { output: "", error: true };
 
       case "ls": {
         const hasA = args.some(a => a.startsWith("-") && a.includes("a"));
@@ -753,14 +1046,10 @@ class Terminal {
       }
 
       case "echo": {
-        const joined = args.join(" ");
-        // Résoudre les variables (injectées puis standard)
-        out = joined.replace(/\$(\w+)/g, (m, name) => {
-          if (this._envVars && this._envVars[name] !== undefined) return this._envVars[name];
-          const std = { HOME: "/home/user", USER: "user", SHELL: "/bin/bash", PWD: this.cwd,
-                        PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" };
-          return std[name] !== undefined ? std[name] : "";
-        });
+        // Les variables/substitutions sont déjà résolues par _expandLine (quote-aware).
+        let a = args.slice();
+        if (a[0] === "-n" || a[0] === "-e") a = a.slice(1);
+        out = a.join(" ");
         break;
       }
 
@@ -1278,6 +1567,7 @@ class Terminal {
           "Pipes & redirections :  cmd1 | cmd2   ·   cmd > fichier   ·   cmd >> fichier (ajout)",
           "Jokers :  cat *.txt  ·  rm *.log  ·  ls logs/*.log",
           "Chemins RÉELS : cd logs/2024 · cd .. · cd / · cd ~ · cat /etc/hostname · find /var -name '*.log'",
+          "Scripting :  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
           "",
           "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)"
@@ -1292,7 +1582,7 @@ class Terminal {
 
     if (!silent) {
       if (err) {
-        this.printErr(out);
+        if (out) this.printErr(out);   // pas de ligne rouge vide (ex: test/[ échoué)
       } else if (out !== null && out !== "") {
         out.split("\n").forEach(l => this.printOut(l));
       }

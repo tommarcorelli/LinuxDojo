@@ -1128,6 +1128,202 @@ const CHAPTERS = [
         explanation: "Enquête bouclée : intrusion identifiée (brute-force SSH), attaquant confirmé (203.0.113.66), backdoor éliminée (PID 1235), rapport rédigé et protégé en <code>-rw-------</code>. C'est exactement le déroulé d'une vraie réponse à incident. 🛡️ Beau travail, analyste."
       }
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 7,
+    title: "🤖 Scénario 7 — Automatiser (scripting)",
+    scenario: "Tu en as marre de répéter les mêmes commandes à la main. Il est temps de faire ce que fait tout bon admin : automatiser. Variables, boucles, conditions, scripts — le shell devient un vrai langage.",
+    missions: [
+
+      {
+        id: 37,
+        name: "Étape 1 — Une variable",
+        cmd: "x=…  $x",
+        xp: 40,
+        lesson: {
+          title: "Les <code>variables</code> — mémoriser une valeur",
+          intro: "Une variable stocke une valeur qu'on réutilise ensuite. On l'écrit <strong>sans espace</strong> autour du <code>=</code> : <code>nom=valeur</code>. Pour lire sa valeur, on préfixe d'un <code>$</code> : <code>$nom</code>. Simple, mais c'est la base de tout script.",
+          syntax: "nom=valeur      puis      echo $nom",
+          options: [
+            { flag: "x=5",        desc: "Affecte 5 à x (aucun espace autour du =)" },
+            { flag: "$x",         desc: "Lit la valeur de x" },
+            { flag: '"$x"',       desc: "Guillemets DOUBLES : la variable est lue" },
+            { flag: "'$x'",       desc: "Guillemets SIMPLES : littéral, pas d'expansion" },
+          ],
+          examples: [
+            { cmd: "serveur=web-01",       comment: "# on mémorise" },
+            { cmd: "echo $serveur",        comment: "# → web-01" },
+            { cmd: 'echo "hôte: $serveur"', comment: "# → hôte: web-01" },
+          ],
+          tip: "Piège classique : `x = 5` (avec espaces) ne marche PAS. C'est `x=5`, collé."
+        },
+        desc: "Range le nom <strong>web-01</strong> dans une variable appelée <code>serveur</code>, puis affiche-la avec <code>echo</code>.",
+        fs: {},
+        hint: "serveur=web-01   puis   echo $serveur",
+        check: (out, s) => /web-01/.test(out) && !!s.assign,
+        explanation: "Tu viens de créer ta première variable. Une fois définie, elle vit toute la session : tu peux la relire autant de fois que tu veux avec <code>$serveur</code>. C'est la brique de base de l'automatisation."
+      },
+
+      {
+        id: 38,
+        name: "Étape 2 — Capturer une sortie",
+        cmd: "$( … )",
+        xp: 45,
+        lesson: {
+          title: "La substitution de commande <code>$(…)</code>",
+          intro: "Le vrai pouvoir : mettre le <strong>résultat d'une commande</strong> dans une variable ou dans un texte. On entoure la commande de <code>$(</code> et <code>)</code>. Bash exécute d'abord ce qu'il y a dedans, puis remplace par sa sortie.",
+          syntax: "variable=$(commande)     ·     echo \"... $(commande) ...\"",
+          options: [
+            { flag: "$(ls)",             desc: "Remplacé par la liste des fichiers" },
+            { flag: "$(cat f)",          desc: "Remplacé par le contenu de f" },
+            { flag: "$(ls *.log | wc -l)", desc: "On peut y mettre un pipeline entier" },
+          ],
+          examples: [
+            { cmd: "n=$(ls *.log | wc -l)", comment: "# n = nombre de .log" },
+            { cmd: 'echo "il y a $n logs"',  comment: "# → il y a 3 logs" },
+            { cmd: 'echo "on est le $(date)"', comment: "# injecte la date" },
+          ],
+          tip: "On lit `$( … )` de l'intérieur vers l'extérieur : d'abord la commande interne, puis le remplacement."
+        },
+        desc: "Compte les fichiers <strong>.log</strong> et affiche exactement <code>total: N</code> (où N est le nombre), en une seule commande avec <code>$(…)</code>.",
+        fs: {
+          "app.log":   { type: "file", content: "x" },
+          "error.log": { type: "file", content: "y" },
+          "debug.log": { type: "file", content: "z" },
+          "notes.txt": { type: "file", content: "pas un log" },
+        },
+        hint: 'echo "total: $(ls *.log | wc -l)"',
+        check: (out) => /total:\s*3/.test(out),
+        explanation: "Tu as capturé la sortie d'un pipeline (<code>ls | wc -l</code>) directement dans un texte. C'est ce qui permet aux scripts de <em>réagir</em> aux données réelles du système au lieu de valeurs figées."
+      },
+
+      {
+        id: 39,
+        name: "Étape 3 — Une boucle for",
+        cmd: "for … done",
+        xp: 50,
+        lesson: {
+          title: "La boucle <code>for</code> — répéter sans se répéter",
+          intro: "Faire la même action sur plusieurs éléments ? C'est le boulot de <code>for</code>. Elle parcourt une liste (des mots, des fichiers via <code>*</code>, une séquence…) et exécute le bloc entre <code>do</code> et <code>done</code> pour chacun. La variable de boucle prend chaque valeur tour à tour.",
+          syntax: "for VAR in liste; do  commandes  ; done",
+          options: [
+            { flag: "for f in *.txt", desc: "Boucle sur tous les .txt" },
+            { flag: "do … done",      desc: "Le bloc répété (le corps de la boucle)" },
+            { flag: "$f",             desc: "L'élément courant, à chaque tour" },
+          ],
+          examples: [
+            { cmd: "for f in *.log; do echo $f; done", comment: "# affiche chaque .log" },
+            { cmd: "for i in 1 2 3; do echo n$i; done", comment: "# n1 n2 n3" },
+            { cmd: "for f in *.txt; do wc -l $f; done",  comment: "# compte chaque fichier" },
+          ],
+          tip: "Sur une seule ligne, sépare par des `;` : `for … ; do … ; done`. Sur plusieurs lignes, le prompt devient `>` en attendant `done`."
+        },
+        desc: "Pour <strong>chaque fichier .txt</strong>, affiche son nom. Utilise une boucle <code>for</code> avec le joker <code>*.txt</code>.",
+        fs: {
+          "rapport.txt": { type: "file", content: "a" },
+          "notes.txt":   { type: "file", content: "b" },
+          "todo.txt":    { type: "file", content: "c" },
+          "script.log":  { type: "file", content: "d" },
+        },
+        hint: "for f in *.txt; do echo $f; done",
+        check: (out) => /rapport\.txt/.test(out) && /notes\.txt/.test(out) && /todo\.txt/.test(out) && !/\.log/.test(out),
+        explanation: "Une boucle, trois fichiers traités automatiquement — et ça marcherait pareil avec 3 000 fichiers. C'est exactement comme ça qu'on renomme en masse, qu'on sauvegarde des dossiers, qu'on traite des logs. Tu ne te répéteras plus jamais."
+      },
+
+      {
+        id: 40,
+        name: "Étape 4 — Boucle + action utile",
+        cmd: "for + wc",
+        xp: 50,
+        lesson: {
+          title: "Une boucle qui <em>travaille</em>",
+          intro: "Dans le corps d'une boucle, tu peux mettre n'importe quelle commande — pas juste <code>echo</code>. C'est là que l'automatisation devient concrète : compter les lignes de chaque log, chercher un motif dans chaque fichier, sauvegarder chaque dossier…",
+          syntax: "for f in *.log; do  wc -l $f  ; done",
+          options: [
+            { flag: "wc -l $f",        desc: "Compte les lignes du fichier courant" },
+            { flag: "grep X $f",       desc: "Cherche X dans chaque fichier" },
+            { flag: "cp $f backup/",   desc: "Sauvegarde chaque fichier" },
+          ],
+          examples: [
+            { cmd: "for f in *.log; do wc -l $f; done", comment: "# lignes de chaque log" },
+            { cmd: "for f in *.conf; do grep port $f; done", comment: "# le port de chaque conf" },
+          ],
+          tip: "Le corps peut contenir plusieurs commandes, séparées par des `;`. Chaque tour les exécute toutes."
+        },
+        desc: "Pour <strong>chaque fichier .log</strong>, affiche son <strong>nombre de lignes</strong> (boucle <code>for</code> + <code>wc -l</code>).",
+        fs: {
+          "access.log": { type: "file", content: "l1\nl2\nl3" },
+          "error.log":  { type: "file", content: "e1\ne2" },
+          "debug.log":  { type: "file", content: "d1" },
+        },
+        hint: "for f in *.log; do wc -l $f; done",
+        check: (out) => /access\.log/.test(out) && /error\.log/.test(out) && /\b3\b/.test(out) && /\b2\b/.test(out),
+        explanation: "Chaque log compté d'un seul geste. Remplace <code>wc -l</code> par <code>grep ERROR</code> et tu as un mini-outil d'analyse ; par <code>cp … backup/</code> et tu as une sauvegarde automatique. La boucle, c'est le couteau suisse de l'admin."
+      },
+
+      {
+        id: 41,
+        name: "Étape 5 — Une condition",
+        cmd: "if [ … ]",
+        xp: 55,
+        lesson: {
+          title: "Les conditions <code>if</code> / <code>test</code>",
+          intro: "Un script intelligent prend des décisions. <code>if</code> exécute un bloc <strong>seulement si</strong> une condition est vraie. La condition s'écrit avec <code>test</code> ou sa forme courte <code>[ … ]</code> (attention aux espaces autour des crochets !).",
+          syntax: "if [ condition ]; then  …  else  …  ; fi",
+          options: [
+            { flag: "[ -f fichier ]", desc: "Vrai si le fichier existe" },
+            { flag: "[ -d dossier ]", desc: "Vrai si le dossier existe" },
+            { flag: "[ $a = $b ]",    desc: "Vrai si égaux (texte)" },
+            { flag: "[ $n -gt 3 ]",   desc: "Vrai si n > 3 (-lt -eq -ge…)" },
+          ],
+          examples: [
+            { cmd: "if [ -f config.json ]; then echo ok; fi", comment: "# si le fichier est là" },
+            { cmd: "if [ $x -gt 10 ]; then echo grand; else echo petit; fi", comment: "" },
+          ],
+          tip: "Les espaces sont OBLIGATOIRES : `[ -f x ]` marche, `[-f x]` non. Et ça se ferme par `fi` (if à l'envers)."
+        },
+        desc: "Vérifie si le fichier <code>config.json</code> existe : <strong>si oui, affiche <code>present</code></strong>. Utilise <code>if</code> avec <code>[ -f … ]</code>.",
+        fs: {
+          "config.json": { type: "file", content: '{"port":3000}' },
+          "readme.txt":  { type: "file", content: "doc" },
+        },
+        hint: "if [ -f config.json ]; then echo present; fi",
+        check: (out) => /present/.test(out),
+        explanation: "Ton script sait maintenant <em>réagir</em> : il n'agit que si la condition est remplie. Combine <code>if</code> avec une boucle et tu obtiens des scripts qui vérifient, filtrent et décident — la vraie automatisation, celle qui tourne sans toi à 3h du matin."
+      },
+
+      {
+        id: 42,
+        name: "Étape 6 — Lancer un vrai script",
+        cmd: "bash script.sh",
+        xp: 70,
+        lesson: {
+          title: "Exécuter un <code>script</code> complet",
+          intro: "Un script, c'est une suite de commandes rangées dans un fichier <code>.sh</code>. On l'exécute avec <code>bash fichier.sh</code> (ou <code>./fichier.sh</code> s'il est exécutable). Toute la puissance — variables, boucles, conditions — réunie dans un seul fichier réutilisable. C'est l'aboutissement du scripting.",
+          syntax: "bash script.sh      ou      ./script.sh",
+          options: [
+            { flag: "bash s.sh",   desc: "Exécute le script avec bash" },
+            { flag: "./s.sh",      desc: "L'exécute directement (si chmod +x)" },
+            { flag: "cat s.sh",    desc: "Lis-le d'abord pour savoir ce qu'il fait !" },
+          ],
+          examples: [
+            { cmd: "cat deploy.sh",   comment: "# TOUJOURS lire un script avant de le lancer" },
+            { cmd: "bash deploy.sh",  comment: "# puis l'exécuter" },
+          ],
+          tip: "Règle de sécurité : on ne lance JAMAIS un script sans l'avoir lu avant (`cat`). Un script, ça peut tout faire sur ta machine."
+        },
+        desc: "Le script <code>deploy.sh</code> automatise le déploiement (il contient une boucle). Lis-le si tu veux, puis <strong>exécute-le</strong>.",
+        fs: {
+          "deploy.sh": { type: "file", perms: "-rwxr-xr-x", content: 'echo "== deploiement =="\nfor s in web db cache; do\n  echo "-> $s deploye"\ndone\necho "== termine =="' },
+          "readme.md": { type: "file", content: "Lance deploy.sh pour tout déployer d'un coup." },
+        },
+        hint: "cat deploy.sh   pour le lire, puis   bash deploy.sh",
+        check: (out) => /web/.test(out) && /db/.test(out) && /cache/.test(out) && /termine/.test(out),
+        explanation: "Tu viens d'exécuter un vrai script d'automatisation : il a bouclé sur trois services et les a « déployés » tout seul. Variables, boucles, conditions, scripts — tu as maintenant les outils pour transformer n'importe quelle corvée répétitive en une seule commande. Bienvenue chez les vrais admins. 🤖"
+      }
+    ]
   }
 ];
 

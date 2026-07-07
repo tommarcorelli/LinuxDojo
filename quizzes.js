@@ -31,6 +31,12 @@ const QUIZZES = {
     { q: "Compter les lignes FAILED d'un fichier ?", options: ["wc FAILED f.log", "grep -c FAILED f.log", "count FAILED f.log", "grep -v FAILED f.log"], answer: 1 },
     { q: "chmod 600 rapport.txt, ça donne quoi ?", options: ["Lisible par tout le monde", "Exécutable par tous", "Lecture/écriture pour le propriétaire seul", "Fichier supprimé"], answer: 2 },
   ],
+  7: [
+    { q: "Comment définir correctement une variable ?", options: ["x = 5", "x=5", "$x=5", "set x 5"], answer: 1 },
+    { q: "Que fait $(ls | wc -l) ?", options: ["Affiche une erreur", "Crée un fichier", "Remplace par le nombre de fichiers", "Rien"], answer: 2 },
+    { q: "Une boucle for se ferme par…", options: ["end", "fi", "done", "stop"], answer: 2 },
+    { q: "Quelle condition teste si le fichier f existe ?", options: ["[ -d f ]", "[ -f f ]", "[ -x f ]", "[ f exists ]"], answer: 1 },
+  ],
 };
 
 const Quiz = {
