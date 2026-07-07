@@ -7,6 +7,7 @@ function _obLS(key, fallback) {
   catch { return fallback; }
 }
 function _banditDone()    { const a = _obLS("linuxdojo_bandit", []); return Array.isArray(a) ? a.length : 0; }
+function _bossDone()      { const b = _obLS("linuxdojo_boss", {}); return (b && Array.isArray(b.defeated)) ? b.defeated.length : 0; }
 function _challengeBest() { const n = parseInt(localStorage.getItem("linuxdojo_challenge_best"), 10); return isNaN(n) ? 0 : n; }
 function _dailyDone()     { const d = _obLS("linuxdojo_daily", {}); return d && d.done ? 1 : 0; }
 function _statTotal()     { return (typeof STATS !== "undefined" && STATS.total) ? STATS.total : 0; }
@@ -27,6 +28,10 @@ const OBJECTIVES = [
   { id: "challenge", icon: "⚡", title: "Sang-froid",          desc: "Atteins 60 pts de record en mode Défis",     xp: 35, target: 60,  cur: () => _challengeBest() },
   { id: "badges3",   icon: "🏅", title: "Collectionneur",      desc: "Débloque 3 badges",                          xp: 40, target: 3,   cur: g => g.badges.length },
   { id: "hacker",    icon: "💻", title: "Sur la voie du Hacker", desc: "Atteins le rang Hacker (800 XP)",          xp: 60, target: 800, cur: g => g.xp },
+  { id: "boss1",     icon: "⚔️", title: "Premier trophée",     desc: "Terrasse ton premier boss",                  xp: 40, target: 1,   cur: () => _bossDone() },
+  { id: "bossall",   icon: "🐲", title: "Videur de donjon",    desc: "Terrasse les 5 boss (Sensei inclus)",        xp: 100, target: 5,  cur: () => _bossDone() },
+  { id: "rtfm",      icon: "📖", title: "RTFM",                desc: "Consulte 3 pages de manuel (man cmd)",       xp: 20, target: 3,   cur: () => _statCmd("man") },
+  { id: "eggs",      icon: "🥚", title: "Chasseur d'œufs",     desc: "Trouve 3 easter eggs (cowsay, sl, fortune…)", xp: 30, target: 3,  cur: () => ["cowsay","sl","fortune","vim","sudo"].filter(c => _statCmd(c) > 0).length },
 ];
 
 // ── Vérifie & débloque automatiquement les objectifs atteints ────────────────

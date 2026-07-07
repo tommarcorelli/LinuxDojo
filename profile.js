@@ -8,6 +8,8 @@ const THEMES = [
   { id: "cyber",   name: "Cyberpunk",   cls: "theme-cyber",  min: 500,  sw: "linear-gradient(135deg,#ec4899,#8b5cf6,#06b6d4)" },
   { id: "amber",   name: "Rétro Ambre", cls: "theme-amber",  min: 800,  sw: "linear-gradient(135deg,#b45309,#f59e0b,#fbbf24)" },
   { id: "blood",   name: "Sang & Feu",  cls: "theme-blood",  min: 1200, sw: "linear-gradient(135deg,#7f1d1d,#dc2626,#f87171)" },
+  { id: "synthwave", name: "Synthwave", cls: "theme-synthwave", min: 1600, sw: "linear-gradient(135deg,#ff2975,#b967ff,#01cdfe)" },
+  { id: "vantablack", name: "Vantablack", cls: "theme-vantablack", min: 2200, sw: "linear-gradient(135deg,#111,#334155,#e2e8f0)" },
 ];
 const THEME_KEY = "linuxdojo_theme";
 function currentThemeId() { try { return localStorage.getItem(THEME_KEY) || "default"; } catch { return "default"; } }
@@ -87,9 +89,12 @@ function renderProfile() {
   if (rings) {
     const learnDone = GAME.completed.size;
     const learnTotal = 30;
+    const bossTotal = (typeof BOSS_FIGHTS !== "undefined") ? BOSS_FIGHTS.length : 5;
+    const bossDone  = (typeof bossKills === "function") ? bossKills() : 0;
     const data = [
       { label: "Apprendre",    done: learnDone, total: learnTotal, color: "#7c3aed", icon: "📖" },
-      { label: "Badges",       done: GAME.badges.length, total: 9, color: "#eab308", icon: "🏅" },
+      { label: "Boss",         done: bossDone, total: bossTotal, color: "#ef4444", icon: "⚔️" },
+      { label: "Badges",       done: GAME.badges.length, total: (typeof BADGES !== "undefined") ? BADGES.length : 12, color: "#eab308", icon: "🏅" },
       { label: "Niveau",       done: Math.floor(xp/100)+1, total: 25, color: "#06b6d4", icon: "⚡" },
     ];
     rings.innerHTML = "";
@@ -128,8 +133,87 @@ function renderProfile() {
   }
 
   renderStats();
+  renderHeatmap();
   renderThemes();
 }
+
+/* ── Heatmap d'activité (style GitHub, 12 semaines) ────────── */
+function renderHeatmap() {
+  const el = document.getElementById("pf-heatmap");
+  if (!el) return;
+  const days = (typeof STATS !== "undefined" && STATS.days) ? STATS.days : {};
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = (today.getDay() + 6) % 7;              // lundi = 0
+  const start = new Date(today);
+  start.setDate(start.getDate() - dow - 77);          // 11 semaines avant le lundi courant
+
+  const fmt = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  const lvl = n => n === 0 ? "" : n < 10 ? " hm-l1" : n < 25 ? " hm-l2" : n < 50 ? " hm-l3" : " hm-l4";
+
+  let cells = "";
+  let activeDays = 0, totalCmds = 0;
+  for (let i = 0; i < 84; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    if (d > today) { cells += '<div class="hm-cell hm-future"></div>'; continue; }
+    const n = days[fmt(d)] || 0;
+    if (n > 0) { activeDays++; totalCmds += n; }
+    const label = d.toLocaleDateString("fr-FR", { weekday:"short", day:"numeric", month:"short" });
+    cells += `<div class="hm-cell${lvl(n)}" title="${n} commande${n>1?"s":""} — ${label}"></div>`;
+  }
+
+  el.innerHTML =
+    '<div class="hm-grid">' + cells + '</div>' +
+    '<div class="hm-legend"><span style="margin-right:6px">' + totalCmds + ' commandes sur 12 semaines</span>' +
+    '<span>moins</span><span class="hm-cell"></span><span class="hm-cell hm-l1"></span><span class="hm-cell hm-l2"></span><span class="hm-cell hm-l3"></span><span class="hm-cell hm-l4"></span><span>plus</span></div>';
+
+  const count = document.getElementById("pf-heatmap-count");
+  if (count) count.textContent = activeDays + " jour" + (activeDays > 1 ? "s" : "") + " actif" + (activeDays > 1 ? "s" : "");
+}
+
+/* ── Export / Import de sauvegarde ─────────────────────────── */
+function _b64EncodeUnicode(s) { return btoa(unescape(encodeURIComponent(s))); }
+function _b64DecodeUnicode(s) { return decodeURIComponent(escape(atob(s))); }
+
+function exportSave() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith("linuxdojo")) data[k] = localStorage.getItem(k);
+  }
+  const code = _b64EncodeUnicode(JSON.stringify({ v: 1, exportedAt: new Date().toISOString(), data }));
+  const done = () => { if (typeof showToast === "function") showToast("📤 Sauvegarde copiée dans le presse-papier !"); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(done).catch(() => prompt("Copie ce code de sauvegarde :", code));
+  } else {
+    prompt("Copie ce code de sauvegarde :", code);
+  }
+}
+
+function importSave() {
+  const code = prompt("Colle ton code de sauvegarde LinuxDojo :");
+  if (!code) return;
+  try {
+    const parsed = JSON.parse(_b64DecodeUnicode(code.trim()));
+    if (!parsed || typeof parsed.data !== "object") throw new Error("format");
+    const keys = Object.keys(parsed.data).filter(k => k.startsWith("linuxdojo"));
+    if (!keys.length) throw new Error("vide");
+    if (!confirm("Importer cette sauvegarde ? Elle remplacera ta progression actuelle (" + keys.length + " clés).")) return;
+    keys.forEach(k => localStorage.setItem(k, parsed.data[k]));
+    location.reload();
+  } catch (e) {
+    alert("❌ Code de sauvegarde invalide.");
+  }
+}
+
+// Câblage des boutons (les scripts sont chargés en fin de body, le DOM existe)
+(() => {
+  const ex = document.getElementById("pf-export");
+  const im = document.getElementById("pf-import");
+  if (ex) ex.addEventListener("click", exportSave);
+  if (im) im.addEventListener("click", importSave);
+})();
 
 function updateNavRank() {
   const rank = getRank(GAME.xp);

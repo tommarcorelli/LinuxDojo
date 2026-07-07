@@ -118,7 +118,7 @@ const CHALLENGES = [
     xp: 25,
     timeLimit: 90,
     fs: { "noms.txt": { type:"file", content:"Zara\nAlice\nMike\nBob\nCarla" } },
-    check: (out) => { const l = out.split("\n").filter(Boolean); return l[0] === "Alice" || l[0] === "Bob"; },
+    check: (out) => { const l = out.split("\n").filter(Boolean); return l[0] === "alice" || l[0] === "bob"; },
     solution: "sort noms.txt"
   },
   {
@@ -150,6 +150,56 @@ const CHALLENGES = [
     fs: { "data.csv": { type:"file", content:"Alice,25,Paris\nBob,30,Lyon\nCarla,22,Marseille" } },
     check: (out) => /alice|bob|carla/i.test(out) && !/25|30|22/.test(out),
     solution: "awk -F',' '{print $1}' data.csv"
+  },
+  {
+    id: 16,
+    category: "Head",
+    desc: "Affiche uniquement les <strong>3 premières lignes</strong> de <strong>journal.txt</strong>.",
+    xp: 25,
+    timeLimit: 75,
+    fs: { "journal.txt": { type:"file", content:"jour1 arrivée\njour2 exploration\njour3 découverte\njour4 tempête\njour5 retour" } },
+    check: (out) => /jour1/.test(out) && /jour3/.test(out) && !/jour4|jour5/.test(out),
+    solution: "head -n 3 journal.txt"
+  },
+  {
+    id: 17,
+    category: "Tail",
+    desc: "Affiche uniquement les <strong>2 dernières lignes</strong> de <strong>journal.txt</strong> (les plus récentes).",
+    xp: 25,
+    timeLimit: 75,
+    fs: { "journal.txt": { type:"file", content:"jour1 arrivée\njour2 exploration\njour3 découverte\njour4 tempête\njour5 retour" } },
+    check: (out) => /jour4/.test(out) && /jour5/.test(out) && !/jour1|jour2|jour3/.test(out),
+    solution: "tail -n 2 journal.txt"
+  },
+  {
+    id: 18,
+    category: "Cut",
+    desc: "Extrais la <strong>2e colonne</strong> (les emails) de <strong>contacts.txt</strong>. Séparateur : point-virgule.",
+    xp: 40,
+    timeLimit: 120,
+    fs: { "contacts.txt": { type:"file", content:"Alice;alice@mail.fr;Paris\nBob;bob@mail.fr;Lyon\nCarla;carla@mail.fr;Nice" } },
+    check: (out) => /alice@mail\.fr/.test(out) && /bob@mail\.fr/.test(out) && !/paris|lyon|nice/.test(out),
+    solution: "cut -d';' -f2 contacts.txt"
+  },
+  {
+    id: 19,
+    category: "Uniq",
+    desc: "Le fichier <strong>visiteurs.txt</strong> est plein de doublons. Affiche la liste <strong>triée sans doublons</strong>.",
+    xp: 40,
+    timeLimit: 120,
+    fs: { "visiteurs.txt": { type:"file", content:"hugo\nlea\nhugo\nmax\nlea\nhugo\nzoe\nmax" } },
+    check: (out) => { const l = out.split("\n").filter(Boolean); return l.length === 4 && /hugo/.test(out) && /zoe/.test(out); },
+    solution: "sort visiteurs.txt | uniq   (ou sort -u)"
+  },
+  {
+    id: 20,
+    category: "RTFM",
+    desc: "Un vrai ninja lit la doc : affiche la <strong>page de manuel</strong> de la commande <strong>grep</strong>.",
+    xp: 30,
+    timeLimit: 60,
+    fs: {},
+    check: (out) => /synopsis/.test(out) && /grep/.test(out),
+    solution: "man grep"
   }
 ];
 

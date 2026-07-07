@@ -22,6 +22,18 @@ const GLOSSARY = [
     syntax:"less [fichier]",
     options:[["Espace","page suivante"],["b","page précédente"],["/motif","rechercher"],["q","quitter"]],
     examples:[["less access.log","parcourir un gros log"]] },
+  { cmd:"head", cat:"Fichiers", desc:"Affiche les premières lignes d'un fichier.",
+    syntax:"head [-n N] fichier",
+    options:[["-n 5","les 5 premières lignes"],["(défaut)","10 lignes"]],
+    examples:[["head -n 3 log.txt","3 premières lignes"],["head -1 f.csv","l'en-tête d'un CSV"]] },
+  { cmd:"tail", cat:"Fichiers", desc:"Affiche les dernières lignes (la fin des logs !).",
+    syntax:"tail [-n N] fichier",
+    options:[["-n 5","les 5 dernières lignes"],["-f","suit le fichier en direct (logs live)"]],
+    examples:[["tail -n 20 app.log","les 20 dernières lignes"],["tail -f app.log","surveiller en temps réel"]] },
+  { cmd:"tree", cat:"Fichiers", desc:"Affiche l'arborescence des dossiers en arbre.",
+    syntax:"tree [chemin]",
+    options:[["-L 2","limite la profondeur à 2 niveaux"],["-a","inclut les fichiers cachés"]],
+    examples:[["tree","arbre du dossier courant"]] },
   { cmd:"touch", cat:"Fichiers", desc:"Crée un fichier vide (ou met à jour sa date).",
     syntax:"touch [fichier]", options:[],
     examples:[["touch notes.txt","créer un fichier vide"],["touch a b c","créer 3 fichiers"]] },
@@ -62,6 +74,10 @@ const GLOSSARY = [
     syntax:"commande1 | commande2",
     options:[],
     examples:[["ls | grep .txt","lister puis filtrer"],["cat log | grep ERR | wc -l","filtrer puis compter"]] },
+  { cmd:"uniq", cat:"Recherche", desc:"Supprime les lignes dupliquées ADJACENTES (trie d'abord !).",
+    syntax:"sort fichier | uniq [options]",
+    options:[["-c","compte les occurrences de chaque ligne"],["-d","affiche seulement les doublons"]],
+    examples:[["sort f.txt | uniq","liste sans doublons"],["sort f.txt | uniq -c","avec compteur"]] },
 
   // ── Permissions & Système ──
   { cmd:"chmod", cat:"Permissions & Système", desc:"Modifie les permissions d'un fichier.",
@@ -88,6 +104,26 @@ const GLOSSARY = [
     syntax:"echo $VARIABLE",
     options:[["$HOME","dossier personnel"],["$PATH","chemins des programmes"],["$USER","nom d'utilisateur"]],
     examples:[["echo $HOME","→ /home/user"],["env","toutes les variables"]] },
+  { cmd:"env / export", cat:"Permissions & Système", desc:"Liste ou définit les variables d'environnement.",
+    syntax:"env   ·   export NOM=valeur",
+    options:[["env","liste toutes les variables"],["env | grep X","chercher une variable"],["export DEBUG=1","définir une variable"]],
+    examples:[["env | grep PATH","voir le PATH"],["export EDITOR=vim","définir son éditeur"]] },
+  { cmd:"du / free / uptime", cat:"Permissions & Système", desc:"Santé du système : disque, mémoire, temps de fonctionnement.",
+    syntax:"du -h   ·   free -h   ·   uptime",
+    options:[["du -h","taille des fichiers/dossiers"],["free -h","mémoire RAM utilisée/libre"],["uptime","depuis quand la machine tourne"]],
+    examples:[["du -h","tailles lisibles"],["free -h","état de la RAM"]] },
+  { cmd:"uname / hostname / date", cat:"Permissions & Système", desc:"Identité de la machine : système, nom, date.",
+    syntax:"uname -a   ·   hostname   ·   date",
+    options:[["uname -a","noyau + architecture"],["hostname","nom de la machine"],["date","date et heure"]],
+    examples:[["uname -a","tout savoir sur le noyau"]] },
+  { cmd:"history", cat:"Permissions & Système", desc:"Affiche l'historique des commandes tapées.",
+    syntax:"history",
+    options:[["!42","ré-exécute la commande n°42"],["Ctrl+R","recherche interactive dans l'historique"]],
+    examples:[["history","tout l'historique"],["history | grep ssh","retrouver une commande"]] },
+  { cmd:"man / whatis", cat:"Aide", desc:"LE réflexe : le manuel intégré de chaque commande.",
+    syntax:"man commande   ·   whatis commande",
+    options:[["man grep","manuel complet de grep"],["whatis ls","description en une ligne"],["q","quitter le manuel"]],
+    examples:[["man tar","ne plus jamais oublier -czf"],["whatis awk","c'est quoi awk déjà ?"]] },
 
   // ── Réseau & Archives ──
   { cmd:"tar", cat:"Réseau & Archives", desc:"Crée/extrait des archives compressées.",
@@ -116,6 +152,14 @@ const GLOSSARY = [
     syntax:"awk -F',' '{print $1}' fichier",
     options:[["$1, $2","numéro de colonne"],["-F','","séparateur (ici virgule)"],["NR","numéro de ligne"]],
     examples:[["awk '{print $1}' f","1ère colonne"],["awk -F',' '{print $2}' d.csv","2e colonne CSV"]] },
+  { cmd:"cut", cat:"Texte & Décodage", desc:"Découpe chaque ligne pour extraire des colonnes.",
+    syntax:"cut -d'sép' -fN fichier",
+    options:[["-d','","séparateur (ici la virgule)"],["-f1","1ère colonne"],["-f1,3","colonnes 1 et 3"]],
+    examples:[["cut -d',' -f2 users.csv","2e colonne d'un CSV"],["cut -d':' -f1 /etc/passwd","les logins du système"]] },
+  { cmd:"tr", cat:"Texte & Décodage", desc:"Remplace ou supprime des caractères dans un flux.",
+    syntax:"commande | tr 'set1' 'set2'",
+    options:[["'a-z' 'A-Z'","minuscules → MAJUSCULES"],["-d 'x'","supprime tous les x"]],
+    examples:[["cat f | tr 'a-z' 'A-Z'","tout en majuscules"],["echo o-la | tr -d '-'","supprime les tirets"]] },
   { cmd:"base64", cat:"Texte & Décodage", desc:"Encode / décode en Base64.",
     syntax:"base64 [-d] [fichier]",
     options:[["-d","décoder"],["(sans -d)","encoder"]],
@@ -130,7 +174,7 @@ const GLOSSARY = [
     examples:[["xxd -r -p hex.txt","hex → texte"],["echo hi | xxd -p","texte → hex"]] },
 ];
 
-const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage"];
+const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage","Aide"];
 
 let glossaryFilter = "Tout";
 let glossarySearch = "";

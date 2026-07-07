@@ -161,6 +161,31 @@ const BANDIT_LEVELS = [
       "info.txt": { type:"file", content:"Deux caractères hex = un octet. xxd -r -p reconstruit le texte." }
     },
     check: (out) => /R00tAcc3ss/.test(out)
+  },
+  {
+    id: 13,
+    title: "Niveau 13 — La Forteresse",
+    desc: "Le mot de passe dans <strong>forteresse.enc</strong> est <strong>doublement protégé</strong> : d'abord chiffré en ROT13, puis encodé en Base64. Enchaîne les deux décodages avec un pipe.",
+    hints: ["cat forteresse.enc", "base64 -d forteresse.enc", "cat forteresse.enc | base64 -d | rot13"],
+    password: "Sh4d0wM4st3rOfB4sh",
+    // base64(rot13("Sh4d0wM4st3rOfB4sh")) = RnU0cTBqWjRmZzNlQnNPNGZ1
+    fs: {
+      "forteresse.enc": { type:"file", content:"RnU0cTBqWjRmZzNlQnNPNGZ1" },
+      "plan.txt": { type:"file", content:"Double muraille : Base64 à l'extérieur, ROT13 à l'intérieur.\nDécode dans l'ordre inverse de la construction." }
+    },
+    check: (out) => /Sh4d0wM4st3rOfB4sh/.test(out)
+  },
+  {
+    id: 14,
+    title: "Niveau 14 — Le Grand Archiviste",
+    desc: "L'archiviste a noyé le mot de passe dans <strong>registre.csv</strong> (colonnes : user,role,token). C'est le <strong>token</strong> de l'unique utilisateur avec le rôle <strong>root</strong>. Filtre puis découpe.",
+    hints: ["cat registre.csv", "grep root registre.csv", "grep root registre.csv | cut -d',' -f3"],
+    password: "K1ngOfTh3Hill777",
+    fs: {
+      "registre.csv": { type:"file", content:"user,role,token\nnina,viewer,tk_9021\nsacha,editor,tk_5510\nhugo,viewer,tk_1188\nmorgane,root,K1ngOfTh3Hill777\nkarim,editor,tk_3345\nlucie,viewer,tk_7702" },
+      "note.txt": { type:"file", content:"Un seul root règne sur le registre." }
+    },
+    check: (out) => /K1ngOfTh3Hill777/.test(out)
   }
 ];
 
@@ -191,6 +216,8 @@ class BanditMode {
   _save() { localStorage.setItem(this.SAVE, JSON.stringify([...this.completed])); }
 
   init() {
+    const story = document.getElementById("bandit-story");
+    if (story) story.textContent = "Tu t'es infiltré dans le serveur d'une organisation obscure. Chaque niveau cache le mot de passe du suivant. Fouille, filtre, décode — et ne laisse aucune trace.";
     this._renderLevels();
     this._loadLevel(0);
   }

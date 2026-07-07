@@ -685,7 +685,7 @@ body::before {
 #hint-text { font-size: 12px; color: var(--yellow); font-family: var(--font-mono); display: none; }
 
 /* Terminal */
-#terminal, #explore-terminal, #challenge-terminal, #bandit-terminal {
+#terminal, #explore-terminal, #challenge-terminal, #bandit-terminal, #boss-terminal {
   flex: 1;
   overflow-y: auto;
   padding: 14px 20px;
@@ -697,11 +697,13 @@ body::before {
 #terminal::-webkit-scrollbar,
 #explore-terminal::-webkit-scrollbar,
 #challenge-terminal::-webkit-scrollbar,
-#bandit-terminal::-webkit-scrollbar { width: 4px; }
+#bandit-terminal::-webkit-scrollbar,
+#boss-terminal::-webkit-scrollbar { width: 4px; }
 #terminal::-webkit-scrollbar-thumb,
 #explore-terminal::-webkit-scrollbar-thumb,
 #challenge-terminal::-webkit-scrollbar-thumb,
-#bandit-terminal::-webkit-scrollbar-thumb { background: var(--glass-md); border-radius: 2px; }
+#bandit-terminal::-webkit-scrollbar-thumb,
+#boss-terminal::-webkit-scrollbar-thumb { background: var(--glass-md); border-radius: 2px; }
 
 .t-line { white-space: pre-wrap; word-break: break-all; }
 .t-prompt-line { display: flex; gap: 6px; }
@@ -716,7 +718,7 @@ body::before {
 .t-story { color: var(--purple-li); font-style: italic; }
 
 /* Barres d'input */
-#input-bar, #explore-input-bar, #challenge-input-bar, #bandit-input-bar {
+#input-bar, #explore-input-bar, #challenge-input-bar, #bandit-input-bar, #boss-input-bar {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -727,7 +729,7 @@ body::before {
   backdrop-filter: blur(20px);
 }
 
-#prompt, .explore-prompt, .ch-prompt, .bandit-prompt {
+#prompt, .explore-prompt, .ch-prompt, .bandit-prompt, .boss-prompt {
   color: var(--green-li);
   font-family: var(--font-mono);
   font-size: 13px;
@@ -735,7 +737,7 @@ body::before {
   flex-shrink: 0;
 }
 
-#cmd-input, #explore-cmd, #ch-cmd, #bandit-cmd {
+#cmd-input, #explore-cmd, #ch-cmd, #bandit-cmd, #boss-cmd {
   flex: 1;
   background: transparent;
   border: none;
@@ -749,7 +751,8 @@ body::before {
 #cmd-input::placeholder,
 #explore-cmd::placeholder,
 #ch-cmd::placeholder,
-#bandit-cmd::placeholder { color: var(--text-dim); }
+#bandit-cmd::placeholder,
+#boss-cmd::placeholder { color: var(--text-dim); }
 
 /* Boutons communs */
 .btn-primary {
@@ -780,7 +783,7 @@ body::before {
 }
 .btn-ghost:hover { border-color: var(--glass-border-hi); color: var(--text); }
 
-#btn-back-lesson, #run-btn, #explore-run, #ch-run, #bandit-run {
+#btn-back-lesson, #run-btn, #explore-run, #ch-run, #bandit-run, #boss-run {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   color: var(--text-md);
@@ -792,13 +795,13 @@ body::before {
   transition: all .15s;
   flex-shrink: 0;
 }
-#btn-back-lesson:hover, #run-btn:hover, #explore-run:hover, #ch-run:hover, #bandit-run:hover {
+#btn-back-lesson:hover, #run-btn:hover, #explore-run:hover, #ch-run:hover, #bandit-run:hover, #boss-run:hover {
   background: var(--glass-md);
   border-color: var(--purple-li);
   color: var(--purple-li);
 }
 
-#btn-hint {
+#btn-hint, #boss-hint {
   background: transparent;
   border: 1px solid var(--glass-border);
   color: var(--text-dim);
@@ -809,7 +812,7 @@ body::before {
   font-family: var(--font-ui);
   transition: all .15s;
 }
-#btn-hint:hover { border-color: var(--yellow); color: var(--yellow); }
+#btn-hint:hover, #boss-hint:hover { border-color: var(--yellow); color: var(--yellow); }
 .cost { color: var(--red); font-size: 10px; }
 
 /* ── PAGE EXPLORER ──────────────────────────────────────────── */
@@ -1296,6 +1299,229 @@ body::before {
   box-shadow: 0 8px 32px rgba(124,58,237,0.3), 0 0 0 1px var(--glass-border-hi);
 }
 
+/* ═══ PAGE BOSS — Salle des Boss ════════════════════════════ */
+#page-boss { overflow: hidden; }
+
+#boss-layout {
+  display: flex;
+  height: calc(100vh - var(--nav-h));
+  height: calc(100dvh - var(--nav-h));
+  overflow: hidden;
+}
+
+#boss-left {
+  width: 320px;
+  background: rgba(8,8,16,0.6);
+  border-right: 1px solid var(--glass-border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  backdrop-filter: blur(20px);
+  padding: 20px 16px;
+}
+#boss-left-head h2 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+#boss-left-head p  { font-size: 12px; color: var(--text-md); line-height: 1.6; margin-bottom: 18px; }
+
+#boss-list { display: flex; flex-direction: column; gap: 10px; }
+
+.boss-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .18s;
+  position: relative;
+  overflow: hidden;
+}
+.boss-card:hover:not(.locked) { border-color: rgba(239,68,68,0.55); background: var(--glass-md); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.12); }
+.boss-card.active { border-color: var(--red); background: rgba(239,68,68,0.08); }
+.boss-card.done   { border-color: var(--green); }
+.boss-card.locked { opacity: .45; cursor: not-allowed; }
+.boss-card-emoji  { font-size: 32px; flex-shrink: 0; }
+.boss-card-info   { flex: 1; min-width: 0; }
+.boss-card-name   { font-size: 13px; font-weight: 700; color: var(--text); }
+.boss-card-tag    { font-size: 11px; color: var(--text-md); line-height: 1.45; margin-top: 2px; }
+.boss-card-meta   { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); margin-top: 6px; }
+.boss-done-chip   { color: var(--green-li); }
+
+#boss-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 14px;
+}
+
+#boss-arena {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(8,8,16,0.55);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+}
+
+#boss-arena-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--glass-border);
+  background: linear-gradient(135deg, rgba(239,68,68,0.07), rgba(124,58,237,0.05));
+  flex-shrink: 0;
+}
+
+#boss-avatar {
+  font-size: 56px;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: boss-breathe 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 14px rgba(239,68,68,0.35));
+}
+@keyframes boss-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.07) translateY(-3px); }
+}
+.boss-idle #boss-avatar { animation: boss-breathe 4.5s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(124,58,237,0.4)); }
+
+#boss-arena-info { flex: 1; min-width: 0; }
+#boss-name    { font-size: 19px; font-weight: 800; }
+#boss-tagline { font-size: 11.5px; color: var(--text-md); margin: 3px 0 9px; line-height: 1.5; }
+
+#boss-hpbar {
+  height: 15px;
+  background: var(--glass-md);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  max-width: 460px;
+}
+#boss-hpfill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  border-radius: 8px;
+  transition: width .55s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 0 12px rgba(239,68,68,0.5);
+}
+#boss-hptext {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+#boss-player-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+#boss-hearts { font-size: 17px; letter-spacing: 2px; min-height: 20px; }
+
+#boss-brief {
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(8,8,16,0.7);
+  flex-shrink: 0;
+}
+#boss-phase-label {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--purple-li);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+#boss-desc { font-size: 13px; color: var(--text); line-height: 1.6; }
+#boss-brief-bottom { display: flex; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+#boss-hint-text { font-size: 12px; color: var(--yellow); font-family: var(--font-mono); display: none; }
+#boss-timer-wrap { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 1; max-width: 220px; min-width: 130px; }
+#boss-timer-bar  { flex: 1; height: 6px; background: var(--glass-md); border-radius: 3px; overflow: hidden; }
+#boss-timer-fill { height: 100%; width: 0%; transition: width 1s linear; border-radius: 3px; }
+#boss-timer-label { font-size: 11px; font-family: var(--font-mono); color: var(--text-md); min-width: 32px; text-align: right; }
+
+/* Impact : tremblement de l'arène */
+.boss-shake { animation: boss-shake .5s cubic-bezier(.36,.07,.19,.97); }
+@keyframes boss-shake {
+  10%, 90% { transform: translate(-4px, 1px) rotate(-0.3deg); }
+  20%, 80% { transform: translate(5px, -2px) rotate(0.3deg); }
+  30%, 50%, 70% { transform: translate(-7px, 2px) rotate(-0.5deg); }
+  40%, 60% { transform: translate(7px, -1px) rotate(0.4deg); }
+}
+
+/* Attaque du boss : flash rouge via la vignette CRT */
+#crt-vignette { transition: box-shadow .25s; }
+body.boss-hit #crt-vignette { box-shadow: inset 0 0 220px rgba(239,68,68,0.65); }
+
+/* Nombre de dégâts flottant */
+.boss-dmg-float {
+  position: fixed;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 800;
+  color: #f87171;
+  text-shadow: 0 0 14px rgba(239,68,68,0.8), 0 2px 4px rgba(0,0,0,0.6);
+  z-index: 10000;
+  pointer-events: none;
+  animation: dmg-rise 1.15s cubic-bezier(.2,.8,.3,1) forwards;
+}
+@keyframes dmg-rise {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.6); }
+  18%  { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1.35); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-72px) scale(1); }
+}
+
+/* Accents nav + carte d'accueil */
+.nav-btn-boss { color: #fca5a5; }
+.nav-btn-boss:hover, .nav-btn-boss.active { color: #f87171; }
+.mode-card-boss:hover { border-color: rgba(239,68,68,0.5); box-shadow: 0 12px 40px rgba(239,68,68,0.14); }
+
+/* ═══ HEATMAP D'ACTIVITÉ (profil) ═══════════════════════════ */
+#pf-heatmap {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 36px;
+  overflow-x: auto;
+}
+.hm-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 13px);
+  grid-auto-flow: column;
+  grid-auto-columns: 13px;
+  gap: 3px;
+  width: max-content;
+}
+.hm-cell {
+  width: 13px; height: 13px;
+  border-radius: 3px;
+  background: var(--glass-md);
+}
+.hm-cell.hm-l1 { background: rgba(124,58,237,0.30); }
+.hm-cell.hm-l2 { background: rgba(124,58,237,0.55); box-shadow: 0 0 4px rgba(124,58,237,0.3); }
+.hm-cell.hm-l3 { background: rgba(147,90,246,0.80); box-shadow: 0 0 6px rgba(124,58,237,0.5); }
+.hm-cell.hm-l4 { background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.75); }
+.hm-cell.hm-future { background: transparent; border: 1px dashed rgba(255,255,255,0.05); }
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.hm-legend .hm-cell { display: inline-block; }
+
 /* ═══ PAGE PROFIL ═══════════════════════════════════════════ */
 #page-profile { overflow-y: auto; }
 
@@ -1762,6 +1988,21 @@ body.theme-blood {
   --grad-main:linear-gradient(135deg,#7f1d1d 0%,#dc2626 50%,#f87171 100%);
   --grad-card:linear-gradient(135deg,rgba(220,38,38,0.15) 0%,rgba(127,29,29,0.1) 100%);
 }
+body.theme-synthwave {
+  --bg:#0d0221; --bg1:#160735; --bg2:#1d0a44; --bg3:#2a1158;
+  --purple:#ff2975; --purple-li:#ff71ce; --blue:#01cdfe; --blue-li:#8be9fd;
+  --cyan:#05ffa1; --cyan-li:#7bffce; --green-li:#05ffa1; --yellow:#fffb96;
+  --grad-main:linear-gradient(135deg,#ff2975 0%,#b967ff 50%,#01cdfe 100%);
+  --grad-card:linear-gradient(135deg,rgba(255,41,117,0.18) 0%,rgba(1,205,254,0.12) 100%);
+}
+body.theme-vantablack {
+  --bg:#000000; --bg1:#050505; --bg2:#0a0a0a; --bg3:#111111;
+  --glass:rgba(255,255,255,0.03); --glass-md:rgba(255,255,255,0.06); --glass-hi:rgba(255,255,255,0.10);
+  --purple:#e2e8f0; --purple-li:#ffffff; --blue:#94a3b8; --blue-li:#cbd5e1;
+  --cyan:#e2e8f0; --cyan-li:#f8fafc;
+  --grad-main:linear-gradient(135deg,#334155 0%,#94a3b8 50%,#e2e8f0 100%);
+  --grad-card:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.03) 100%);
+}
 
 /* Sélecteur de thèmes (profil) */
 #pf-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 12px; margin-bottom: 36px; }
@@ -1986,4 +2227,34 @@ body.theme-blood {
   margin-top: 12px; padding: 12px; border-radius: 10px;
   background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35);
   color: var(--green-li); font-size: 13px; text-align: center;
+}
+
+/* ═══ BOSS — RESPONSIVE MOBILE ══════════════════════════════ */
+@media (max-width: 768px) {
+  #boss-layout { flex-direction: column; }
+  #boss-left {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border);
+    padding: 10px 12px;
+    overflow: visible;
+    flex-shrink: 0;
+  }
+  #boss-left-head { display: none; }
+  #boss-list {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .boss-card { min-width: 235px; flex-shrink: 0; padding: 10px 12px; }
+  .boss-card-tag { display: none; }
+  #boss-right  { padding: 8px; }
+  #boss-arena-head { padding: 12px 14px; gap: 12px; }
+  #boss-avatar { font-size: 42px; }
+  #boss-name   { font-size: 15px; }
+  #boss-tagline { display: none; }
+  #boss-brief  { padding: 10px 14px; }
+  #boss-player-panel #boss-flee { padding: 4px 10px; font-size: 11px; }
+  #boss-hearts { font-size: 14px; }
 }

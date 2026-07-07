@@ -86,6 +86,34 @@ const DAILY_POOL = [
     check: (out) => (out.match(/linux/gi) || []).length >= 3,
     hint: "grep -i linux notes.txt"
   },
+  {
+    title: "👀 Juste le début",
+    desc: "Le rapport est trop long. Affiche seulement ses <strong>2 premières lignes</strong>.",
+    fs: { "rapport.txt":{type:"file",content:"résumé exécutif\nbudget validé\ndétails ennuyeux\nannexe 1\nannexe 2"} },
+    check: (out) => /résumé|resume/.test(out) && /budget/.test(out) && !/annexe/.test(out),
+    hint: "head -n 2 rapport.txt"
+  },
+  {
+    title: "🏁 La fin de l'histoire",
+    desc: "Affiche uniquement la <strong>dernière ligne</strong> de <code>course.txt</code> pour connaître le vainqueur.",
+    fs: { "course.txt":{type:"file",content:"départ donné\nvirage serré\nchute dans le peloton\nsprint final\nvainqueur : turbo-escargot"} },
+    check: (out) => /turbo-escargot/.test(out) && !/départ|depart/.test(out),
+    hint: "tail -n 1 course.txt"
+  },
+  {
+    title: "✂️ Chirurgie de colonnes",
+    desc: "Extrais uniquement les <strong>prénoms</strong> (2e colonne) de <code>equipe.csv</code>, séparateur virgule.",
+    fs: { "equipe.csv":{type:"file",content:"1,malik,capitaine\n2,sona,gardienne\n3,rex,attaquant"} },
+    check: (out) => /malik/.test(out) && /sona/.test(out) && !/capitaine|gardienne/.test(out),
+    hint: "cut -d',' -f2 equipe.csv"
+  },
+  {
+    title: "🧬 Sans doublons",
+    desc: "Compte combien d'<strong>espèces différentes</strong> contient <code>zoo.txt</code> (doublons exclus).",
+    fs: { "zoo.txt":{type:"file",content:"panda\ntigre\npanda\nloutre\ntigre\npanda\nokapi"} },
+    check: (out) => /\b4\b/.test(out),
+    hint: "sort zoo.txt | uniq | wc -l   (ou sort -u zoo.txt | wc -l)"
+  },
 ];
 
 const DAILY_KEY = "linuxdojo_daily";  // { date: "YYYY-MM-DD", done: false, idx: N }

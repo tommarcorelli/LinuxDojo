@@ -22,14 +22,26 @@ function persist() {
 
 // ── Statistiques de commandes ──────────────────────────────────
 const STATS_KEY = "linuxdojo_stats";
-function loadStats() { try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { cmd:{}, total:0 }; } catch { return { cmd:{}, total:0 }; } }
+function loadStats() { try { const s = JSON.parse(localStorage.getItem(STATS_KEY)) || {}; return { cmd: s.cmd || {}, total: s.total || 0, days: s.days || {} }; } catch { return { cmd:{}, total:0, days:{} }; } }
 let STATS = loadStats();
+function _dayKey(d) { d = d || new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
 function bumpStat(cmd) {
   if (!cmd) return;
   STATS.cmd[cmd] = (STATS.cmd[cmd] || 0) + 1;
   STATS.total++;
+  STATS.days[_dayKey()] = (STATS.days[_dayKey()] || 0) + 1;
   localStorage.setItem(STATS_KEY, JSON.stringify(STATS));
   if (typeof objectivesTick === "function") objectivesTick();
+}
+
+// Boss vaincus (lus depuis la sauvegarde du mode Boss)
+function bossKills() {
+  try { return ((JSON.parse(localStorage.getItem("linuxdojo_boss")) || {}).defeated || []).length; }
+  catch { return 0; }
+}
+function bossHasKilled(id) {
+  try { return ((JSON.parse(localStorage.getItem("linuxdojo_boss")) || {}).defeated || []).includes(id); }
+  catch { return false; }
 }
 
 const BADGES = [
@@ -42,6 +54,9 @@ const BADGES = [
   { id: "xp100",       label: "💯 Centurion",     cond: g => g.xp >= 100 },
   { id: "xp500",       label: "🔥 Inferno",       cond: g => g.xp >= 500 },
   { id: "xp1000",      label: "👑 Légende",       cond: g => g.xp >= 1000 },
+  { id: "boss1",       label: "⚔️ Tueur de Boss", cond: () => bossKills() >= 1 },
+  { id: "boss4",       label: "🐉 Fléau des Monstres", cond: () => bossKills() >= 4 },
+  { id: "blackbelt",   label: "🖤 Ceinture Noire", cond: () => bossHasKilled("sensei") },
 ];
 
 function checkBadges() {
@@ -109,6 +124,7 @@ function showPage(id) {
   if (id === "explore"   && !gsInitialized) { initGameShell();  gsInitialized = true; }
   if (id === "challenge" && !chInitialized) { initChallenges(); chInitialized = true; }
   if (id === "bandit"    && !bnInitialized) { initBandit();     bnInitialized = true; }
+  if (id === "boss") { if (!bsInitialized) { initBoss(); bsInitialized = true; } else if (bsObj) { bsObj.renderList(); } }
   if (id === "learn"     && !learnInit)     { initLearn();      learnInit = true; }
   if (id === "profile"   && typeof renderProfile === "function") { renderProfile(); }
   if (id === "sandbox"   && !sbInit) { initSandbox(); sbInit = true; }
@@ -119,7 +135,7 @@ function showPage(id) {
 
 let sbInit = false;
 
-let gsInitialized = false, chInitialized = false, bnInitialized = false, learnInit = false;
+let gsInitialized = false, chInitialized = false, bnInitialized = false, learnInit = false, bsInitialized = false;
 
 document.querySelectorAll(".nav-btn[data-page]").forEach(btn => {
   btn.addEventListener("click", () => showPage(btn.dataset.page));
@@ -392,6 +408,22 @@ function initChallenges() {
   chObj.init();
 }
 
+// MODE BOSS
+let bsObj = null;
+function initBoss() {
+  bsObj = new BossMode({
+    listEl:$("boss-list"), arenaEl:$("boss-arena"), avatarEl:$("boss-avatar"),
+    nameEl:$("boss-name"), tagEl:$("boss-tagline"),
+    hpFill:$("boss-hpfill"), hpText:$("boss-hptext"),
+    heartsEl:$("boss-hearts"), phaseEl:$("boss-phase-label"), descEl:$("boss-desc"),
+    timerFill:$("boss-timer-fill"), timerLbl:$("boss-timer-label"),
+    hintBtn:$("boss-hint"), hintText:$("boss-hint-text"),
+    termEl:$("boss-terminal"), inputEl:$("boss-cmd"), runBtn:$("boss-run"),
+    fleeBtn:$("boss-flee"),
+  });
+  bsObj.init();
+}
+
 // MODE BANDIT
 let bnObj = null;
 function initBandit() {
@@ -407,14 +439,17 @@ function initBandit() {
 // MODE BAC À SABLE
 let sbTerm = null;
 const SANDBOX_FS = {
-  "README.txt":   { type:"file", content:"Bac à sable — terminal libre.\nToutes les commandes marchent. Aucun objectif.\nEssaie : ls -la · cat notes.txt · grep TODO notes.txt · echo \"hi\" | base64 · base64 -d · rot13 · sort liste.txt" },
+  "README.txt":   { type:"file", content:"Bac à sable — terminal libre.\nToutes les commandes marchent. Aucun objectif.\nEssaie : ls -la · tree · man grep · head -3 poeme.txt · cut -d',' -f1 data.csv\n         sort doublons.txt | uniq -c · cat *.txt · echo \"hi\" | base64\nEt pour rire : cowsay yo · fortune · sl · sudo make me a sandwich · vim" },
   "notes.txt":    { type:"file", content:"TODO: apprendre grep\nTODO: maîtriser les pipes\nFAIT: installer Linux\nTODO: automatiser avec des scripts\nIDÉE: contribuer à l'open source" },
   "liste.txt":    { type:"file", content:"banane\npomme\ncerise\nabricot\nmangue\nkiwi" },
+  "doublons.txt": { type:"file", content:"alpha\nalpha\nbeta\ngamma\ngamma\ngamma\ndelta" },
+  "poeme.txt":    { type:"file", content:"Le shell est calme\nles pipes coulent sans fin\nsegfault soudain\n---\nvieux serveur ronronne\nun cron réveille la nuit\nles logs tombent en pluie\n---\nsudo sans réfléchir\nla prod ne répond plus\nle café est froid" },
   "data.csv":     { type:"file", content:"nom,role,ville\nAlice,dev,Paris\nBob,ops,Lyon\nCarla,design,Nice" },
   "script.sh":    { type:"file", perms:"-rwxr-xr-x", content:"#!/bin/bash\necho 'Hello depuis le bac à sable'\nfor i in 1 2 3; do echo \"tour $i\"; done" },
   "secret.b64":   { type:"file", content:"QmllbiBqb3XDqSA6KQ==" },
   "config.json":  { type:"file", content:'{\n  "env": "sandbox",\n  "debug": true,\n  "port": 3000\n}' },
   "logs":         { type:"dir" },
+  "logs/app.log": { type:"file", content:"INFO boot ok\nWARN mémoire à 80%\nERROR timeout DB\nINFO retry\nERROR disque plein" },
   ".env":         { type:"file", content:"API_KEY=demo\nSECRET=change_me" },
 };
 function initSandbox() {

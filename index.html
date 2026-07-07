@@ -29,6 +29,7 @@
       <button class="nav-btn" data-page="explore">Explorer</button>
       <button class="nav-btn" data-page="challenge">Défis</button>
       <button class="nav-btn" data-page="bandit">Infiltration</button>
+      <button class="nav-btn nav-btn-boss" data-page="boss">⚔️ Boss</button>
       <button class="nav-btn" data-page="sandbox">Bac à sable</button>
       <button class="nav-btn" data-page="glossary">Glossaire</button>
       <button class="nav-btn" data-page="profile">Profil</button>
@@ -87,13 +88,19 @@
         <div class="mode-icon">⚡</div>
         <h3>Défis</h3>
         <p>Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à x5.</p>
-        <div class="mode-tag">15 défis · Combo & record</div>
+        <div class="mode-tag">20 défis · Combo & record</div>
       </div>
       <div class="mode-card" data-page="bandit">
         <div class="mode-icon">🔐</div>
         <h3>Infiltration</h3>
         <p>Trouve le mot de passe caché. Fouille, filtre, et décode (base64, ROT13, hex).</p>
-        <div class="mode-tag">Style Bandit · 13 niveaux</div>
+        <div class="mode-tag">Style Bandit · 15 niveaux</div>
+      </div>
+      <div class="mode-card mode-card-boss" data-page="boss">
+        <div class="mode-icon">⚔️</div>
+        <h3>Salle des Boss</h3>
+        <p>Affronte le Kraken, le Spectre, l'Hydre, le Golem… et le Sensei. HP, cœurs, chrono.</p>
+        <div class="mode-tag">5 boss · Ceinture Noire</div>
       </div>
       <div class="mode-card" data-page="sandbox">
         <div class="mode-icon">🧪</div>
@@ -280,6 +287,53 @@
     </div>
   </div>
 
+  <!-- ══ PAGE BOSS (Salle des Boss) ══════════════════════════ -->
+  <div id="page-boss" class="page">
+    <div id="boss-layout">
+      <div id="boss-left">
+        <div id="boss-left-head">
+          <h2>⚔️ Salle des Boss</h2>
+          <p>Chaque commande juste inflige des dégâts.<br>Timer écoulé = tu perds un cœur. 3 cœurs, pas un de plus.</p>
+        </div>
+        <div id="boss-list"></div>
+      </div>
+      <div id="boss-right">
+        <div id="boss-arena" class="boss-idle">
+          <div id="boss-arena-head">
+            <div id="boss-avatar">⚔️</div>
+            <div id="boss-arena-info">
+              <div id="boss-name">Salle des Boss</div>
+              <div id="boss-tagline"></div>
+              <div id="boss-hpbar"><div id="boss-hpfill"></div><span id="boss-hptext"></span></div>
+            </div>
+            <div id="boss-player-panel">
+              <div id="boss-hearts"></div>
+              <button class="btn-ghost" id="boss-flee">🏃 Fuir</button>
+            </div>
+          </div>
+          <div id="boss-brief">
+            <div id="boss-phase-label"></div>
+            <p id="boss-desc"></p>
+            <div id="boss-brief-bottom">
+              <button id="boss-hint">💡 Indice <span class="cost">−10 XP</span></button>
+              <span id="boss-hint-text"></span>
+              <div id="boss-timer-wrap">
+                <div id="boss-timer-bar"><div id="boss-timer-fill"></div></div>
+                <span id="boss-timer-label"></span>
+              </div>
+            </div>
+          </div>
+          <div id="boss-terminal" role="log"></div>
+          <div id="boss-input-bar">
+            <span class="boss-prompt">ronin@arene:~$</span>
+            <input id="boss-cmd" type="text" autocomplete="off" spellcheck="false" placeholder="frappe avec la bonne commande...">
+            <button id="boss-run">↵</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ PAGE PROFIL ═════════════════════════════════════════ -->
   <div id="page-profile" class="page">
     <div id="profile-wrap">
@@ -305,12 +359,17 @@
       <div class="profile-section-title">📊 Tes commandes les plus utilisées</div>
       <div id="pf-stats"></div>
 
+      <div class="profile-section-title">🗓️ Ton activité <span class="obj-count" id="pf-heatmap-count"></span></div>
+      <div id="pf-heatmap"></div>
+
       <div class="profile-section-title">🎨 Thèmes</div>
       <div id="pf-themes"></div>
 
       <div class="profile-section-title">⚙️ Options</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn-ghost" id="pf-sound">🔊 Son : ON</button>
+        <button class="btn-ghost" id="pf-export">📤 Exporter la sauvegarde</button>
+        <button class="btn-ghost" id="pf-import">📥 Importer</button>
         <button class="btn-ghost" id="pf-reset">↺ Réinitialiser la progression</button>
       </div>
     </div>
@@ -426,6 +485,7 @@
   <script src="gameshell.js"></script>
   <script src="challenges.js"></script>
   <script src="bandit.js"></script>
+  <script src="boss.js"></script>
   <script src="quizzes.js"></script>
   <script src="glossary.js"></script>
   <script src="daily.js"></script>
