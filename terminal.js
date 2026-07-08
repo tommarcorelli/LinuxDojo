@@ -30,6 +30,9 @@ class Terminal {
     this._envVars = {}; // variables (shell + env) — lues par $VAR, echo, env
     this._blockLines = []; // buffer d'un bloc for/if/while en cours de saisie
     this._lastCode = 0; // code de retour de la dernière commande ($?)
+    this._aliases = {}; // alias définis par l'utilisateur (alias ll='ls -la')
+    this._jobs = [];    // jobs lancés en arrière-plan (cmd &)
+    this._jobCounter = 0;
   }
 
   // Charge le filesystem d'une mission.
@@ -55,6 +58,9 @@ class Terminal {
     this._envVars = {};
     this._blockLines = [];
     this._lastCode = 0;
+    this._aliases = {};
+    this._jobs = [];
+    this._jobCounter = 0;
   }
 
   /* ── Chemins ───────────────────────────────────────────────── */
@@ -330,7 +336,7 @@ class Terminal {
   // Exécute une commande simple (avec pipes/redirections/affectations),
   // après expansion des variables et substitutions de commande.
   _execSimple(raw, silent) {
-    const line = this._expandLine(this._stripComment(raw)).trim();
+    let line = this._expandLine(this._stripComment(raw)).trim();
     if (!line) return { output: "", error: false };
 
     // Affectation de variable : NAME=valeur (toute la ligne)
@@ -342,12 +348,30 @@ class Terminal {
       return { output: "", error: false };
     }
 
+    // Exécution en arrière-plan : cmd & (mais pas cmd &&, non géré ici)
+    let background = false;
+    if (this._hasUnquoted(line, "&") >= 0 && !line.endsWith("&&")) {
+      const idx = line.length - 1;
+      if (line[idx] === "&" && line[idx - 1] !== "&") {
+        background = true;
+        line = line.slice(0, idx).trim();
+      }
+    }
+
     let res;
     if (this._hasUnquoted(line, "|") >= 0)       res = this._runPipe(line, silent);
     else if (this._hasUnquoted(line, ">>") >= 0) res = this._runRedirect(line, true);
     else if (this._hasUnquoted(line, ">") >= 0)  res = this._runRedirect(line, false);
     else                                         res = this._exec(this._parse(line), "", silent);
     this._lastCode = res.error ? 1 : 0;
+
+    if (background) {
+      this._jobCounter++;
+      const pid = 2000 + this._jobCounter;
+      this._jobs.push({ id: this._jobCounter, pid, cmd: line, output: res.output, error: res.error, done: false });
+      this._lastCode = 0;
+      return { output: `[${this._jobCounter}] ${pid}`, error: false };
+    }
     return res;
   }
 
@@ -638,6 +662,14 @@ class Terminal {
     const [cmd, ...args] = parts;
     if (!cmd) return { output: "", error: false };
 
+    // Expansion d'alias (une seule couche, anti-boucle simple)
+    if (this._aliases && this._aliases[cmd] && !this._inAlias) {
+      this._inAlias = true;
+      const res = this._exec([...this._parse(this._aliases[cmd]), ...args], stdin, silent);
+      this._inAlias = false;
+      return res;
+    }
+
     // Exécution d'un script par chemin : ./script.sh, /home/user/x.sh, dossier/x.sh
     if (cmd.includes("/")) {
       const p = this._resolve(cmd);
@@ -748,7 +780,7 @@ class Terminal {
             const node = (f === "." || f === "..") ? { type: "dir" } : (nodeFor(f) || { type: "file" });
             const perms = node.perms || (node.type === "dir" ? "drwxr-xr-x" : "-rw-r--r--");
             const size = node.content ? node.content.length : (node.type === "dir" ? 4096 : 0);
-            return `${perms}  1 user user ${String(size).padStart(6)}  ${f}`;
+            return `${perms}  1 ${node.owner || "user"} ${node.group || "user"} ${String(size).padStart(6)}  ${f}`;
           }).join("\n");
         } else {
           // Dans un pipe ou une redirection, ls sort une entrée par ligne (comme le vrai ls)
@@ -935,6 +967,112 @@ class Terminal {
         }
         this.state.chmod = target;
         out = "";
+        break;
+      }
+
+      case "chown": {
+        if (!args[1]) { out = "chown: manque les arguments\nUsage : chown UTILISATEUR[:GROUPE] FICHIER\nExemple : chown sensei:sensei secret.key"; err = true; break; }
+        const target = args[args.length - 1];
+        const abs = this._resolve(target);
+        if (!this.fs[abs]) { out = `chown: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`; err = true; break; }
+        const [owner, group] = args[0].split(":");
+        if (owner) this.fs[abs].owner = owner;
+        if (group) this.fs[abs].group = group;
+        this.state.chown = target;
+        out = "";
+        break;
+      }
+
+      case "chgrp": {
+        if (!args[1]) { out = "chgrp: manque les arguments\nUsage : chgrp GROUPE FICHIER\nExemple : chgrp sensei secret.key"; err = true; break; }
+        const target = args[args.length - 1];
+        const abs = this._resolve(target);
+        if (!this.fs[abs]) { out = `chgrp: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`; err = true; break; }
+        this.fs[abs].group = args[0];
+        this.state.chgrp = target;
+        out = "";
+        break;
+      }
+
+      case "alias": {
+        if (!args.length) {
+          const entries = Object.entries(this._aliases);
+          out = entries.length ? entries.map(([k, v]) => `alias ${k}='${v}'`).join("\n") : "";
+          break;
+        }
+        const joined = args.join(" ");
+        const m = joined.match(/^([A-Za-z_][\w.-]*)=(.*)$/);
+        if (!m) { out = "alias: usage : alias nom='commande'\nExemple : alias ll='ls -la'"; err = true; break; }
+        this._aliases[m[1]] = this._stripQuotes(m[2]);
+        this.state.alias = m[1];
+        out = "";
+        break;
+      }
+
+      case "unalias": {
+        const name = args[0];
+        if (!name) { out = "unalias: manque le nom de l'alias\nUsage : unalias NOM"; err = true; break; }
+        if (!this._aliases[name]) { out = `unalias: ${name}: alias introuvable`; err = true; break; }
+        delete this._aliases[name];
+        out = "";
+        break;
+      }
+
+      case "jobs": {
+        if (!this._jobs.length) { out = ""; break; }
+        out = this._jobs.map(j => `[${j.id}]+  ${j.done ? "Terminé" : "En cours"}              ${j.cmd} &`).join("\n");
+        break;
+      }
+
+      case "fg": {
+        if (!this._jobs.length) { out = "fg: aucun job en arrière-plan\n💡 Lance une commande avec « & » pour créer un job (ex: sleep 5 &)"; err = true; break; }
+        const spec = args[0] ? args[0].replace("%", "") : null;
+        const target = spec ? this._jobs.find(j => String(j.id) === spec) : this._jobs[this._jobs.length - 1];
+        if (!target) { out = `fg: %${spec}: job introuvable`; err = true; break; }
+        out = (target.output ? target.output + "\n" : "") + `${target.cmd}`;
+        this._jobs = this._jobs.filter(j => j !== target);
+        break;
+      }
+
+      case "xargs": {
+        let a = args.slice();
+        let n = null;
+        const nIdx = a.indexOf("-n");
+        if (nIdx >= 0) { n = parseInt(a[nIdx + 1], 10) || 1; a.splice(nIdx, 2); }
+        const tokens = (stdin || "").split(/\s+/).filter(Boolean);
+        if (!tokens.length) { out = ""; break; }
+        const baseCmd = a.length ? a : ["echo"];
+        const batches = [];
+        if (n) { for (let i = 0; i < tokens.length; i += n) batches.push(tokens.slice(i, i + n)); }
+        else batches.push(tokens);
+        const outs = [];
+        for (const b of batches) {
+          const r = this._exec([...baseCmd, ...b], "", true);
+          if (r.output) outs.push(r.output);
+        }
+        out = outs.join("\n");
+        break;
+      }
+
+      case "diff": {
+        const files = args.filter(a => !a.startsWith("-"));
+        if (files.length < 2) { out = "diff: il faut deux fichiers\nUsage : diff FICHIER1 FICHIER2"; err = true; break; }
+        const f1 = this._file(files[0]);
+        const f2 = this._file(files[1]);
+        if (!f1 || !f1.node) { out = `diff: ${files[0]}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!f2 || !f2.node) { out = `diff: ${files[1]}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        const l1 = (f1.node.content || "").split("\n");
+        const l2 = (f2.node.content || "").split("\n");
+        const max = Math.max(l1.length, l2.length);
+        const lines = [];
+        for (let i = 0; i < max; i++) {
+          const va = l1[i], vb = l2[i];
+          if (va === vb) continue;
+          if (va !== undefined && vb !== undefined) { lines.push(`${i + 1}c${i + 1}`, `< ${va}`, "---", `> ${vb}`); }
+          else if (va !== undefined) { lines.push(`${i + 1}d${i}`, `< ${va}`); }
+          else { lines.push(`${i + 1}a${i + 1}`, `> ${vb}`); }
+        }
+        out = lines.join("\n");
         break;
       }
 
@@ -1559,9 +1697,13 @@ class Terminal {
           "Fichiers     : cat, less, head, tail, touch, mkdir, cp, mv, rm, ln -s, chmod",
           "Texte        : grep [-invc], sort, uniq [-c], wc [-lwc], cut -d -f, tr, sed, awk",
           "Système      : ps aux, kill, whoami, id, df -h, du, free, uptime, uname -a, date",
-          "Environnement: echo $VAR, env, export VAR=x, history, hostname",
+          "Propriété    : chown user:groupe fichier, chgrp groupe fichier",
+          "Environnement: echo $VAR, env, export VAR=x, history, hostname, alias nom='cmd', unalias",
           "Réseau       : curl, ping",
           "Décodage     : base64 [-d], rot13, xxd -r -p",
+          "Comparaison  : diff fichier1 fichier2",
+          "Enchaînement : cmd | xargs [-n N] autre_cmd",
+          "Tâches de fond: cmd &, jobs, fg [%N]",
           "Aide         : man CMD, whatis CMD, help",
           "",
           "Pipes & redirections :  cmd1 | cmd2   ·   cmd > fichier   ·   cmd >> fichier (ajout)",
