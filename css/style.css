@@ -814,6 +814,7 @@ body::before {
 }
 #btn-hint:hover, #boss-hint:hover { border-color: var(--yellow); color: var(--yellow); }
 .cost { color: var(--red); font-size: 10px; }
+.cost.free { color: var(--green); }
 
 /* ── PAGE EXPLORER ──────────────────────────────────────────── */
 #page-explore { overflow: hidden; }

@@ -105,7 +105,7 @@ function addXP(amount) {
 
 let GAME = loadSave();
 let currentMission = null;
-let hintUsed = false;
+let hintLevel = 0; // 0 = rien révélé, 1 = tip, 2 = +syntaxe, 3 = +solution complète
 let cmdHistory = [];
 let histIdx = -1;
 
@@ -228,7 +228,7 @@ function renderSidebar() {
 function loadMission(m) {
   reviewMode = false;
   currentMission = m;
-  hintUsed = false;
+  resetHintUI();
   renderLesson(m.lesson);
   showView("lesson");
   renderSidebar();
@@ -275,7 +275,7 @@ function loadExercise() {
   $("mp-name").textContent   = m.name;
   $("mp-xp-tag").textContent = "+" + m.xp + " XP";
   $("mp-desc").innerHTML     = m.desc;
-  $("hint-text").style.display = "none";
+  resetHintUI();
   term.clear();
   term.loadFS(m.fs);
   $("prompt").textContent = term.promptStr();
@@ -317,12 +317,11 @@ function startReview() {
 function loadReviewItem() {
   const m = reviewQueue.shift();
   currentMission = m;
-  hintUsed = false;
+  resetHintUI();
   showView("exercise");
   $("mp-name").textContent   = "🔁 Révision — " + m.name;
   $("mp-xp-tag").textContent = "+10 XP";
   $("mp-desc").innerHTML     = m.desc;
-  $("hint-text").style.display = "none";
   term.clear();
   term.loadFS(m.fs);
   term.printInfo("🔁 RÉVISION (" + (reviewTotal - reviewQueue.length) + "/" + reviewTotal + ") — sans leçon, de mémoire !");
@@ -386,13 +385,42 @@ $("cmd-input").addEventListener("keydown", e => {
   else if (e.key==="ArrowUp") { e.preventDefault(); if(histIdx<cmdHistory.length-1){histIdx++;$("cmd-input").value=cmdHistory[histIdx]||"";} }
   else if (e.key==="ArrowDown") { e.preventDefault(); if(histIdx>0){histIdx--;$("cmd-input").value=cmdHistory[histIdx]||"";}else{histIdx=-1;$("cmd-input").value="";} }
 });
-$("btn-hint").addEventListener("click", () => {
-  if (!currentMission) return;
+const HINT_TIERS = [
+  { cost: 0, icon: "💡", label: "Indice",          costLabel: "gratuit", reveal: m => "💡 " + m.lesson.tip },
+  { cost: 3, icon: "🔍", label: "Indice précis",    costLabel: "−3 XP",   reveal: m => "🔍 Syntaxe : <code>" + m.lesson.syntax + "</code>" },
+  { cost: 5, icon: "✅", label: "Voir la solution", costLabel: "−5 XP",   reveal: m => "✅ Solution : <code>" + m.hint + "</code>" },
+];
+
+function renderHintButton() {
+  const btn = $("btn-hint");
+  if (!btn) return;
+  if (hintLevel >= HINT_TIERS.length) {
+    btn.disabled = true;
+    btn.innerHTML = "✅ Indices épuisés";
+    return;
+  }
+  btn.disabled = false;
+  const tier = HINT_TIERS[hintLevel];
+  const costClass = tier.cost === 0 ? "cost free" : "cost";
+  btn.innerHTML = tier.icon + " " + tier.label + ' <span class="' + costClass + '">' + tier.costLabel + "</span>";
+}
+
+function resetHintUI() {
+  hintLevel = 0;
   const ht = $("hint-text");
-  if (ht.style.display==="none"||!ht.style.display) {
-    ht.textContent="💡 "+currentMission.hint; ht.style.display="inline";
-    if (!hintUsed) { hintUsed=true; GAME.xp=Math.max(0,GAME.xp-5); persist(); updateXPBar(); }
-  } else { ht.style.display="none"; }
+  if (ht) { ht.innerHTML = ""; ht.style.display = "none"; }
+  renderHintButton();
+}
+
+$("btn-hint").addEventListener("click", () => {
+  if (!currentMission || hintLevel >= HINT_TIERS.length) return;
+  const tier = HINT_TIERS[hintLevel];
+  const ht = $("hint-text");
+  ht.innerHTML += (ht.innerHTML ? "<br>" : "") + tier.reveal(currentMission);
+  ht.style.display = "inline";
+  if (tier.cost > 0) { GAME.xp = Math.max(0, GAME.xp - tier.cost); persist(); updateXPBar(); }
+  hintLevel++;
+  renderHintButton();
 });
 
 // MODE EXPLORER
