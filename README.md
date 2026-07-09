@@ -43,6 +43,20 @@ XP, 8 rangs (Bleu → Légende), 15 badges, 17 objectifs transversaux, défi du 
 - Sauvegarde locale (localStorage) + export/import par code
 - Effets : Web Audio API, matrix rain, séquence de boot, particules, konami code 🎮
 
+## Tests
+
+Le simulateur de shell (`js/terminal.js`) a une suite de tests unitaires (Node, zéro dépendance) :
+
+```bash
+node tests/terminal.test.js
+```
+
+40 tests couvrant navigation/fichiers, pipes & redirections, jokers, variables & substitution
+de commande, scripting (`for`/`if`/`bash`), permissions (`chmod`/`chown`/`chgrp`), les utilitaires
+(`alias`, `xargs`, `diff`, jobs en arrière-plan), la simulation Git, et les cas limites (commande
+inconnue, fichier absent, `rm -rf /`). Si un test casse après une modification du terminal, c'est
+probablement une vraie régression à corriger avant de livrer.
+
 ## Structure du projet
 
 ```
@@ -63,5 +77,7 @@ LinuxDojo/
 │   ├── objectives.js / profile.js / quizzes.js
 │   ├── fx.js             effets visuels/sonores
 │   └── sw-register.js    enregistrement + bannière de mise à jour du SW
+├── tests/
+│   └── terminal.test.js  tests unitaires du parseur (node tests/terminal.test.js)
 └── icons/
 ```
