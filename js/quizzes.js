@@ -37,6 +37,12 @@ const QUIZZES = {
     { q: "Une boucle for se ferme par…", options: ["end", "fi", "done", "stop"], answer: 2 },
     { q: "Quelle condition teste si le fichier f existe ?", options: ["[ -d f ]", "[ -f f ]", "[ -x f ]", "[ f exists ]"], answer: 1 },
   ],
+  8: [
+    { q: "Quelle commande transforme un dossier en dépôt Git ?", options: ["git start", "git init", "git new", "git create"], answer: 1 },
+    { q: "Comment mettre TOUS les fichiers en scène avant un commit ?", options: ["git commit .", "git save .", "git add .", "git stage all"], answer: 2 },
+    { q: "À quoi sert « -m » dans git commit -m \"...\" ?", options: ["Mode silencieux", "Le message du commit", "Merge automatique", "Nombre de fichiers"], answer: 1 },
+    { q: "Quelle commande crée une branche ET bascule dessus en une fois ?", options: ["git branch -b nom", "git switch nom", "git checkout -b nom", "git new nom"], answer: 2 },
+  ],
 };
 
 const Quiz = {

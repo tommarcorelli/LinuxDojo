@@ -152,11 +152,12 @@ function buildCertificateCanvas(scale) {
   const xp   = (typeof GAME !== "undefined") ? GAME.xp : 0;
   const boss = (typeof bossKills === "function") ? bossKills() : 5;
   const miss = (typeof GAME !== "undefined" && GAME.completed) ? GAME.completed.size : 0;
+  const missTotal = (typeof ALL_MISSIONS !== "undefined") ? ALL_MISSIONS.length : 36;
   const stats = [
     ["RANG", rank.name],
     ["XP TOTAL", String(xp)],
     ["BOSS VAINCUS", boss + " / 5"],
-    ["MISSIONS", miss + " / 36"],
+    ["MISSIONS", miss + " / " + missTotal],
   ];
   const colW = 250, startX = W / 2 - (colW * stats.length) / 2 + colW / 2;
   stats.forEach((s, i) => {

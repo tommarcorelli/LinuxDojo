@@ -221,9 +221,32 @@ const GLOSSARY = [
     syntax:"bash script.sh    ou    ./script.sh",
     options:[["bash s.sh","exécute avec bash"],["./s.sh","exécute si +x (chmod)"],["cat s.sh","à lire AVANT de lancer !"]],
     examples:[["cat deploy.sh","lire le script"],["bash deploy.sh","l'exécuter"]] },
+
+  // ── Git ──
+  { cmd:"git init", cat:"Git", desc:"Transforme le dossier courant en dépôt Git (crée .git/).",
+    syntax:"git init", options:[],
+    examples:[["git init","à faire une seule fois, au début du projet"]] },
+  { cmd:"git status", cat:"Git", desc:"Affiche l'état du dépôt : fichiers en scène, non suivis, branche active.",
+    syntax:"git status", options:[],
+    examples:[["git status","à taper à tout moment, sans risque"]] },
+  { cmd:"git add", cat:"Git", desc:"Met des fichiers « en scène » (staging), prêts pour le prochain commit.",
+    syntax:"git add fichier    ·    git add .",
+    options:[["git add f","un seul fichier"],["git add .","tous les fichiers du dossier"]],
+    examples:[["git add app.py","préparer un fichier"],["git add .","tout préparer d'un coup"]] },
+  { cmd:"git commit", cat:"Git", desc:"Enregistre un instantané permanent des fichiers en scène.",
+    syntax:'git commit -m "message"',
+    options:[["-m \"...\"","message obligatoire décrivant le changement"]],
+    examples:[['git commit -m "fix bug login"',"valider avec un message clair"]] },
+  { cmd:"git log", cat:"Git", desc:"Affiche l'historique des commits (hash, auteur, message).",
+    syntax:"git log", options:[],
+    examples:[["git log","du commit le plus récent au plus ancien"]] },
+  { cmd:"git branch / checkout", cat:"Git", desc:"Liste, crée ou change de branche de travail.",
+    syntax:"git branch [nom]    ·    git checkout [-b] nom",
+    options:[["git branch","liste les branches (* = active)"],["git branch nom","crée SANS y basculer"],["git checkout nom","bascule sur une branche existante"],["git checkout -b nom","crée ET bascule en une commande"]],
+    examples:[["git checkout -b feature-x","nouvelle branche de travail"],["git branch","voir où on en est"]] },
 ];
 
-const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage","Scripting","Aide"];
+const GLOSSARY_CATS = ["Tout","Navigation","Fichiers","Recherche","Permissions & Système","Réseau & Archives","Texte & Décodage","Scripting","Git","Aide"];
 
 let glossaryFilter = "Tout";
 let glossarySearch = "";

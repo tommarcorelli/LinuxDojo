@@ -1324,6 +1324,193 @@ const CHAPTERS = [
         explanation: "Tu viens d'exécuter un vrai script d'automatisation : il a bouclé sur trois services et les a « déployés » tout seul. Variables, boucles, conditions, scripts — tu as maintenant les outils pour transformer n'importe quelle corvée répétitive en une seule commande. Bienvenue chez les vrais admins. 🤖"
       }
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 8,
+    title: "🌱 Scénario 8 — Versionner avec Git",
+    scenario: "Le projet grossit, l'équipe s'agrandit. Il est temps d'arrêter d'envoyer des fichiers par email et d'apprendre l'outil que tout développeur utilise au quotidien : Git. Historique, sauvegardes, branches — plus jamais tu ne perdras une ligne de code.",
+    missions: [
+
+      {
+        id: 43,
+        name: "Étape 1 — Initialiser un dépôt",
+        cmd: "git init",
+        xp: 40,
+        lesson: {
+          title: "<code>git init</code> — Créer un dépôt Git",
+          intro: "Git suit l'historique d'un dossier. Avant de pouvoir enregistrer quoi que ce soit, il faut transformer ce dossier en <strong>dépôt Git</strong> (un « repo »). Ça crée un sous-dossier caché <code>.git/</code> qui contiendra tout l'historique — mais tes fichiers, eux, ne bougent pas.",
+          syntax: "git init",
+          options: [
+            { flag: "git init",  desc: "Initialise un dépôt dans le dossier courant" },
+            { flag: ".git/",     desc: "Le dossier caché créé (visible avec ls -a)" },
+          ],
+          examples: [
+            { cmd: "git init",  comment: "# → Dépôt Git vide initialisé dans .../.git/" },
+            { cmd: "ls -a",     comment: "# le dossier .git apparaît" },
+          ],
+          tip: "On ne fait `git init` qu'UNE seule fois par projet, au tout début. Pas besoin de le refaire à chaque commit."
+        },
+        desc: "Transforme ce dossier en dépôt Git avec <code>git init</code>.",
+        fs: {
+          "app.py":    { type: "file", content: "print('hello dojo')" },
+          "readme.md": { type: "file", content: "# Mon projet" },
+        },
+        hint: "git init",
+        check: (out, s) => !!s.gitInit,
+        explanation: "Le dossier est maintenant un dépôt Git : Git peut suivre chaque modification à partir de maintenant. Rien n'est encore enregistré — juste le suivi qui vient de démarrer. Prochaine étape : lui dire QUOI suivre."
+      },
+
+      {
+        id: 44,
+        name: "Étape 2 — Mettre en scène (add)",
+        cmd: "git add",
+        xp: 40,
+        lesson: {
+          title: "<code>git add</code> — Ajouter à l'index (staging)",
+          intro: "Git ne sauvegarde pas tout automatiquement. Tu choisis explicitement quels fichiers seront inclus dans la prochaine sauvegarde grâce à <code>git add</code> — c'est la « zone de staging ». <code>git status</code> te montre en permanence ce qui est prêt et ce qui ne l'est pas.",
+          syntax: "git add fichier      ·      git add .",
+          options: [
+            { flag: "git add app.py", desc: "Met UN fichier en scène" },
+            { flag: "git add .",      desc: "Met TOUS les fichiers du dossier en scène" },
+            { flag: "git status",     desc: "Affiche ce qui est en scène / non suivi" },
+          ],
+          examples: [
+            { cmd: "git status",     comment: "# voir l'état avant" },
+            { cmd: "git add app.py", comment: "# mettre app.py en scène" },
+            { cmd: "git status",     comment: "# app.py apparaît en vert" },
+          ],
+          tip: "`git add .` est pratique mais dangereux sur un vrai projet : relis toujours `git status` avant, pour ne pas ajouter un fichier secret par erreur."
+        },
+        desc: "Vérifie l'état du dépôt avec <code>git status</code>, puis mets <strong>tous les fichiers</strong> en scène avec <code>git add .</code>.",
+        fs: {
+          "app.py":    { type: "file", content: "print('hello dojo')" },
+          "readme.md": { type: "file", content: "# Mon projet" },
+        },
+        hint: "git init && git add .",
+        check: (out, s) => Array.isArray(s.gitAdd) && s.gitAdd.length >= 2,
+        explanation: "Tes fichiers sont maintenant « en scène » (staged) : prêts à être enregistrés dans l'historique au prochain commit. Rien n'est encore définitif — tu peux encore ajouter ou retirer des fichiers avant de valider."
+      },
+
+      {
+        id: 45,
+        name: "Étape 3 — Valider (commit)",
+        cmd: "git commit -m",
+        xp: 50,
+        lesson: {
+          title: "<code>git commit</code> — Enregistrer un instantané",
+          intro: "Un <strong>commit</strong>, c'est une photo de ton projet à un instant T, accompagnée d'un message qui explique ce qui a changé. Chaque commit reste pour toujours dans l'historique : tu peux toujours revenir en arrière. Le message (<code>-m</code>) doit être clair — c'est ce que toute l'équipe lira.",
+          syntax: 'git commit -m "message clair"',
+          options: [
+            { flag: "-m \"...\"", desc: "Le message du commit (obligatoire ici)" },
+            { flag: "git log",   desc: "Pour revoir l'historique après" },
+          ],
+          examples: [
+            { cmd: 'git commit -m "premiere version"', comment: "# enregistre ce qui est en scène" },
+            { cmd: "git log",                            comment: "# vérifier que le commit existe" },
+          ],
+          tip: "Un bon message de commit décrit le POURQUOI, pas juste le quoi : `\"corrige le bug de connexion\"` vaut mieux que `\"fix\"`."
+        },
+        desc: "Valide les fichiers mis en scène avec un commit dont le message est exactement <code>initial commit</code>.",
+        fs: {
+          "app.py":    { type: "file", content: "print('hello dojo')" },
+          "readme.md": { type: "file", content: "# Mon projet" },
+        },
+        hint: 'git init && git add . && git commit -m "initial commit"',
+        check: (out, s) => s.gitCommit === "initial commit",
+        explanation: "Premier commit posé ! Ce n'est plus une simple copie de fichiers : c'est un point de l'histoire de ton projet, daté, signé, et récupérable pour toujours. C'est la brique de base de tout travail en équipe."
+      },
+
+      {
+        id: 46,
+        name: "Étape 4 — Consulter l'historique",
+        cmd: "git log",
+        xp: 45,
+        lesson: {
+          title: "<code>git log</code> — L'historique des commits",
+          intro: "Après plusieurs commits, comment savoir ce qui a été fait, quand, et pourquoi ? <code>git log</code> affiche l'historique complet : identifiant unique (hash), auteur, et message de chaque commit, du plus récent au plus ancien.",
+          syntax: "git log",
+          options: [
+            { flag: "commit <hash>", desc: "Identifiant unique de la sauvegarde" },
+            { flag: "message",       desc: "Ce que tu as tapé après -m" },
+          ],
+          examples: [
+            { cmd: "git log", comment: "# liste tous les commits, du + récent au + ancien" },
+          ],
+          tip: "Le hash (ex: `71c89e0`) identifie un commit de façon unique — c'est ce que tu utiliserais pour y revenir plus tard."
+        },
+        desc: "Fais deux commits successifs (n'importe quels messages), puis consulte l'historique avec <code>git log</code>.",
+        fs: {
+          "app.py":    { type: "file", content: "print(1)" },
+          "readme.md": { type: "file", content: "doc" },
+        },
+        hint: 'git init && git add app.py && git commit -m "app" && git add readme.md && git commit -m "readme" && git log',
+        check: (out, s) => !!s.gitLog && s.gitCommitCount >= 2,
+        explanation: "Tu peux maintenant lire l'histoire complète du projet. Sur un vrai dépôt avec des centaines de commits, `git log` (avec ses options comme `--oneline`) est l'outil numéro 1 pour comprendre « qui a fait quoi, et quand »."
+      },
+
+      {
+        id: 47,
+        name: "Étape 5 — Travailler sur une branche",
+        cmd: "git checkout -b",
+        xp: 55,
+        lesson: {
+          title: "Les <code>branches</code> — travailler sans casser le principal",
+          intro: "Une branche est une ligne de développement parallèle. La branche <code>main</code> reste stable pendant que tu expérimentes ailleurs, sans risque. <code>git checkout -b nom</code> crée une nouvelle branche ET bascule dessus en une seule commande.",
+          syntax: "git branch nom          ·          git checkout -b nom",
+          options: [
+            { flag: "git branch",         desc: "Liste les branches (* = celle active)" },
+            { flag: "git branch nom",     desc: "Crée une branche SANS y basculer" },
+            { flag: "git checkout nom",   desc: "Bascule sur une branche existante" },
+            { flag: "git checkout -b nom", desc: "Crée ET bascule en une seule commande" },
+          ],
+          examples: [
+            { cmd: "git checkout -b feature-login", comment: "# nouvelle branche de travail" },
+            { cmd: "git branch",                     comment: "# feature-login est marquée *" },
+          ],
+          tip: "Convention d'équipe classique : `main` reste toujours stable et déployable ; tout nouveau travail se fait sur une branche dédiée."
+        },
+        desc: "Crée une nouvelle branche appelée <code>feature-login</code> et bascule dessus directement, en une seule commande.",
+        fs: {
+          "app.py": { type: "file", content: "print(1)" },
+        },
+        hint: "git init && git checkout -b feature-login",
+        check: (out, s) => s.gitCheckout === "feature-login",
+        explanation: "Tu es maintenant sur ta propre branche : tout commit que tu feras ici n'affectera pas <code>main</code> tant que tu ne l'y fusionnes pas. C'est ce qui permet à plusieurs personnes de travailler en parallèle sans se marcher dessus."
+      },
+
+      {
+        id: 48,
+        name: "Étape 6 — Le workflow complet",
+        cmd: "init → add → commit → status",
+        xp: 70,
+        lesson: {
+          title: "Le <code>workflow Git</code> de base, de bout en bout",
+          intro: "En vrai, tu enchaînes toujours les mêmes étapes : initialiser (une fois), modifier des fichiers, <code>add</code> pour choisir ce qui est prêt, <code>commit</code> pour valider, et <code>status</code> à tout moment pour vérifier où tu en es. C'est ce cycle que tu répéteras des milliers de fois dans ta carrière.",
+          syntax: "git init → git add → git commit -m \"...\" → git status",
+          options: [
+            { flag: "git status", desc: "Ton meilleur ami : à taper à chaque doute" },
+          ],
+          examples: [
+            { cmd: "git init",                    comment: "# une seule fois" },
+            { cmd: "git add .",                   comment: "# préparer" },
+            { cmd: 'git commit -m "message"',     comment: "# valider" },
+            { cmd: "git status",                  comment: "# vérifier que tout est propre" },
+          ],
+          tip: "Si `git status` dit « rien à valider, la copie de travail est propre », tout ton travail est en sécurité dans l'historique."
+        },
+        desc: "Initialise le dépôt, ajoute <strong>tous</strong> les fichiers, commit avec le message <code>mission finale</code>, puis termine par un <code>git status</code> qui doit être propre.",
+        fs: {
+          "app.py":    { type: "file", content: "print(1)" },
+          "readme.md": { type: "file", content: "doc" },
+          "config.yml":{ type: "file", content: "debug: false" },
+        },
+        hint: 'git init && git add . && git commit -m "mission finale" && git status',
+        check: (out, s) => s.gitCommit === "mission finale" && !!s.gitStatus && /propre/.test(out),
+        explanation: "Tu maîtrises maintenant le cycle Git de base — celui que des millions de développeurs utilisent chaque jour, de la plus petite startup aux plus gros projets open source. Prochaine étape naturelle une fois sur le terrain : <code>git push</code> vers un dépôt distant comme GitHub, pour partager ton travail avec une équipe. 🌱"
+      }
+    ]
   }
 ];
 

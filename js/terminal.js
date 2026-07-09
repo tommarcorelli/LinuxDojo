@@ -33,6 +33,7 @@ class Terminal {
     this._aliases = {}; // alias définis par l'utilisateur (alias ll='ls -la')
     this._jobs = [];    // jobs lancés en arrière-plan (cmd &)
     this._jobCounter = 0;
+    this._git = null;   // dépôt git simulé (null tant que 'git init' n'a pas été fait)
   }
 
   // Charge le filesystem d'une mission.
@@ -61,6 +62,7 @@ class Terminal {
     this._aliases = {};
     this._jobs = [];
     this._jobCounter = 0;
+    this._git = null;
   }
 
   /* ── Chemins ───────────────────────────────────────────────── */
@@ -221,7 +223,7 @@ class Terminal {
     }
 
     // Commandes connues proches
-    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping"];
+    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
       return `${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`;
@@ -251,7 +253,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -994,6 +996,116 @@ class Terminal {
         break;
       }
 
+      case "git": {
+        const sub = args[0];
+        if (!sub) {
+          out = "usage: git <commande> [<args>]\n\nCommandes courantes :\n   init       Crée un dépôt Git vide\n   status     Affiche l'état du dépôt\n   add        Ajoute des fichiers à l'index (staging)\n   commit     Enregistre les modifications\n   log        Affiche l'historique des commits\n   branch     Liste ou crée des branches\n   checkout   Change de branche";
+          err = true; break;
+        }
+        if (sub !== "init" && !this._git) {
+          out = "fatal: pas un dépôt git (ni aucun des dossiers parents) : .git\n💡 Lance d'abord : git init";
+          err = true; break;
+        }
+
+        if (sub === "init") {
+          this._git = { branch: "main", branches: ["main"], staged: new Set(), committed: new Set(), log: [] };
+          const abs = this._resolve(".git");
+          this.fs[abs] = { type: "dir" };
+          this._ensureParents(abs);
+          this.state.gitInit = true;
+          out = `Dépôt Git vide initialisé dans ${this.cwd}/.git/`;
+          break;
+        }
+
+        if (sub === "status") {
+          const allFiles = Object.keys(this.fs)
+            .filter(k => k.startsWith(this.cwd + "/") && !this._isDir(k) && !k.includes("/.git"))
+            .map(k => k.slice(this.cwd.length + 1));
+          const staged = [...this._git.staged];
+          const untracked = allFiles.filter(f => !this._git.committed.has(f) && !this._git.staged.has(f));
+          const L = [`Sur la branche ${this._git.branch}`];
+          if (!this._git.log.length) L.push("", "Aucun commit pour l'instant");
+          if (staged.length) L.push("", "Modifications qui seront validées :", ...staged.map(f => `\tnouveau fichier :   ${f}`));
+          if (untracked.length) L.push("", "Fichiers non suivis :", "  (utilisez « git add <fichier> » pour les inclure)", ...untracked.map(f => `\t${f}`));
+          if (!staged.length && !untracked.length) L.push("", "rien à valider, la copie de travail est propre");
+          this.state.gitStatus = true;
+          out = L.join("\n");
+          break;
+        }
+
+        if (sub === "add") {
+          const targets = args.slice(1);
+          if (!targets.length) { out = "Rien de spécifié, rien ajouté.\nUsage : git add <fichier>   ou   git add ."; err = true; break; }
+          if (targets.includes(".")) {
+            Object.keys(this.fs)
+              .filter(k => k.startsWith(this.cwd + "/") && !this._isDir(k) && !k.includes("/.git"))
+              .forEach(k => this._git.staged.add(k.slice(this.cwd.length + 1)));
+          } else {
+            for (const t of targets) {
+              const abs = this._resolve(t);
+              if (!this._exists(abs)) { out = `fatal: le chemin '${t}' ne correspond à aucun fichier connu de git`; err = true; break; }
+              this._git.staged.add(abs.slice(this.cwd.length + 1));
+            }
+          }
+          if (!err) out = "";
+          this.state.gitAdd = [...this._git.staged];
+          break;
+        }
+
+        if (sub === "commit") {
+          const mIdx = args.indexOf("-m");
+          const msg = mIdx >= 0 ? this._stripQuotes(args.slice(mIdx + 1).join(" ")) : null;
+          if (!msg) { out = "git commit: il faut un message\nUsage : git commit -m \"message du commit\""; err = true; break; }
+          if (!this._git.staged.size) { out = 'rien à valider (utilisez "git add" pour suivre des fichiers)'; err = true; break; }
+          const hash = Math.random().toString(16).slice(2, 9);
+          const files = [...this._git.staged];
+          files.forEach(f => this._git.committed.add(f));
+          this._git.log.unshift({ hash, msg, files, branch: this._git.branch });
+          this._git.staged.clear();
+          out = `[${this._git.branch} ${hash}] ${msg}\n ${files.length} fichier(s) modifié(s)`;
+          this.state.gitCommit = msg;
+          this.state.gitCommitCount = this._git.log.length;
+          break;
+        }
+
+        if (sub === "log") {
+          if (!this._git.log.length) { out = `fatal: votre branche actuelle '${this._git.branch}' ne contient encore aucun commit`; err = true; break; }
+          out = this._git.log.map(c => `commit ${c.hash}${"0".repeat(33)}\nAuteur : user <user@dojo>\n\n    ${c.msg}\n`).join("\n");
+          this.state.gitLog = true;
+          break;
+        }
+
+        if (sub === "branch") {
+          const name = args[1];
+          if (!name) { out = this._git.branches.map(b => (b === this._git.branch ? "* " : "  ") + b).join("\n"); break; }
+          if (this._git.branches.includes(name)) { out = `fatal: une branche nommée '${name}' existe déjà`; err = true; break; }
+          this._git.branches.push(name);
+          this.state.gitBranch = name;
+          out = "";
+          break;
+        }
+
+        if (sub === "checkout") {
+          const create = args[1] === "-b";
+          const name = create ? args[2] : args[1];
+          if (!name) { out = "usage: git checkout <branche>\n       git checkout -b <nouvelle-branche>"; err = true; break; }
+          if (create) {
+            if (this._git.branches.includes(name)) { out = `fatal: une branche nommée '${name}' existe déjà`; err = true; break; }
+            this._git.branches.push(name);
+          } else if (!this._git.branches.includes(name)) {
+            out = `error: pathspec '${name}' ne correspond à aucun fichier connu de git`; err = true; break;
+          }
+          this._git.branch = name;
+          this.state.gitCheckout = name;
+          out = create ? `Basculement sur la nouvelle branche '${name}'` : `Basculement sur la branche '${name}'`;
+          break;
+        }
+
+        out = `git: '${sub}' n'est pas une commande git. Voir 'git --help'.`;
+        err = true;
+        break;
+      }
+
       case "alias": {
         if (!args.length) {
           const entries = Object.entries(this._aliases);
@@ -1710,6 +1822,7 @@ class Terminal {
           "Jokers :  cat *.txt  ·  rm *.log  ·  ls logs/*.log",
           "Chemins RÉELS : cd logs/2024 · cd .. · cd / · cd ~ · cat /etc/hostname · find /var -name '*.log'",
           "Scripting :  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
+          "Git :  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b nom",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
           "",
           "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)"
