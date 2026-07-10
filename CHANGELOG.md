@@ -6,6 +6,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Défi du jour partageable façon Wordle : une fois le défi résolu, un bouton « Partager »
+  copie dans le presse-papier une grille 🟥/🟩 (nombre de tentatives), le numéro de défi
+  du jour, la série 🔥 et l'XP gagné
 - Nouveau boss : **Le Gardien des Serrures** (🔐) — 5 phases sur le thème des permissions
   (`ls -l`, `chmod`, `chown`), inséré avant le Sensei. Le Sensei exige désormais 5 boss
   vaincus (au lieu de 4). Tous les compteurs "5 boss" du site (README, page d'accueil,

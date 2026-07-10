@@ -50,8 +50,12 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       unitaires dédiés
 - [ ] **Mode "Expert"** — missions plus difficiles sans indices, pour les joueurs qui ont
       fini les 48 missions de base
-- [ ] **Défi du jour partageable** (façon Wordle : grille de résultat copiable) — bon levier
-      de viralité
+- [x] **Défi du jour partageable** (façon Wordle : grille de résultat copiable) — un bouton
+      « Partager » apparaît une fois le défi réussi (ou en le rouvrant le même jour) : copie
+      dans le presse-papier un texte façon Wordle (numéro de défi croissant, grille 🟥/🟩 selon
+      le nombre de tentatives, série 🔥 si ≥2 jours, XP gagné, lien du site). Rétrocompatible
+      avec les sauvegardes existantes (pas de bouton si l'ancien format ne contient pas les
+      nouvelles données).
 - [x] **Plus de boss fights** — 6ᵉ combat ajouté : **Le Gardien des Serrures** (🔐, 5 phases,
       thème permissions `ls -l` / `chmod` / `chown`, inédit dans la Salle des Boss). Sensei
       exige désormais d'avoir vaincu les 5 boss réguliers (au lieu de 4)

@@ -2310,6 +2310,13 @@ body.theme-vantablack {
   background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35);
   color: var(--green-li); font-size: 13px; text-align: center;
 }
+.daily-share {
+  margin-top: 10px; padding: 12px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.daily-share-grid { font-size: 20px; letter-spacing: 3px; }
+.daily-share #daily-share-btn { font-size: 12px; padding: 7px 14px; }
 
 /* ═══ BOSS — RESPONSIVE MOBILE ══════════════════════════════ */
 @media (max-width: 768px) {

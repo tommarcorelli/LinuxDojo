@@ -123,12 +123,18 @@ function _fmtKey(d) {
 }
 function _todayKey() { return _fmtKey(new Date()); }
 function _yesterdayKey() { const d = new Date(); d.setDate(d.getDate() - 1); return _fmtKey(d); }
+function _daysSinceRef() {
+  const d = new Date(); const ref = new Date(2020,0,1);
+  return Math.floor((d - ref) / 86400000);
+}
 function _dayIndex() {
   // Index déterministe basé sur le nombre de jours depuis 2020-01-01
-  const d = new Date(); const ref = new Date(2020,0,1);
-  const days = Math.floor((d - ref) / 86400000);
+  const days = _daysSinceRef();
   return ((days % DAILY_POOL.length) + DAILY_POOL.length) % DAILY_POOL.length;
 }
+// Numéro de défi façon Wordle : croît chaque jour, indépendant de la taille du pool
+// (le pool boucle, mais le numéro affiché continue toujours d'avancer)
+function _dayNumber() { return _daysSinceRef() + 1; }
 function _loadDaily() {
   try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || {}; } catch { return {}; }
 }
@@ -178,6 +184,7 @@ function updateDailyBanner() {
 
 // État de la modale
 let _dailyTerm = null;
+let _dailyAttempts = 0;  // tentatives ratées depuis l'ouverture (remis à zéro à chaque ouverture)
 
 function openDaily() {
   const idx = _dayIndex();
@@ -191,7 +198,8 @@ function openDaily() {
   document.getElementById("daily-reward").textContent = alreadyDone ? "✓ Terminé aujourd'hui" : "+50 XP bonus";
   document.getElementById("daily-title").textContent = ch.title;
   document.getElementById("daily-desc").innerHTML = ch.desc + (alreadyDone ? '<br><span style="color:var(--green-li);font-size:12px">Tu peux le refaire pour t\'entraîner (sans récompense).</span>' : "");
-  document.getElementById("daily-status").innerHTML = "";
+  document.getElementById("daily-status").innerHTML = alreadyDone ? _dailyShareBlock(state) : "";
+  _dailyAttempts = 0;
 
   // Init terminal si pas déjà fait
   const termEl = document.getElementById("daily-terminal");
@@ -233,7 +241,7 @@ function _dailyRun() {
 
   let ok = false;
   try { ok = ch.check(out.toLowerCase(), _dailyTerm.state); } catch(e) {}
-  if (!ok) return;
+  if (!ok) { _dailyAttempts++; return; }
 
   const state = _loadDaily();
   const today = _todayKey();
@@ -243,21 +251,65 @@ function _dailyRun() {
     // Mise à jour de la série : +1 si le dernier défi datait d'hier, sinon on repart à 1
     const streak = (state.date === _yesterdayKey()) ? (state.streak || 0) + 1 : 1;
     const best   = Math.max(state.best || 0, streak);
-    _saveDaily({ date: today, done: true, idx, streak, best });
+    const attempts = _dailyAttempts + 1;  // tentatives ratées + le coup gagnant
 
     const streakBonus = Math.min((streak - 1) * 5, 50);   // +5 XP/jour de série, plafonné à +50
     const gain = 50 + streakBonus;
+    _saveDaily({ date: today, done: true, idx, streak, best, attempts, gain, dayNumber: _dayNumber() });
+
     if (typeof addXP === "function") addXP(gain);
     if (typeof SFX !== "undefined") SFX.success();
     if (typeof burstParticles === "function") burstParticles(window.innerWidth/2, window.innerHeight*0.35);
     _dailyTerm.printOk("✅ Défi du jour réussi ! +" + gain + " XP" + (streakBonus ? "  (série 🔥" + streak + " → +" + streakBonus + " bonus)" : " bonus"));
     document.getElementById("daily-status").innerHTML =
-      '<div class="daily-success">🎉 Bravo ! ' + (streak >= 2 ? "Série de 🔥" + streak + " jours ! " : "") + 'Reviens demain pour la continuer.</div>';
+      '<div class="daily-success">🎉 Bravo ! ' + (streak >= 2 ? "Série de 🔥" + streak + " jours ! " : "") + 'Reviens demain pour la continuer.</div>' +
+      _dailyShareBlock(_loadDaily());
     if (typeof showAchievement === "function")
       showAchievement(streak >= 2 ? "🔥" : "📅", streak >= 2 ? "Série de " + streak + " jours" : "Défi du jour", "+" + gain + " XP");
     updateDailyBanner();
   } else {
     _dailyTerm.printOk("✅ Correct ! (déjà validé aujourd'hui)");
+  }
+}
+
+// ── Grille partageable façon Wordle ─────────────────────────
+// Construit une chaîne de blocs 🟥/🟩 représentant le nombre de tentatives
+// (plafonné visuellement à 5 échecs affichés, au-delà on résume avec un chiffre)
+function _dailyShareGrid(attempts) {
+  const fails = Math.max(0, (attempts || 1) - 1);
+  if (fails <= 5) return "🟥".repeat(fails) + "🟩";
+  return "🟥×" + fails + " 🟩";
+}
+
+function _dailyShareText(state) {
+  const grid = _dailyShareGrid(state.attempts);
+  const lines = [
+    "LinuxDojo — Défi #" + (state.dayNumber || _dayNumber()),
+    grid,
+  ];
+  if ((state.streak || 0) >= 2) lines.push("🔥 Série de " + state.streak + " jours");
+  lines.push("+" + (state.gain || 50) + " XP");
+  lines.push("https://tommarcorelli.github.io/LinuxDojo/");
+  return lines.join("\n");
+}
+
+function _dailyShareBlock(state) {
+  if (!state || !state.attempts) return "";
+  return '<div class="daily-share">' +
+    '<div class="daily-share-grid">' + _dailyShareGrid(state.attempts) + '</div>' +
+    '<button id="daily-share-btn" class="btn-ghost" type="button">📋 Partager mon résultat</button>' +
+    '</div>';
+}
+
+function shareDailyResult() {
+  const state = _loadDaily();
+  if (!state || !state.attempts) return;
+  const text = _dailyShareText(state);
+  const done = () => { if (typeof showToast === "function") showToast("📋 Résultat copié — colle-le où tu veux !"); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => prompt("Copie ton résultat :", text));
+  } else {
+    prompt("Copie ton résultat :", text);
   }
 }
 
@@ -274,5 +326,6 @@ function initDailyModal() {
   close.addEventListener("click", () => document.getElementById("modal-daily").classList.remove("open"));
   document.getElementById("modal-daily").addEventListener("click", e => {
     if (e.target.id === "modal-daily") document.getElementById("modal-daily").classList.remove("open");
+    else if (e.target.id === "daily-share-btn") shareDailyResult();
   });
 }
