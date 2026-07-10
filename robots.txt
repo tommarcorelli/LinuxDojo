@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tommarcorelli.github.io/LinuxDojo/sitemap.xml

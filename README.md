@@ -64,6 +64,15 @@ LinuxDojo/
 ├── index.html          point d'entrée
 ├── manifest.json        config PWA
 ├── sw.js                 service worker (reste à la racine : scope global)
+├── LICENSE               MIT
+├── CONTRIBUTING.md       comment contribuer (commandes, missions, tests)
+├── CODE_OF_CONDUCT.md
+├── CHANGELOG.md
+├── ROADMAP.md            ligne de route du projet
+├── sitemap.xml / robots.txt
+├── .github/
+│   ├── workflows/tests.yml     CI : lance les tests à chaque push
+│   └── ISSUE_TEMPLATE/         templates bug / suggestion
 ├── css/
 │   └── style.css
 ├── js/
@@ -81,3 +90,8 @@ LinuxDojo/
 │   └── terminal.test.js  tests unitaires du parseur (node tests/terminal.test.js)
 └── icons/
 ```
+
+## Contribuer
+
+Voir [`CONTRIBUTING.md`](CONTRIBUTING.md) pour les détails techniques, et [`ROADMAP.md`](ROADMAP.md)
+pour la ligne de route et les idées déjà identifiées.

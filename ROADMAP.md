@@ -26,25 +26,23 @@ qui a été identifié comme piste d'amélioration y est consigné.
 
 Petites choses avec un bon rapport effort/valeur, à faire en premier.
 
-- [ ] **`LICENSE`** — le repo est public sans licence explicite, ce qui signifie légalement
-      "tous droits réservés" par défaut : personne ne peut légalement forker/réutiliser le
-      code même si c'était l'intention. À trancher : MIT (permissif) ou autre.
-- [ ] **`CONTRIBUTING.md` + templates d'issues GitHub** — cadre pour les contributions externes
-      (comment lancer les tests, convention de code, comment proposer une mission)
-- [ ] **`CHANGELOG.md`** — historique des versions/évolutions, utile dès que le projet a des
-      contributeurs externes ou une communauté qui suit les nouveautés
-- [ ] **`CODE_OF_CONDUCT.md`** — standard sur les projets open source communautaires
-- [ ] **`sitemap.xml` + `robots.txt`** — améliore le référencement Google, ~10 min de travail
-- [ ] **Audit contraste couleurs (WCAG AA)** — complément naturel du travail ARIA déjà fait,
-      pour les malvoyants (pas seulement les non-voyants)
-- [ ] **Mode daltonien** — vérifier que les couleurs de statut (vert succès / rouge erreur)
-      restent distinguables, ajouter des icônes en complément de la couleur si besoin
-- [ ] **Favicon multi-tailles + `theme-color`** — vérifier que le PWA a toutes les tailles
-      d'icônes recommandées (192, 512, maskable) pour un score Lighthouse propre
-- [ ] **Focus trap clavier dans les modales** — le travail ARIA a ajouté `role="dialog"` mais
-      le focus clavier (Tab) n'est pas piégé à l'intérieur : un utilisateur au clavier peut
-      Tab-er "derrière" la modale ouverte. Vrai trou d'accessibilité identifié après coup,
-      pas corrigé lors du passage ARIA initial.
+- [x] **`LICENSE`** — MIT
+- [x] **`CONTRIBUTING.md` + templates d'issues GitHub**
+- [x] **`CHANGELOG.md`**
+- [x] **`CODE_OF_CONDUCT.md`**
+- [x] **`sitemap.xml` + `robots.txt`**
+- [x] **Audit contraste couleurs (WCAG AA)** — `--text-dim` échouait (~2.5x sur fond, il en
+      faut 4.5x pour du texte normal) sur les 4 thèmes qui redéfinissent le fond ; corrigé
+      (`#475569` → `#828b99`, 4.6x minimum garanti sur tous les thèmes)
+- [x] **Mode daltonien** — les erreurs shell (`.t-err`) ne reposaient que sur la couleur
+      rouge, sans autre indice ; ajout d'un marqueur `✗`/`⚠` (CSS `::before`, zéro risque
+      pour les tests). Les messages de succès avaient déjà des emoji, rien à faire dessus.
+- [x] **Favicon multi-tailles + `theme-color`** — déjà en place (audit confirmé, aucun
+      changement nécessaire)
+- [x] **Focus trap clavier dans les modales** — implémenté de façon générique (un seul
+      `MutationObserver` dans `game.js`, s'applique automatiquement aux 4 modales sans
+      toucher leur code d'ouverture respectif) : Tab reste piégé dans la modale ouverte,
+      Echap la ferme, le focus revient à l'élément d'origine à la fermeture
 
 ## 📚 Phase 2 — Contenu
 

@@ -36,7 +36,7 @@
   /* Texte */
   --text:      #e2e8f0;
   --text-md:   #94a3b8;
-  --text-dim:  #475569;
+  --text-dim:  #828b99;
 
   /* Gradients */
   --grad-main: linear-gradient(135deg, #7c3aed 0%, #3b82f6 50%, #06b6d4 100%);
@@ -711,9 +711,11 @@ body::before {
 .t-cmd   { color: var(--text); }
 .t-out   { color: var(--text-md); }
 .t-err   { color: var(--red); }
+.t-err::before  { content: "✗ "; opacity: .85; }
 .t-ok    { color: var(--green-li); }
 .t-info  { color: var(--blue-li); }
 .t-warn  { color: var(--yellow); }
+.t-warn::before { content: "⚠ "; opacity: .85; }
 .t-sep   { color: var(--text-dim); user-select: none; }
 .t-story { color: var(--purple-li); font-style: italic; }
 

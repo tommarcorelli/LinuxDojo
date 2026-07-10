@@ -530,6 +530,43 @@ function initSandbox() {
 // Modales
 function openModal(id)  { $(id).classList.add("open"); }
 function closeModal(id) { $(id).classList.remove("open"); }
+
+// Focus trap accessible : s'applique automatiquement à TOUTE modale ouverte
+// (peu importe le fichier qui bascule la classe "open"), pour qu'un utilisateur
+// au clavier ne puisse pas Tab-er "derrière" une boîte de dialogue ouverte.
+(function setupModalFocusTrap() {
+  const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  let activeModal = null;
+  let lastFocused = null;
+
+  function trapKeydown(e) {
+    if (!activeModal) return;
+    if (e.key === "Escape") { activeModal.classList.remove("open"); return; }
+    if (e.key !== "Tab") return;
+    const focusables = Array.from(activeModal.querySelectorAll(FOCUSABLE)).filter(el => el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  document.querySelectorAll(".modal").forEach(modal => {
+    new MutationObserver(() => {
+      if (modal.classList.contains("open")) {
+        activeModal = modal;
+        lastFocused = document.activeElement;
+        const focusables = modal.querySelectorAll(FOCUSABLE);
+        (focusables[0] || modal).focus();
+        document.addEventListener("keydown", trapKeydown, true);
+      } else if (activeModal === modal) {
+        activeModal = null;
+        document.removeEventListener("keydown", trapKeydown, true);
+        if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+      }
+    }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+  });
+})();
+
 $("win-close").addEventListener("click", () => closeModal("modal-win"));
 $("modal-win").addEventListener("click", e => { if(e.target===$("modal-win")) closeModal("modal-win"); });
 $("quiz-close").addEventListener("click", () => closeModal("modal-quiz"));
