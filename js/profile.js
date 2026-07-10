@@ -126,8 +126,9 @@ function renderProfile() {
     BADGES.forEach(b => {
       const unlocked = GAME.badges.includes(b.id);
       const el = document.createElement("div");
-      el.className = "profile-badge " + (unlocked ? "unlocked" : "locked");
-      el.innerHTML = `<div class="profile-badge-icon">${unlocked ? b.label.split(" ")[0] : "🔒"}</div><div class="profile-badge-name">${b.label.split(" ").slice(1).join(" ")}</div>`;
+      el.className = "profile-badge " + (unlocked ? "unlocked" : "locked") + (b.secret ? " profile-badge-secret" : "");
+      const name = unlocked ? b.label.split(" ").slice(1).join(" ") : (b.secret ? "???" : b.label.split(" ").slice(1).join(" "));
+      el.innerHTML = `<div class="profile-badge-icon">${unlocked ? b.label.split(" ")[0] : "🔒"}</div><div class="profile-badge-name">${name}</div>`;
       badgesEl.appendChild(el);
     });
   }

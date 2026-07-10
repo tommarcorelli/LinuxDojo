@@ -194,6 +194,7 @@ class EasterEggs {
   _activate() {
     showAchievement("🎮","KONAMI CODE","Code secret trouvé ! +500 XP");
     if (typeof addXP === "function") addXP(500);
+    if (typeof markSecret === "function") markSecret("konami");
     document.body.classList.add("rainbow-mode");
     SFX.levelup();
     setTimeout(()=>document.body.classList.remove("rainbow-mode"),8000);

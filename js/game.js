@@ -11,10 +11,11 @@ function loadSave() {
     s.quizzes   = new Set(s.quizzes || []);
     if (!s.reviewCounts) s.reviewCounts = {};
     if (!s.objectives)   s.objectives = [];
+    if (!s.secrets)      s.secrets = {};
     return s;
   } catch { return defaultSave(); }
 }
-function defaultSave() { return { xp: 0, completed: new Set(), badges: [], quizzes: new Set(), reviewCounts: {}, objectives: [] }; }
+function defaultSave() { return { xp: 0, completed: new Set(), badges: [], quizzes: new Set(), reviewCounts: {}, objectives: [], secrets: {} }; }
 function persist() {
   const s = { ...GAME, completed: [...GAME.completed], quizzes: [...GAME.quizzes] };
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
@@ -32,6 +33,17 @@ function bumpStat(cmd) {
   STATS.days[_dayKey()] = (STATS.days[_dayKey()] || 0) + 1;
   localStorage.setItem(STATS_KEY, JSON.stringify(STATS));
   if (typeof objectivesTick === "function") objectivesTick();
+  if (typeof checkBadges === "function" && typeof GAME !== "undefined") checkBadges();
+}
+
+// Marque un événement caché (déclencheur de badge secret) dans la sauvegarde
+function markSecret(key) {
+  if (typeof GAME === "undefined") return;
+  if (!GAME.secrets) GAME.secrets = {};
+  if (GAME.secrets[key]) return;
+  GAME.secrets[key] = true;
+  persist();
+  if (typeof checkBadges === "function") checkBadges();
 }
 
 // Boss vaincus (lus depuis la sauvegarde du mode Boss)
@@ -61,6 +73,13 @@ const BADGES = [
   { id: "boss1",       label: "⚔️ Tueur de Boss", cond: () => bossKills() >= 1 },
   { id: "boss4",       label: "🐉 Fléau des Monstres", cond: () => bossKills() >= 4 },
   { id: "blackbelt",   label: "🖤 Ceinture Noire", cond: () => bossHasKilled("sensei") },
+  // ── Secrets : découvrables uniquement en explorant, jamais indiqués dans une mission ──
+  { id: "cowsay",      label: "🐮 Chuchoteur de vaches", secret: true, cond: () => (STATS.cmd["cowsay"]||0) >= 1 },
+  { id: "sl",          label: "🚂 Machiniste distrait",  secret: true, cond: () => (STATS.cmd["sl"]||0) >= 1 },
+  { id: "fortune",     label: "🔮 Oracle du shell",      secret: true, cond: () => (STATS.cmd["fortune"]||0) >= 1 },
+  { id: "vim",         label: "🥋 Survivant de Vim",     secret: true, cond: () => (STATS.cmd["vim"]||0) >= 1 && ((STATS.cmd[":q!"]||0) >= 1 || (STATS.cmd[":wq"]||0) >= 1) },
+  { id: "konami",      label: "🎮 Code secret",          secret: true, cond: g => !!(g.secrets && g.secrets.konami) },
+  { id: "speedrun",    label: "⚡ Éclair",               secret: true, cond: g => !!(g.secrets && g.secrets.speedrun) },
 ];
 
 function checkBadges() {
@@ -106,6 +125,7 @@ function addXP(amount) {
 
 let GAME = loadSave();
 let currentMission = null;
+let exerciseStartedAt = null;
 let hintLevel = 0; // 0 = rien révélé, 1 = tip, 2 = +syntaxe, 3 = +solution complète
 let cmdHistory = [];
 let histIdx = -1;
@@ -277,6 +297,7 @@ function loadExercise() {
   $("mp-xp-tag").textContent = "+" + m.xp + " XP";
   $("mp-desc").innerHTML     = m.desc;
   resetHintUI();
+  exerciseStartedAt = Date.now();
   term.clear();
   term.loadFS(m.fs);
   $("prompt").textContent = term.promptStr();
@@ -354,6 +375,9 @@ function onReviewSuccess() {
 
 function onMissionSuccess(m) {
   GAME.completed.add(m.id);
+  if (exerciseStartedAt && Date.now() - exerciseStartedAt < 10000) {
+    if (typeof markSecret === "function") markSecret("speedrun");
+  }
   if (typeof SFX !== "undefined") SFX.success();
   burstParticles(window.innerWidth/2, window.innerHeight/2);
   addXP(m.xp);

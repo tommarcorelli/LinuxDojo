@@ -6,6 +6,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- 6 badges secrets, cachés (`???`) tant qu'ils ne sont pas débloqués : `cowsay`, `sl`,
+  `fortune`, survivre à `vim`, Konami code, terminer une mission en moins de 10s
 - Overlay raccourcis clavier : touche `?` (ou bouton ⌨️ dans la nav) pour afficher une
   modale récapitulant Tab, ↑/↓, Entrée, Échap ; désactivé automatiquement si le focus est
   dans un champ de saisie pour ne pas interférer avec la frappe

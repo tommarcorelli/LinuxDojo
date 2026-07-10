@@ -54,8 +54,10 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       de viralité
 - [ ] **Plus de boss fights / kata** — le contenu actuel (5 boss, 6 katas) peut être étendu
       une fois le rythme de sortie des scénarios calé
-- [ ] **Badges/succès secrets** — quelques badges cachés découvrables uniquement en explorant
-      (ex: taper un easter egg précis, finir une mission en moins de 10s...)
+- [x] **Badges/succès secrets** — 6 badges cachés (icône `???` tant qu'ils ne sont pas
+      débloqués) : taper `cowsay`, `sl`, `fortune`, survivre à `vim` (`:q!`/`:wq`), trouver
+      le Konami code, ou finir une mission en moins de 10 secondes. Système générique
+      (`markSecret()` + `STATS.cmd`) réutilisable pour de futurs secrets
 - [ ] **Mini-scénario Docker** — après Git, la suite logique côté outils modernes : `docker ps`,
       `docker run`, `docker build` simulés (reste dans l'esprit "simulateur", pas de vrai Docker)
 - [x] **Overlay "raccourcis clavier"** (touche `?`) — modale listant Tab, ↑/↓, Entrée, Échap,
