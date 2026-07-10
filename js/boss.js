@@ -255,6 +255,75 @@ const BOSS_FIGHTS = [
     ],
   },
 
+  /* ═══ BOSS 5 — LE GARDIEN DES SERRURES ══════════════════════ */
+  {
+    id: "gardien",
+    name: "Le Gardien des Serrures",
+    emoji: "🔐",
+    color: "#eab308",
+    tagline: "Chaque porte qu'il garde a une serrure. Certaines sont cassées.",
+    story: "Une statue de bronze veille sur la chambre du trésor. Elle ne laisse passer que ceux qui savent lire — et corriger — les permissions.",
+    hp: 110,
+    xp: 130,
+    taunts: ["Le Gardien resserre une serrure derrière toi !", "CLIC. Une porte se verrouille dans ton dos.", "Le Gardien grince : « Les droits ne se donnent pas, ils se méritent. »"],
+    winText: "La dernière serrure cède. Le Gardien s'incline et te laisse entrer : le trésor est à toi.",
+    phases: [
+      {
+        title: "Repérer la brèche",
+        desc: "Une porte du trésor a été laissée grande ouverte. Liste les fichiers <strong>avec leurs permissions</strong> pour trouver lequel est accessible à tous.",
+        hint: "ls -l",
+        timeLimit: 60,
+        fs: {
+          "tresor.key": { type:"file", perms:"-rw-------", content:"or et gemmes" },
+          "journal.txt": { type:"file", perms:"-rwxrwxrwx", content:"Le Gardien note tout ici..." },
+          "sceau.txt": { type:"file", perms:"-rw-r--r--", content:"sceau du gardien" },
+        },
+        check: (out) => /rwxrwxrwx/.test(out) && /journal\.txt/.test(out),
+      },
+      {
+        title: "Refermer la brèche",
+        desc: "<code>journal.txt</code> est ouvert à tous les vents. Restreins-le pour que <strong>seul le propriétaire</strong> puisse lire et écrire (<code>600</code>).",
+        hint: "chmod 600 journal.txt",
+        timeLimit: 75,
+        fs: {
+          "journal.txt": { type:"file", perms:"-rwxrwxrwx", content:"Le Gardien note tout ici..." },
+        },
+        check: (out, s) => s.chmod === "journal.txt",
+      },
+      {
+        title: "Démasquer l'imposteur",
+        desc: "Un voleur s'est fait passer pour le Gardien. Affiche les permissions <strong>et propriétaires</strong> pour trouver qui possède <code>relique.txt</code>.",
+        hint: "ls -l",
+        timeLimit: 75,
+        fs: {
+          "relique.txt": { type:"file", perms:"-rw-r--r--", owner:"voleur", group:"voleur", content:"une relique volée" },
+          "sceau.txt":   { type:"file", perms:"-rw-r--r--", owner:"gardien", group:"gardien", content:"sceau du gardien" },
+        },
+        check: (out) => /voleur/.test(out) && /relique\.txt/.test(out),
+      },
+      {
+        title: "Reprendre la relique",
+        desc: "Rends <code>relique.txt</code> au Gardien : change son propriétaire et son groupe pour <strong>gardien</strong>.",
+        hint: "chown gardien:gardien relique.txt",
+        timeLimit: 75,
+        fs: {
+          "relique.txt": { type:"file", perms:"-rw-r--r--", owner:"voleur", group:"voleur", content:"une relique volée" },
+        },
+        check: (out, s) => s.chown === "relique.txt",
+      },
+      {
+        title: "La porte finale",
+        desc: "Le mécanisme d'ouverture est dans <code>ouvrir.sh</code>, mais il n'est pas exécutable. Rends-le <strong>exécutable</strong> pour actionner la dernière serrure.",
+        hint: "chmod +x ouvrir.sh",
+        timeLimit: 90,
+        fs: {
+          "ouvrir.sh": { type:"file", perms:"-rw-r--r--", content:"#!/bin/bash\necho 'Porte ouverte'" },
+        },
+        check: (out, s) => s.chmod === "ouvrir.sh",
+      },
+    ],
+  },
+
   /* ═══ BOSS FINAL — L'EXAMEN DE LA CEINTURE NOIRE ════════════ */
   {
     id: "sensei",
@@ -265,7 +334,7 @@ const BOSS_FIGHTS = [
     story: "Le Sensei t'attend au sommet du dojo. Six épreuves éclair, tirées de tout ce que tu as appris. Réussis-les et repars avec la Ceinture Noire. 🖤",
     hp: 150,
     xp: 300,
-    requires: 4,   // nombre de boss à vaincre pour débloquer
+    requires: 5,   // nombre de boss à vaincre pour débloquer
     taunts: ["Le Sensei esquive sans même te regarder.", "« Trop lent. Recommence. »", "Le Sensei soupire, déçu."],
     winText: "Le Sensei s'incline. « Tu es prêt. » Il te tend la CEINTURE NOIRE du LinuxDojo. 🖤",
     phases: [

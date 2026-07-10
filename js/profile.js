@@ -89,7 +89,7 @@ function renderProfile() {
   if (rings) {
     const learnDone = GAME.completed.size;
     const learnTotal = (typeof CHAPTERS !== "undefined") ? CHAPTERS.flatMap(c => c.missions).length : 36;
-    const bossTotal = (typeof BOSS_FIGHTS !== "undefined") ? BOSS_FIGHTS.length : 5;
+    const bossTotal = (typeof BOSS_FIGHTS !== "undefined") ? BOSS_FIGHTS.length : 6;
     const bossDone  = (typeof bossKills === "function") ? bossKills() : 0;
     const data = [
       { label: "Apprendre",    done: learnDone, total: learnTotal, color: "#7c3aed", icon: "📖" },

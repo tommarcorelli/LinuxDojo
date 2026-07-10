@@ -6,6 +6,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Nouveau boss : **Le Gardien des Serrures** (🔐) — 5 phases sur le thème des permissions
+  (`ls -l`, `chmod`, `chown`), inséré avant le Sensei. Le Sensei exige désormais 5 boss
+  vaincus (au lieu de 4). Tous les compteurs "5 boss" du site (README, page d'accueil,
+  certificat, objectifs, profil) mis à jour en conséquence
 - 7ᵉ kata : **Git** (`init`, `status`, `add`, `commit`, `log`, `branch`, `checkout`) —
   aligné sur les commandes du scénario 8
 - 6 badges secrets, cachés (`???`) tant qu'ils ne sont pas débloqués : `cowsay`, `sl`,

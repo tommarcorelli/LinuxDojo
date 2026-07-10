@@ -52,8 +52,9 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       fini les 48 missions de base
 - [ ] **Défi du jour partageable** (façon Wordle : grille de résultat copiable) — bon levier
       de viralité
-- [ ] **Plus de boss fights** — le contenu actuel (5 boss) peut être étendu une fois le
-      rythme de sortie des scénarios calé
+- [x] **Plus de boss fights** — 6ᵉ combat ajouté : **Le Gardien des Serrures** (🔐, 5 phases,
+      thème permissions `ls -l` / `chmod` / `chown`, inédit dans la Salle des Boss). Sensei
+      exige désormais d'avoir vaincu les 5 boss réguliers (au lieu de 4)
 - [x] **Kata Git** — 7ᵉ kata ajouté (`git init/status/add/commit/log/branch/checkout`),
       pour muscler les réflexes sur le scénario 8 (Git) comme les autres chapitres
 - [x] **Badges/succès secrets** — 6 badges cachés (icône `???` tant qu'ils ne sont pas
