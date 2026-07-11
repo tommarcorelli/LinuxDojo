@@ -186,8 +186,20 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 
 ## 📈 Phase 4 — Croissance / communauté
 
-- [ ] **Analytics respectueux de la vie privée** (type Plausible/Umami, sans cookies) — pour
+- [x] **Analytics respectueux de la vie privée** (type Plausible/Umami, sans cookies) — pour
       savoir quelles missions bloquent le plus de joueurs, sans tracking intrusif
+      → Choix de **GoatCounter** : sans cookie, sans donnée perso, open-source, hébergé (rien
+      à opérer côté serveur), cohérent avec l'esprit « zéro compte » du jeu. Nouveau module
+      `js/analytics.js`, chargé en dernier et en asynchrone (n'impacte ni l'affichage ni le
+      hors-ligne). Garde-fous : **respecte Do Not Track / Global Privacy Control**, ne compte
+      pas en local (localhost / `file:`), et surtout **`config-gated`** — tant que la constante
+      `GC_CODE` est vide, le module ne charge rien et ne track rien (no-op total). Expose
+      `window.trackEvent(nom)` pour les évènements personnalisés à venir (mission échouée,
+      certificat obtenu…), déjà sûr à appeler partout (no-op si l'analytics est inactive).
+      **Activation restante (hors code) :** créer le compte gratuit sur goatcounter.com et
+      renseigner `GC_CODE`. SW bumpé v18 → v19 (précache du nouveau module).
+      *Prochaine étape :* câbler les évènements par mission pour répondre pleinement au
+      « quelles missions bloquent » (nécessite l'analytics activée pour être vérifiable).
 - [x] **Partage social des succès** — bouton "partager" sur le certificat et les badges
       (génère une image ou un lien préformaté pour Twitter/LinkedIn)
       → **Certificat** (`js/certificate.js`) : bouton « 📤 Partager » à côté du téléchargement.

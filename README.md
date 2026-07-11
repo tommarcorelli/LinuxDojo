@@ -48,6 +48,9 @@ XP, 8 rangs (Bleu → Légende), 15 badges, 17 objectifs transversaux, défi du 
 - Effets : Web Audio API, matrix rain, séquence de boot, particules, konami code 🎮
 - Build de minification optionnel avant déploiement (`npm run build` → `dist/`,
   ~28 % de poids JS/CSS en moins) — voir [`CONTRIBUTING.md`](CONTRIBUTING.md#build-minification-avant-déploiement)
+- Analytics respectueux de la vie privée (GoatCounter, `js/analytics.js`) : **sans cookie**,
+  sans donnée perso, respecte Do Not Track / GPC, ne compte pas en local. **Désactivé par
+  défaut** — aucun tracking tant que `GC_CODE` n'est pas renseigné (voir l'en-tête du fichier)
 
 ## Tests
 
@@ -91,6 +94,7 @@ LinuxDojo/
 │   ├── certificate.js    génération du certificat PNG
 │   ├── objectives.js / profile.js / quizzes.js
 │   ├── fx.js             effets visuels/sonores
+│   ├── analytics.js      analytics privacy-friendly (GoatCounter, off par défaut)
 │   └── sw-register.js    enregistrement + bannière de mise à jour du SW
 ├── tests/
 │   └── terminal.test.js  tests unitaires du parseur (node tests/terminal.test.js)
