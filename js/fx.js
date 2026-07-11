@@ -179,7 +179,82 @@ const RANKS = [
 function getRank(xp) { let r = RANKS[0]; for (const rank of RANKS) if (xp >= rank.min) r = rank; return r; }
 function getNextRank(xp) { for (const rank of RANKS) if (xp < rank.min) return rank; return null; }
 
-/* ── 9. KONAMI CODE ───────────────────────────────────────── */
+/* ── 10. RECHERCHE ARRIÈRE DANS L'HISTORIQUE (Ctrl+R, façon bash) ────── */
+// Réutilisable par n'importe quel terminal du dojo qui possède déjà un
+// historique de commandes (tableau du plus récent [0] au plus ancien).
+// Affiche l'état de la recherche dans le placeholder du champ (le champ
+// reste vide pendant la recherche, comme un vrai `(reverse-i-search)`).
+class ReverseSearch {
+  constructor(inputEl, getHistory) {
+    this.input = inputEl;
+    this.getHistory = getHistory;
+    this.active = false;
+    this.query = "";
+    this.matchIdx = -1;
+    this.savedValue = "";
+    this.savedPlaceholder = "";
+  }
+  _search(fromIdx) {
+    const hist = this.getHistory() || [];
+    if (!this.query) { this.matchIdx = hist.length ? 0 : -1; return hist[0] ?? null; }
+    const q = this.query.toLowerCase();
+    for (let i = Math.max(fromIdx, 0); i < hist.length; i++) {
+      if (hist[i].toLowerCase().includes(q)) { this.matchIdx = i; return hist[i]; }
+    }
+    this.matchIdx = -1;
+    return null;
+  }
+  _render(match) {
+    this.input.value = "";
+    this.input.placeholder = `(recherche inversée) \`${this.query}': ${match !== null ? match : "aucune correspondance"}`;
+  }
+  start() {
+    if (this.active) return;
+    this.active = true;
+    this.query = "";
+    this.savedValue = this.input.value;
+    this.savedPlaceholder = this.input.placeholder;
+    this._render(this._search(0));
+  }
+  _restore() {
+    this.active = false;
+    this.input.value = this.savedValue;
+    this.input.placeholder = this.savedPlaceholder;
+  }
+  // Traite une touche. Renvoie "run" si Entrée a validé un résultat (l'appelant doit
+  // exécuter la commande maintenant présente dans le champ), true si la touche a été
+  // consommée sans rien d'autre à faire, ou false si l'appelant doit la gérer normalement.
+  handleKey(e) {
+    const ctrlR = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r";
+    if (!this.active) {
+      if (ctrlR) { e.preventDefault(); this.start(); return true; }
+      return false;
+    }
+    if (ctrlR) { e.preventDefault(); this._render(this._search(this.matchIdx + 1)); return true; }
+    if (e.key === "Escape") { e.preventDefault(); this._restore(); return true; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const hist = this.getHistory() || [];
+      const match = this.matchIdx >= 0 ? hist[this.matchIdx] : null;
+      this.active = false;
+      this.input.placeholder = this.savedPlaceholder;
+      this.input.value = match || this.savedValue;
+      return "run";
+    }
+    if (e.key === "Backspace") { e.preventDefault(); this.query = this.query.slice(0, -1); this._render(this._search(0)); return true; }
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      this.query += e.key;
+      this._render(this._search(0));
+      return true;
+    }
+    // Toute autre touche (flèches, Tab...) annule la recherche et suit son cours normal
+    this._restore();
+    return false;
+  }
+}
+
+/* ── 11. KONAMI CODE ──────────────────────────────────────── */
 class EasterEggs {
   constructor() {
     this.konami = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];

@@ -23,6 +23,11 @@ qui a été identifié comme piste d'amélioration y est consigné.
   selon la date (Halloween 24/10→02/11, Noël 15/12→02/01), bannière dismissible sur
   l'accueil, et une commande cachée par événement (jamais révélée) débloquant un badge
   exclusif + 100 XP, ré-obtenable chaque année (`js/seasonal.js`)
+- **Recherche arrière dans l'historique** (`Ctrl+R` façon bash) — classe réutilisable
+  `ReverseSearch` (`js/fx.js`) câblée sur les 3 terminaux qui ont un historique de commandes
+  (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
+  précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
+  du champ, sans nouvel élément DOM
 
 ---
 
@@ -105,8 +110,6 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       notifié si une erreur JS survient chez un vrai joueur, plutôt que de ne jamais le savoir
 - [ ] **Compression/minification** — même sans build, un script simple de minification avant
       déploiement réduirait le poids total (actuellement chargé tel quel, ~200 Ko de JS)
-- [ ] **Recherche arrière dans l'historique** (`Ctrl+R` façon bash) — actuellement seulement
-      ↑/↓ séquentiel ; un vrai réflexe de terminal qui manque pour les joueurs déjà à l'aise
 
 ## 📈 Phase 4 — Croissance / communauté
 

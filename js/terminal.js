@@ -2021,7 +2021,7 @@ class Terminal {
           "Scripting :  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
           "Git :  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b nom",
           "Docker :  docker build -t nom . · docker images · docker run -d --name nom image · docker ps [-a] · docker logs nom · docker stop nom",
-          "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
+          "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · Ctrl+R recherche dans l'historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",
           "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)",

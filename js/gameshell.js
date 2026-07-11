@@ -235,7 +235,11 @@ class GameShell {
 
   _bindEvents() {
     this.runBtn.addEventListener("click", () => this._run());
+    this._rsearch = (typeof ReverseSearch !== "undefined") ? new ReverseSearch(this.inputEl, () => this.history) : null;
     this.inputEl.addEventListener("keydown", e => {
+      const rs = this._rsearch && this._rsearch.handleKey(e);
+      if (rs === "run") { this._run(); return; }
+      if (rs) return;
       if (e.key === "Enter") this._run();
       else if (e.key === "Tab") { e.preventDefault(); this._autocomplete(); }
       else if (e.key === "ArrowUp") { e.preventDefault(); if (this.histIdx < this.history.length-1) { this.histIdx++; this.inputEl.value = this.history[this.histIdx]||""; } }

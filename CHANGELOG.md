@@ -6,6 +6,9 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Recherche arrière dans l'historique (`Ctrl+R`, façon bash) sur les terminaux Apprendre,
+  Bac à sable et Exploration : tape pour filtrer l'historique, `Ctrl+R` pour remonter au
+  résultat précédent, `Entrée` pour lancer la commande trouvée, `Échap` pour annuler
 - Événements saisonniers : thème visuel + effet (flocons de neige / brume spectrale)
   appliqués automatiquement selon la date (Halloween du 24/10 au 02/11, Noël du 15/12 au
   02/01), avec bannière d'annonce dismissible sur l'accueil. Une commande cachée par

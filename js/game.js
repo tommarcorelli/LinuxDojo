@@ -448,7 +448,11 @@ function onMissionSuccess(m) {
 $("btn-go-exercise").addEventListener("click", () => { showView("exercise"); loadExercise(); });
 $("btn-back-lesson").addEventListener("click", () => { renderLesson(currentMission.lesson); showView("lesson"); });
 $("run-btn").addEventListener("click", () => { const v=$("cmd-input").value.trim(); if(v){runLearnCommand(v);$("cmd-input").value="";} });
+const cmdRSearch = (typeof ReverseSearch !== "undefined") ? new ReverseSearch($("cmd-input"), () => cmdHistory) : null;
 $("cmd-input").addEventListener("keydown", e => {
+  const rs = cmdRSearch && cmdRSearch.handleKey(e);
+  if (rs === "run") { runLearnCommand($("cmd-input").value.trim()); $("cmd-input").value=""; return; }
+  if (rs) return;
   if (e.key==="Enter") { runLearnCommand($("cmd-input").value.trim()); $("cmd-input").value=""; }
   else if (e.key==="Tab") { e.preventDefault(); term.autocomplete($("cmd-input")); }
   else if (e.key==="ArrowUp") { e.preventDefault(); if(histIdx<cmdHistory.length-1){histIdx++;$("cmd-input").value=cmdHistory[histIdx]||"";} }
@@ -587,7 +591,11 @@ function initSandbox() {
     if (sbPrompt) sbPrompt.textContent = sbTerm.promptStr();
   };
   $("sandbox-run").addEventListener("click", run);
+  const sbRSearch = (typeof ReverseSearch !== "undefined") ? new ReverseSearch(input, () => hist) : null;
   input.addEventListener("keydown", e => {
+    const rs = sbRSearch && sbRSearch.handleKey(e);
+    if (rs === "run") { run(); return; }
+    if (rs) return;
     if (e.key === "Enter") run();
     else if (e.key === "Tab") { e.preventDefault(); sbTerm.autocomplete(input); }
     else if (e.key === "ArrowUp") { e.preventDefault(); if (hi < hist.length-1) { hi++; input.value = hist[hi]||""; } }
