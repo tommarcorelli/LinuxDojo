@@ -745,6 +745,7 @@ updateXPBar();
 updateHomeStats();
 if (typeof updateNavRank === "function") updateNavRank();
 if (typeof objectivesTick === "function") objectivesTick();
+if (typeof initSeasonal === "function") initSeasonal();
 if (typeof initDailyModal === "function") initDailyModal();
 if (typeof updateDailyBanner === "function") updateDailyBanner();
 const dailyBtn = $("daily-banner-btn");

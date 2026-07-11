@@ -1920,6 +1920,45 @@ class Terminal {
         break;
       }
 
+      case "boo": {
+        if (typeof getActiveSeasonalEvent === "function" && getActiveSeasonalEvent() && getActiveSeasonalEvent().id === "halloween") {
+          out = [
+            "         .-\"\"\"-.",
+            "        / .===. \\",
+            "        \\/ 6 6 \\/       👻 BOOOOO !",
+            "        ( \\___/ )",
+            "     ___ooo_ooo___",
+            "",
+            "Tu as réveillé le fantôme du dojo. Un cadeau spectral t'attend...",
+          ].join("\n");
+          if (typeof markSeasonalSecret === "function") markSeasonalSecret("halloween");
+        } else {
+          out = "🎃 ...rien ne se passe. (Cette commande semble liée à une certaine fête d'automne — reviens fin octobre.)";
+        }
+        break;
+      }
+
+      case "noel":
+      case "joyeuxnoel": {
+        if (typeof getActiveSeasonalEvent === "function" && getActiveSeasonalEvent() && getActiveSeasonalEvent().id === "noel") {
+          out = [
+            "            🌟",
+            "           /★\\",
+            "          /★★★\\",
+            "         /★★★★★\\",
+            "        /★★★★★★★\\",
+            "       /★★★★★★★★★\\",
+            "            ‖‖",
+            "",
+            "🎄 Joyeux Noël, ninja du terminal ! Un cadeau t'attend...",
+          ].join("\n");
+          if (typeof markSeasonalSecret === "function") markSeasonalSecret("noel");
+        } else {
+          out = "🎄 ...rien ne se passe. (Cette commande semble liée à une certaine fête de fin d'année — reviens en décembre.)";
+        }
+        break;
+      }
+
       case "sudo": {
         if (args.join(" ").includes("sandwich")) { out = "D'accord. 🥪"; break; }  // xkcd 149
         out = "user n'apparaît pas dans le fichier sudoers.\nCet incident sera signalé. 👮\n\n(Ici, pas besoin de sudo — tu es déjà maître du dojo.)";
@@ -1985,7 +2024,8 @@ class Terminal {
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",
-          "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)"
+          "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)",
+          "🎃 ...et parfois, à certaines périodes de l'année, il en cache encore d'autres."
         ].join("\n");
         break;
 

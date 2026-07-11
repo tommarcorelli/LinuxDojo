@@ -2065,6 +2065,48 @@ body.theme-vantablack {
   --grad-card:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.03) 100%);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ÉVÉNEMENTS SAISONNIERS — thèmes temporaires (indépendants
+   des thèmes déblocables ci-dessus, appliqués automatiquement
+   selon la date par js/seasonal.js)
+   ═══════════════════════════════════════════════════════════ */
+body.season-halloween {
+  --bg:#0d0603; --bg1:#160a04; --bg2:#1f0f06; --bg3:#2b1508;
+  --purple:#f97316; --purple-li:#fb923c; --blue:#7c3aed; --blue-li:#a78bfa;
+  --cyan:#eab308; --cyan-li:#facc15; --green-li:#f97316;
+  --grad-main:linear-gradient(135deg,#7c3aed 0%,#f97316 50%,#facc15 100%);
+  --grad-card:linear-gradient(135deg,rgba(249,115,22,0.15) 0%,rgba(124,58,237,0.12) 100%);
+}
+body.season-noel {
+  --bg:#050d08; --bg1:#08150c; --bg2:#0c1e10; --bg3:#122a16;
+  --purple:#dc2626; --purple-li:#f87171; --blue:#16a34a; --blue-li:#4ade80;
+  --cyan:#f8fafc; --cyan-li:#ffffff; --green-li:#4ade80;
+  --grad-main:linear-gradient(135deg,#dc2626 0%,#16a34a 50%,#f8fafc 100%);
+  --grad-card:linear-gradient(135deg,rgba(220,38,38,0.15) 0%,rgba(22,163,74,0.12) 100%);
+}
+
+/* Bannière d'événement saisonnier (même structure que .daily-banner) */
+.seasonal-banner {
+  max-width: 900px; margin: 20px auto 0; padding: 14px 20px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  backdrop-filter: blur(10px);
+  animation: banner-glow 4s ease-in-out infinite;
+}
+.seasonal-banner-halloween {
+  background: linear-gradient(135deg, rgba(249,115,22,0.18) 0%, rgba(124,58,237,0.12) 100%);
+  border: 1px solid rgba(249,115,22,0.4);
+}
+.seasonal-banner-noel {
+  background: linear-gradient(135deg, rgba(220,38,38,0.18) 0%, rgba(22,163,74,0.14) 100%);
+  border: 1px solid rgba(74,222,128,0.4);
+}
+.seasonal-banner-close {
+  background: transparent; border: none; color: var(--text-dim); font-size: 16px;
+  cursor: pointer; padding: 4px 8px; border-radius: 6px; flex-shrink: 0;
+}
+.seasonal-banner-close:hover { color: var(--text); background: var(--glass-md); }
+
 /* Sélecteur de thèmes (profil) */
 #pf-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 12px; margin-bottom: 36px; }
 .theme-card {

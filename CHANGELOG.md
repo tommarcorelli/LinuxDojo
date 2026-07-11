@@ -6,6 +6,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Événements saisonniers : thème visuel + effet (flocons de neige / brume spectrale)
+  appliqués automatiquement selon la date (Halloween du 24/10 au 02/11, Noël du 15/12 au
+  02/01), avec bannière d'annonce dismissible sur l'accueil. Une commande cachée par
+  événement (jamais révélée dans l'aide) débloque un badge exclusif + 100 XP, ré-obtenable
+  chaque année (`js/seasonal.js`)
 - Mini-scénario Docker (Scénario 10, 6 missions) : `docker build`, `docker images`,
   `docker run -d --name`, `docker ps`, `docker logs`, `docker stop`. Quiz de fin de chapitre
   et objectif « Ceinture Docker » associés. Nouveau badge « 🐳 Capitaine de conteneurs »

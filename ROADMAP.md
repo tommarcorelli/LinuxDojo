@@ -19,6 +19,10 @@ qui a été identifié comme piste d'amélioration y est consigné.
 - Accessibilité ARIA du terminal (labels, live regions, dialogs)
 - Réorganisation du dossier (`css/`, `js/`, `tests/`)
 - Suite de tests unitaires du parseur (40 tests, zéro dépendance) + CI GitHub Actions
+- **Événements saisonniers** — thème visuel + effet (neige/brume) appliqués automatiquement
+  selon la date (Halloween 24/10→02/11, Noël 15/12→02/01), bannière dismissible sur
+  l'accueil, et une commande cachée par événement (jamais révélée) débloquant un badge
+  exclusif + 100 XP, ré-obtenable chaque année (`js/seasonal.js`)
 
 ---
 
@@ -81,9 +85,7 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       accessible via un bouton dans la nav ou la touche `?` (désactivée si le focus est dans
       un champ de saisie, pour ne pas gêner la frappe) ; réutilise le focus trap générique
       existant, aucune modification du système de modales nécessaire
-- [ ] **Événements saisonniers** — thème visuel temporaire (Halloween, Noël) + un easter egg
-      ou mini-défi limité dans le temps ; bon levier d'engagement à faible coût vu que les
-      8 thèmes existent déjà comme base technique
+
 
 ## 🔧 Phase 3 — Technique / fiabilité
 
