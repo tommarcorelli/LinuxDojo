@@ -1280,9 +1280,10 @@ class Terminal {
 
       case "sort": {
         const fname = this._expandFileArgs(args.filter(a => !a.startsWith("-")))[0];
-        const rev  = args.includes("-r");
-        const num  = args.includes("-n");
-        const uniq = args.includes("-u");
+        const flags = args.filter(a => a.startsWith("-")).join("");
+        const rev  = flags.includes("r");
+        const num  = flags.includes("n");
+        const uniq = flags.includes("u");
         let content = stdin;
         if (fname) {
           const f = this._file(fname);

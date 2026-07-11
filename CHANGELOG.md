@@ -6,10 +6,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Mode Expert : 8 missions avancées sans leçon ni indices (débloquées après les 54 missions
+  de base), combinant plusieurs commandes en pipe. Nouveau badge « 🎓 Maître d'armes »
 - Défi du jour partageable façon Wordle : une fois le défi résolu, un bouton « Partager »
   copie dans le presse-papier une grille 🟥/🟩 (nombre de tentatives), le numéro de défi
   du jour, la série 🔥 et l'XP gagné
-- Nouveau boss : **Le Gardien des Serrures** (🔐) — 5 phases sur le thème des permissions
+- Nouveau boss : **Le Gardien des Serrures**
+
+### Corrigé
+- `sort` ne détectait pas les flags combinés en un seul token (`-rn`, `-nr`) — seul `sort -r`
+  ou `sort -n` séparément fonctionnait. Corrigé pour matcher le comportement déjà présent sur
+  `grep`/`ls`. 2 tests de régression ajoutés. (🔐) — 5 phases sur le thème des permissions
   (`ls -l`, `chmod`, `chown`), inséré avant le Sensei. Le Sensei exige désormais 5 boss
   vaincus (au lieu de 4). Tous les compteurs "5 boss" du site (README, page d'accueil,
   certificat, objectifs, profil) mis à jour en conséquence

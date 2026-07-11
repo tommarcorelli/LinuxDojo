@@ -168,6 +168,21 @@ test("sort trie les lignes, uniq déduplique après sort", () => {
   assertEqual(lines.length, 3, "3 valeurs uniques attendues");
 });
 
+test("sort -rn (flags combinés) trie numérique inversé", () => {
+  // Régression : sort ne détectait pas -r/-n quand combinés en un seul token (-rn),
+  // contrairement à grep/ls qui gèrent déjà les flags combinés.
+  const t = makeTerm({ "n.txt": { type: "file", content: "3\n1\n10\n2" } });
+  const r = t.run("sort -rn n.txt");
+  assertEqual(r.output.split("\n").join(","), "10,3,2,1", "tri numérique inversé attendu");
+});
+
+test("sort -rn combiné avec uniq -c (combo grep|sort|uniq -c|sort -rn)", () => {
+  const t = makeTerm({ "ips.txt": { type: "file", content: "a\nb\na\nc\na" } });
+  const r = t.run("sort ips.txt | uniq -c | sort -rn");
+  const first = r.output.split("\n")[0].trim();
+  assert(first.startsWith("3"), `la ligne la plus fréquente devrait être en tête, reçu: ${JSON.stringify(r.output)}`);
+});
+
 // ═══════════════════════════════════════════════════════════════════════
 // PIPES & REDIRECTIONS
 // ═══════════════════════════════════════════════════════════════════════

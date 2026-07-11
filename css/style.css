@@ -504,6 +504,9 @@ body::before {
 
 .chapter-progress { color: var(--purple-li); font-family: var(--font-mono); font-size: 10px; }
 
+.chapter-block-expert { border-top: 1px dashed var(--glass-border-hi); margin-top: 6px; padding-top: 6px; }
+.chapter-block-expert .chapter-header { color: var(--gold, #d4a72c); }
+
 .mission-item {
   padding: 8px 16px;
   cursor: pointer;

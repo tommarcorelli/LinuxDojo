@@ -48,8 +48,12 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 
 - [x] **Scénario réseau/SSH** — `ssh`, `scp`, `netstat`, 6 missions (Scénario 9), avec 7 tests
       unitaires dédiés
-- [ ] **Mode "Expert"** — missions plus difficiles sans indices, pour les joueurs qui ont
-      fini les 48 missions de base
+- [x] **Mode "Expert"** — 8 missions plus difficiles, sans leçon ni indices, débloquées une
+      fois les 54 missions de base terminées. Chaque mission combine plusieurs commandes en
+      pipe (`grep -v`, `sort | uniq -c | sort -rn`, `find | xargs`, `sed ... >`, `cut | sort -u`,
+      etc.) — le joueur doit assembler la solution seul. Badge dédié « 🎓 Maître d'armes ».
+      Bonus : a révélé et corrigé un bug pré-existant dans `sort` (flags combinés `-rn` non
+      détectés), couvert par 2 nouveaux tests de régression.
 - [x] **Défi du jour partageable** (façon Wordle : grille de résultat copiable) — un bouton
       « Partager » apparaît une fois le défi réussi (ou en le rouvrant le même jour) : copie
       dans le presse-papier un texte façon Wordle (numéro de défi croissant, grille 🟥/🟩 selon
@@ -117,7 +121,7 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 Ces items changent l'architecture du projet ou demandent une infra nouvelle. À ne lancer
 que si vraiment décidé, car ils engagent sur la durée (maintenance double, backend à opérer...).
 
-- **Version anglaise complète** (UI + 48 missions + terminal) — traduire ~17 fichiers JS +
+- **Version anglaise complète** (UI + 54 missions + terminal) — traduire ~17 fichiers JS +
   tout le contenu pédagogique. 3 architectures possibles :
   1. Dossier `/en/` séparé avec copie complète du site (simple, mais double la maintenance
      à chaque futur changement)

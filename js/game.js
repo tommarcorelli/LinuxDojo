@@ -73,6 +73,7 @@ const BADGES = [
   { id: "boss1",       label: "⚔️ Tueur de Boss", cond: () => bossKills() >= 1 },
   { id: "boss4",       label: "🐉 Fléau des Monstres", cond: () => bossKills() >= 4 },
   { id: "blackbelt",   label: "🖤 Ceinture Noire", cond: () => bossHasKilled("sensei") },
+  { id: "expert",      label: "🎓 Maître d'armes", cond: g => typeof EXPERT_MISSIONS !== "undefined" && EXPERT_MISSIONS.every(m => g.completed.has(m.id)) },
   // ── Secrets : découvrables uniquement en explorant, jamais indiqués dans une mission ──
   { id: "cowsay",      label: "🐮 Chuchoteur de vaches", secret: true, cond: () => (STATS.cmd["cowsay"]||0) >= 1 },
   { id: "sl",          label: "🚂 Machiniste distrait",  secret: true, cond: () => (STATS.cmd["sl"]||0) >= 1 },
@@ -240,6 +241,43 @@ function renderSidebar() {
     list.appendChild(block);
   });
 
+  // Mode Expert : débloqué une fois toutes les missions de base terminées
+  if (typeof EXPERT_MISSIONS !== "undefined" && EXPERT_MISSIONS.length) {
+    const totalBase   = CHAPTERS.flatMap(c => c.missions).length;
+    const baseDone    = CHAPTERS.flatMap(c => c.missions).filter(m => GAME.completed.has(m.id)).length;
+    const expertOpen  = baseDone >= totalBase;
+    const edone       = EXPERT_MISSIONS.filter(m => GAME.completed.has(m.id)).length;
+    const eblock = document.createElement("div");
+    eblock.className = "chapter-block chapter-block-expert";
+    const eheader = document.createElement("div");
+    eheader.className = "chapter-header";
+    eheader.innerHTML = '<span>🎓 Mode Expert</span>' +
+      (expertOpen
+        ? '<span class="chapter-progress">' + edone + '/' + EXPERT_MISSIONS.length + '</span>'
+        : '<span class="chapter-progress">🔒</span>');
+    eblock.appendChild(eheader);
+    if (!expertOpen) {
+      const lockRow = document.createElement("div");
+      lockRow.className = "mission-item locked";
+      lockRow.innerHTML = '<span class="mi-icon">🔒</span><div class="mi-info"><div class="mi-name">Termine les ' +
+        totalBase + ' missions de base</div><div class="mi-cmd">' + baseDone + '/' + totalBase + ' pour l’instant</div></div>';
+      eblock.appendChild(lockRow);
+    } else {
+      EXPERT_MISSIONS.forEach((m, i) => {
+        const prev   = i === 0 || GAME.completed.has(EXPERT_MISSIONS[i-1].id);
+        const unlock = prev || GAME.completed.has(m.id);
+        const isDone = GAME.completed.has(m.id);
+        const active = currentMission && currentMission.id === m.id;
+        const item   = document.createElement("div");
+        item.className = "mission-item" + (active?" active":"") + (isDone?" done":"") + (!unlock?" locked":"");
+        item.innerHTML = '<span class="mi-icon">' + (isDone?"✓":(!unlock?"🔒":"○")) + '</span><div class="mi-info"><div class="mi-name">' + m.name + '</div><div class="mi-cmd">' + m.cmd + '</div></div>';
+        if (unlock) item.addEventListener("click", () => loadMission(m));
+        eblock.appendChild(item);
+      });
+    }
+    list.appendChild(eblock);
+  }
+
   // Brancher les boutons quiz
   list.querySelectorAll(".quiz-btn").forEach(b => {
     b.addEventListener("click", (e) => { e.stopPropagation(); openQuiz(parseInt(b.dataset.quiz)); });
@@ -301,7 +339,12 @@ function loadExercise() {
   term.clear();
   term.loadFS(m.fs);
   $("prompt").textContent = term.promptStr();
-  term.printInfo("══ Mission " + m.id + "/" + CHAPTERS.flatMap(c => c.missions).length + " ══");
+  if (m.id >= 9000 && typeof EXPERT_MISSIONS !== "undefined") {
+    const idx = EXPERT_MISSIONS.findIndex(x => x.id === m.id) + 1;
+    term.printInfo("══ Mission Experte " + idx + "/" + EXPERT_MISSIONS.length + " ══");
+  } else {
+    term.printInfo("══ Mission " + m.id + "/" + CHAPTERS.flatMap(c => c.missions).length + " ══");
+  }
   term.printOut("");
   $("cmd-input").focus();
 }
@@ -382,7 +425,7 @@ function onMissionSuccess(m) {
   burstParticles(window.innerWidth/2, window.innerHeight/2);
   addXP(m.xp);
   renderSidebar();
-  const all = CHAPTERS.flatMap(c => c.missions);
+  const all = CHAPTERS.flatMap(c => c.missions).concat(typeof EXPERT_MISSIONS !== "undefined" ? EXPERT_MISSIONS : []);
   const next = all.find(x => x.id === m.id + 1);
   $("win-title").textContent = "Mission accomplie !";
   $("win-xp").textContent    = "+" + m.xp + " XP — Total : " + GAME.xp + " XP";
@@ -419,6 +462,11 @@ const HINT_TIERS = [
 function renderHintButton() {
   const btn = $("btn-hint");
   if (!btn) return;
+  if (currentMission && currentMission.noHints) {
+    btn.style.display = "none";
+    return;
+  }
+  btn.style.display = "";
   if (hintLevel >= HINT_TIERS.length) {
     btn.disabled = true;
     btn.innerHTML = "✅ Indices épuisés";
@@ -438,7 +486,7 @@ function resetHintUI() {
 }
 
 $("btn-hint").addEventListener("click", () => {
-  if (!currentMission || hintLevel >= HINT_TIERS.length) return;
+  if (!currentMission || currentMission.noHints || hintLevel >= HINT_TIERS.length) return;
   const tier = HINT_TIERS[hintLevel];
   const ht = $("hint-text");
   ht.innerHTML += (ht.innerHTML ? "<br>" : "") + tier.reveal(currentMission);
