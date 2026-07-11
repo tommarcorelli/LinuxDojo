@@ -1,11 +1,12 @@
-// sw.js — Service Worker LinuxDojo v14
-const CACHE = "linuxdojo-v14";
+// sw.js — Service Worker LinuxDojo v15
+const CACHE = "linuxdojo-v15";
 const ASSETS = [
   "./","./index.html","./css/style.css",
   "./js/levels.js","./js/terminal.js","./js/fx.js","./js/gameshell.js",
   "./js/challenges.js","./js/bandit.js","./js/boss.js","./js/kata.js","./js/certificate.js","./js/quizzes.js","./js/glossary.js","./js/daily.js","./js/profile.js","./js/game.js","./js/objectives.js","./js/sw-register.js",
   "./manifest.json",
-  "./icons/icon-192.png?v=8","./icons/icon-512.png?v=8"
+  "./icons/icon-192.png?v=9","./icons/icon-512.png?v=9",
+  "./icons/icon-192-maskable.png?v=9","./icons/icon-512-maskable.png?v=9"
 ];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

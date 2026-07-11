@@ -118,8 +118,20 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       modifie la sauvegarde, une bannière (même style que celle de mise à jour du service
       worker) invite à recharger avant de continuer à jouer ici. Pas de fusion automatique
       des deux progressions (trop risqué), juste une alerte claire. 5 tests dédiés.
-- [ ] **Audit Lighthouse PWA complet** (icônes maskable, `theme-color`, performance) — pour
+- [x] **Audit Lighthouse PWA complet** (icônes maskable, `theme-color`, performance) — pour
       le score d'installabilité
+      → Le seul vrai problème trouvé : `icon-512.png` était réutilisée telle quelle en
+      `purpose: maskable`, mais son contenu touchait les 4 bords à 0px de marge (bbox opaque
+      = image entière). En mode maskable, l'OS applique un masque (cercle, squircle...) sur
+      l'icône : sans zone de sécurité, le logo aurait été rogné sur les launchers Android qui
+      masquent l'icône. Créé `icon-192-maskable.png` et `icon-512-maskable.png` dédiées : fond
+      plein `#080810` (pas de transparence, requis par la spec maskable) + logo réduit à 66%
+      du canvas (marge ~17% de chaque côté, confortablement dans le cercle de sécurité de 80%).
+      Les icônes `any` (`icon-192.png`/`icon-512.png`, transparentes) restent inchangées.
+      Manifest/`index.html`/`sw.js` mis à jour (cache-busting `v8` → `v9`, SW `v14` → `v15`).
+      Le reste de l'audit était déjà conforme : `theme-color` présent et cohérent avec le
+      manifest, viewport correct, HTTPS (GitHub Pages), service worker enregistré avec fallback
+      offline, `start_url`/`scope`/`display: standalone` déjà bien configurés.
 - [ ] **Test de compatibilité navigateurs** — vérifié seulement sur Chromium jusqu'ici ;
       à tester sur Firefox et Safari (notamment le service worker et les animations CSS)
 - [ ] **Suivi d'erreurs** (type Sentry, ou une solution auto-hébergée légère) — pour être

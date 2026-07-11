@@ -5,6 +5,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ## [Non publié]
 
+### Corrigé
+- Icônes `maskable` du manifest : `icon-512.png` était réutilisée telle quelle sans zone
+  de sécurité (contenu touchant les 4 bords), ce qui aurait rogné le logo sur les launchers
+  Android appliquant un masque. Nouvelles icônes dédiées `icon-192-maskable.png` /
+  `icon-512-maskable.png` (fond plein, logo à 66% du canvas). Cache-busting `v8` → `v9`,
+  Service Worker `v14` → `v15`
+
 ### Ajouté
 - Détection de sauvegarde concurrente entre onglets : si un autre onglet modifie la
   progression (`localStorage`), une bannière prévient et propose de recharger, pour
