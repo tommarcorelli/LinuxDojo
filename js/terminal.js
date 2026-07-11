@@ -34,6 +34,7 @@ class Terminal {
     this._jobs = [];    // jobs lancés en arrière-plan (cmd &)
     this._jobCounter = 0;
     this._git = null;   // dépôt git simulé (null tant que 'git init' n'a pas été fait)
+    this._docker = null; // daemon docker simulé (images/conteneurs) — créé au premier usage
     this._sshStack = []; // pile des prompts précédents avant chaque 'ssh' (pour 'exit')
   }
 
@@ -64,6 +65,7 @@ class Terminal {
     this._jobs = [];
     this._jobCounter = 0;
     this._git = null;
+    this._docker = null;
     this._sshStack = [];
   }
 
@@ -340,6 +342,18 @@ class Terminal {
   // Exécute une commande simple (avec pipes/redirections/affectations),
   // après expansion des variables et substitutions de commande.
   _execSimple(raw, silent) {
+    // Enchaînement && : chaque segment est ré-exécuté comme une commande à part entière,
+    // dans l'ordre, en s'arrêtant au premier échec — comme un vrai shell.
+    if (this._hasUnquoted(raw, "&&") >= 0) {
+      const segments = this._splitUnquoted(raw, "&&").map(s => s.trim()).filter(Boolean);
+      let res = { output: "", error: false };
+      for (const seg of segments) {
+        res = this._execSimple(seg, silent);
+        if (res.error) break;
+      }
+      return res;
+    }
+
     let line = this._expandLine(this._stripComment(raw)).trim();
     if (!line) return { output: "", error: false };
 
@@ -352,7 +366,7 @@ class Terminal {
       return { output: "", error: false };
     }
 
-    // Exécution en arrière-plan : cmd & (mais pas cmd &&, non géré ici)
+    // Exécution en arrière-plan : cmd & (le enchaînement cmd1 && cmd2 est traité plus haut)
     let background = false;
     if (this._hasUnquoted(line, "&") >= 0 && !line.endsWith("&&")) {
       const idx = line.length - 1;
@@ -1104,6 +1118,99 @@ class Terminal {
         }
 
         out = `git: '${sub}' n'est pas une commande git. Voir 'git --help'.`;
+        err = true;
+        break;
+      }
+
+      case "docker": {
+        if (!this._docker) this._docker = { images: [], containers: [] };
+        const sub = args[0];
+        if (!sub) {
+          out = "Usage :  docker COMMANDE\n\nCommandes courantes :\n  build    Construit une image à partir d'un Dockerfile\n  images   Liste les images locales\n  run      Démarre un conteneur\n  ps       Liste les conteneurs\n  logs     Affiche les logs d'un conteneur\n  stop     Arrête un conteneur\n  rm       Supprime un conteneur arrêté";
+          err = true; break;
+        }
+
+        if (sub === "build") {
+          const tIdx = args.indexOf("-t");
+          const name = tIdx >= 0 ? args[tIdx + 1] : null;
+          if (!name) { out = "docker build: il faut nommer l'image avec -t\nUsage : docker build -t nom ."; err = true; break; }
+          const dfPath = this._resolve("Dockerfile");
+          if (!this.fs[dfPath]) { out = "unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat Dockerfile: no such file or directory\n💡 Un Dockerfile est requis dans le dossier courant."; err = true; break; }
+          const id = Math.random().toString(16).slice(2, 14);
+          this._docker.images = this._docker.images.filter(i => i.name !== name);
+          this._docker.images.push({ name, id });
+          this.state.dockerBuild = name;
+          out = `Envoi du contexte de build au démon Docker\nÉtape 1/3 : FROM node:18\nÉtape 2/3 : COPY . /app\nÉtape 3/3 : CMD ["node", "server.js"]\nImage construite avec succès : ${id}\nTaguée : ${name}:latest`;
+          break;
+        }
+
+        if (sub === "images") {
+          const header = "REPOSITORY   TAG       IMAGE ID       SIZE";
+          out = this._docker.images.length
+            ? [header, ...this._docker.images.map(i => `${i.name}        latest    ${i.id.slice(0, 12)}   128MB`)].join("\n")
+            : header;
+          this.state.dockerImages = true;
+          break;
+        }
+
+        if (sub === "run") {
+          const detached = args.includes("-d");
+          const nameIdx = args.indexOf("--name");
+          const cname = nameIdx >= 0 ? args[nameIdx + 1] : "conteneur" + (this._docker.containers.length + 1);
+          const image = args[args.length - 1];
+          if (!image || image.startsWith("-")) { out = "docker: manque le nom de l'image\nUsage : docker run -d --name nom image"; err = true; break; }
+          const found = this._docker.images.find(i => i.name === image || i.name === image.split(":")[0]);
+          if (!found) { out = `Unable to find image '${image}:latest' locally\ndocker: Error response from daemon: pull access denied for ${image}\n💡 Construis d'abord l'image avec docker build -t ${image} .`; err = true; break; }
+          if (this._docker.containers.find(c => c.name === cname && c.status === "running")) { out = `docker: Error response from daemon: Conflict. The container name "/${cname}" is already in use.`; err = true; break; }
+          const id = Math.random().toString(16).slice(2, 14);
+          this._docker.containers.push({ id, name: cname, image, status: "running" });
+          this.state.dockerRun = cname;
+          out = detached ? id : "Serveur démarré sur le port 3000\n(Ctrl+C pour arrêter — ou lance avec -d pour le mode détaché)";
+          break;
+        }
+
+        if (sub === "ps") {
+          const all = args.includes("-a");
+          const list = this._docker.containers.filter(c => all || c.status === "running");
+          const header = "CONTAINER ID   IMAGE     STATUS         NAMES";
+          out = list.length
+            ? [header, ...list.map(c => `${c.id.slice(0, 12)}   ${c.image}     ${c.status === "running" ? "Up 2 minutes" : "Exited (0)"}   ${c.name}`)].join("\n")
+            : header;
+          this.state.dockerPs = true;
+          break;
+        }
+
+        if (sub === "logs") {
+          const cname = args[1];
+          const c = this._docker.containers.find(c => c.name === cname);
+          if (!c) { out = `Error: No such container: ${cname}`; err = true; break; }
+          out = "npm start\n> monapp@1.0.0 start\n> node server.js\n\nServeur démarré sur le port 3000\nEn attente de connexions...";
+          this.state.dockerLogs = cname;
+          break;
+        }
+
+        if (sub === "stop") {
+          const cname = args[1];
+          const c = this._docker.containers.find(c => c.name === cname && c.status === "running");
+          if (!c) { out = `Error response from daemon: No such container: ${cname}`; err = true; break; }
+          c.status = "exited";
+          this.state.dockerStop = cname;
+          out = cname;
+          break;
+        }
+
+        if (sub === "rm") {
+          const cname = args[1];
+          const idx = this._docker.containers.findIndex(c => c.name === cname);
+          if (idx < 0) { out = `Error: No such container: ${cname}`; err = true; break; }
+          if (this._docker.containers[idx].status === "running") { out = `Error response from daemon: You cannot remove a running container ${cname}. Stop it first.`; err = true; break; }
+          this._docker.containers.splice(idx, 1);
+          this.state.dockerRm = cname;
+          out = cname;
+          break;
+        }
+
+        out = `docker: '${sub}' n'est pas une commande docker.\nVoir 'docker --help'.`;
         err = true;
         break;
       }
@@ -1874,6 +1981,7 @@ class Terminal {
           "Chemins RÉELS : cd logs/2024 · cd .. · cd / · cd ~ · cat /etc/hostname · find /var -name '*.log'",
           "Scripting :  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
           "Git :  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b nom",
+          "Docker :  docker build -t nom . · docker images · docker run -d --name nom image · docker ps [-a] · docker logs nom · docker stop nom",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",

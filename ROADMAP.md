@@ -49,7 +49,7 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 - [x] **Scénario réseau/SSH** — `ssh`, `scp`, `netstat`, 6 missions (Scénario 9), avec 7 tests
       unitaires dédiés
 - [x] **Mode "Expert"** — 8 missions plus difficiles, sans leçon ni indices, débloquées une
-      fois les 54 missions de base terminées. Chaque mission combine plusieurs commandes en
+      fois les 60 missions de base terminées. Chaque mission combine plusieurs commandes en
       pipe (`grep -v`, `sort | uniq -c | sort -rn`, `find | xargs`, `sed ... >`, `cut | sort -u`,
       etc.) — le joueur doit assembler la solution seul. Badge dédié « 🎓 Maître d'armes ».
       Bonus : a révélé et corrigé un bug pré-existant dans `sort` (flags combinés `-rn` non
@@ -69,8 +69,14 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       débloqués) : taper `cowsay`, `sl`, `fortune`, survivre à `vim` (`:q!`/`:wq`), trouver
       le Konami code, ou finir une mission en moins de 10 secondes. Système générique
       (`markSecret()` + `STATS.cmd`) réutilisable pour de futurs secrets
-- [ ] **Mini-scénario Docker** — après Git, la suite logique côté outils modernes : `docker ps`,
-      `docker run`, `docker build` simulés (reste dans l'esprit "simulateur", pas de vrai Docker)
+- [x] **Mini-scénario Docker** — 6 nouvelles missions (Scénario 10), après Git : `docker build`,
+      `docker images`, `docker run -d --name`, `docker ps`, `docker logs`, `docker stop`,
+      simulés dans l'esprit "simulateur" du jeu (pas de vrai Docker). Quiz de fin de chapitre
+      et objectif « Ceinture Docker » ajoutés en cohérence avec les autres scénarios.
+      Bonus : a révélé et corrigé un bug significatif du moteur — `&&` était purement
+      décoratif dans les hints (9 hints existants des scénarios Git/Réseau ne fonctionnaient
+      pas si on les tapait tel quel). Implémenté un vrai enchaînement `&&` avec court-circuit
+      sur échec, comme un vrai shell. 3 tests de régression ajoutés.
 - [x] **Overlay "raccourcis clavier"** (touche `?`) — modale listant Tab, ↑/↓, Entrée, Échap,
       accessible via un bouton dans la nav ou la touche `?` (désactivée si le focus est dans
       un champ de saisie, pour ne pas gêner la frappe) ; réutilise le focus trap générique
@@ -121,7 +127,7 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 Ces items changent l'architecture du projet ou demandent une infra nouvelle. À ne lancer
 que si vraiment décidé, car ils engagent sur la durée (maintenance double, backend à opérer...).
 
-- **Version anglaise complète** (UI + 54 missions + terminal) — traduire ~17 fichiers JS +
+- **Version anglaise complète** (UI + 60 missions + terminal) — traduire ~17 fichiers JS +
   tout le contenu pédagogique. 3 architectures possibles :
   1. Dossier `/en/` séparé avec copie complète du site (simple, mais double la maintenance
      à chaque futur changement)

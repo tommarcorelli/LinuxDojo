@@ -6,7 +6,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
-- Mode Expert : 8 missions avancées sans leçon ni indices (débloquées après les 54 missions
+- Mini-scénario Docker (Scénario 10, 6 missions) : `docker build`, `docker images`,
+  `docker run -d --name`, `docker ps`, `docker logs`, `docker stop`. Quiz de fin de chapitre
+  et objectif « Ceinture Docker » associés. Nouveau badge « 🐳 Capitaine de conteneurs »
+- Mode Expert : 8 missions avancées sans leçon ni indices (débloquées après les missions
   de base), combinant plusieurs commandes en pipe. Nouveau badge « 🎓 Maître d'armes »
 - Défi du jour partageable façon Wordle : une fois le défi résolu, un bouton « Partager »
   copie dans le presse-papier une grille 🟥/🟩 (nombre de tentatives), le numéro de défi
@@ -14,6 +17,10 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Nouveau boss : **Le Gardien des Serrures**
 
 ### Corrigé
+- L'enchaînement `cmd1 && cmd2` était purement décoratif : taper le hint exact d'une mission
+  (ex. `git init && git add . && git commit -m "..."`) n'exécutait que la première commande.
+  9 hints des scénarios Git et Réseau étaient concernés. Implémenté un vrai enchaînement avec
+  court-circuit sur échec, comme un shell réel. 3 tests de régression ajoutés.
 - `sort` ne détectait pas les flags combinés en un seul token (`-rn`, `-nr`) — seul `sort -r`
   ou `sort -n` séparément fonctionnait. Corrigé pour matcher le comportement déjà présent sur
   `grep`/`ls`. 2 tests de régression ajoutés. (🔐) — 5 phases sur le thème des permissions

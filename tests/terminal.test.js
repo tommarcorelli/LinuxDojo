@@ -194,6 +194,21 @@ test("pipe simple : cat | grep", () => {
   assertIncludes(r.output, "chèvre");
 });
 
+test("&& enchaîne réellement plusieurs commandes (régression : purement décoratif avant)", () => {
+  const t = makeTerm({ "app.py": { type: "file", content: "print(1)" } });
+  const r = t.run('git init && git add . && git commit -m "msg"');
+  assertEqual(t.state.gitCommit, "msg", "le commit doit avoir eu lieu après le double &&");
+  assert(!r.error, "la chaîne complète ne doit pas être en erreur");
+});
+
+test("&& s'arrête au premier échec (court-circuit comme un vrai shell)", () => {
+  const t = makeTerm({});
+  const r = t.run("git status && git commit -m 'jamais atteint'");
+  // git status échoue (pas encore de dépôt) : la 2e commande ne doit jamais s'exécuter
+  assert(r.error, "la commande échouée doit remonter une erreur");
+  assertEqual(t.state.gitCommit, undefined, "git commit ne doit pas avoir été exécuté après l'échec");
+});
+
 test("pipe en chaîne : cat | grep | wc -l", () => {
   const t = makeTerm({ "f.txt": { type: "file", content: "a1\nb2\na3\nb4\na5" } });
   const r = t.run("cat f.txt | grep a | wc -l");

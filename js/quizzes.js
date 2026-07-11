@@ -49,6 +49,12 @@ const QUIZZES = {
     { q: "Quelle commande envoie un fichier vers un serveur distant ?", options: ["send", "scp fichier user@hôte:/chemin", "push fichier", "upload fichier"], answer: 1 },
     { q: "Que signifie « LISTEN » dans la sortie de netstat ?", options: ["Le service a planté", "Le service attend des connexions sur ce port", "Le port est fermé", "Le service est en pause"], answer: 1 },
   ],
+  10: [
+    { q: "Que fait « docker build -t monapp . » ?", options: ["Démarre un conteneur", "Construit une image nommée « monapp »", "Supprime l'image « monapp »", "Liste les conteneurs actifs"], answer: 1 },
+    { q: "Quelle option de « docker run » démarre le conteneur en arrière-plan ?", options: ["-a", "-d", "-r", "-b"], answer: 1 },
+    { q: "Quelle commande affiche uniquement les conteneurs EN COURS d'exécution ?", options: ["docker ps -a", "docker images", "docker ps", "docker logs"], answer: 2 },
+    { q: "Comment consulter la sortie (console.log, etc.) d'un conteneur en arrière-plan ?", options: ["docker ps", "docker logs nom", "docker build nom", "docker images nom"], answer: 1 },
+  ],
 };
 
 const Quiz = {

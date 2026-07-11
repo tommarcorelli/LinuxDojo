@@ -66,6 +66,7 @@ const BADGES = [
   { id: "chapter7",    label: "🤖 Automate",      cond: g => [37,38,39,40,41,42].every(id => g.completed.has(id)) },
   { id: "chapter8",    label: "🌱 Committeur",    cond: g => [43,44,45,46,47,48].every(id => g.completed.has(id)) },
   { id: "chapter9",    label: "🌐 Cyber-nomade",  cond: g => [49,50,51,52,53,54].every(id => g.completed.has(id)) },
+  { id: "chapter10",   label: "🐳 Capitaine de conteneurs", cond: g => [55,56,57,58,59,60].every(id => g.completed.has(id)) },
   { id: "master",      label: "⚡ Maître Linux",  cond: g => g.completed.size >= 36 },
   { id: "xp100",       label: "💯 Centurion",     cond: g => g.xp >= 100 },
   { id: "xp500",       label: "🔥 Inferno",       cond: g => g.xp >= 500 },

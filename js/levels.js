@@ -1675,6 +1675,176 @@ const CHAPTERS = [
         explanation: "Tu viens de dérouler un vrai cycle d'administration distante, du transfert de fichier jusqu'à la déconnexion propre. Ajoute la maîtrise de Git du scénario précédent, et tu as les bases exactes du quotidien d'un admin système ou d'un développeur backend. 🌐"
       }
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 10,
+    title: "🐳 Scénario 10 — Conteneuriser avec Docker",
+    scenario: "Ton appli tourne en local, mais \"ça marche chez moi\" ne suffit pas pour la production. Direction Docker : empaqueter l'appli avec tout ce dont elle a besoin, dans un conteneur qui tournera pareil partout.",
+    missions: [
+
+      {
+        id: 55,
+        name: "Étape 1 — Construire une image",
+        cmd: "docker build -t",
+        xp: 35,
+        lesson: {
+          title: "<code>docker build</code> — Construire une image",
+          intro: "Un <code>Dockerfile</code> décrit comment construire une <strong>image</strong> : la base système, le code copié dedans, la commande à lancer au démarrage. <code>docker build</code> lit ce Dockerfile et fabrique l'image, comme une recette qu'on transforme en plat prêt à servir.",
+          syntax: "docker build -t nom .",
+          options: [
+            { flag: "-t nom", desc: "Tague (nomme) l'image construite" },
+            { flag: ".",      desc: "Contexte de build : le dossier courant, là où se trouve le Dockerfile" },
+          ],
+          examples: [
+            { cmd: "docker build -t monapp .",     comment: "# construit et tague l'image « monapp »" },
+            { cmd: "docker build -t monapp:v2 .",   comment: "# avec une version explicite" },
+          ],
+          tip: "Le point final (`.`) n'est pas décoratif : c'est le CONTEXTE de build, le dossier que Docker envoie au démon. Oublie-le et la commande échoue."
+        },
+        desc: "Le dossier contient un <code>Dockerfile</code> et le code de l'appli. Construis une image nommée <code>monapp</code>.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp .",
+        check: (out, s) => s.dockerBuild === "monapp",
+        explanation: "Ton image est construite : un instantané figé de l'appli et de tout son environnement (système, dépendances, code). À partir de maintenant, tu peux la lancer n'importe où — ton poste, un serveur, le cloud — le résultat sera identique."
+      },
+
+      {
+        id: 56,
+        name: "Étape 2 — Lister les images",
+        cmd: "docker images",
+        xp: 30,
+        lesson: {
+          title: "<code>docker images</code> — Voir les images locales",
+          intro: "Une fois construites (ou téléchargées), les images restent stockées localement. <code>docker images</code> les liste, avec leur nom, leur tag (version) et leur identifiant unique — un peu comme <code>ls</code>, mais pour les images Docker.",
+          syntax: "docker images",
+          options: [],
+          examples: [
+            { cmd: "docker images", comment: "# liste toutes les images locales" },
+          ],
+          tip: "Une image inutilisée occupe toujours de la place sur le disque. En vrai usage, `docker image prune` nettoie les images orphelines."
+        },
+        desc: "Construis l'image <code>monapp</code>, puis vérifie qu'elle apparaît bien dans la liste des images locales.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp . && docker images",
+        check: (out, s) => !!s.dockerImages && /monapp/.test(out),
+        explanation: "L'image est bien là, prête à être lancée. Contrairement à un simple script, une image Docker embarque TOUT ce qu'il faut pour tourner — plus de \"il me manque une dépendance\" sur le serveur de prod."
+      },
+
+      {
+        id: 57,
+        name: "Étape 3 — Démarrer un conteneur",
+        cmd: "docker run -d --name",
+        xp: 45,
+        lesson: {
+          title: "<code>docker run</code> — Démarrer un conteneur",
+          intro: "Une image, c'est la recette figée. Un <strong>conteneur</strong>, c'est le plat qu'on sert : une instance en cours d'exécution de cette image. <code>docker run</code> démarre un conteneur à partir d'une image.",
+          syntax: "docker run [-d] [--name nom] image",
+          options: [
+            { flag: "-d",         desc: "Mode détaché : le conteneur tourne en arrière-plan" },
+            { flag: "--name nom", desc: "Donne un nom lisible au conteneur (sinon un nom aléatoire)" },
+          ],
+          examples: [
+            { cmd: "docker run -d --name web monapp", comment: "# démarre « monapp » en arrière-plan, nommé « web »" },
+          ],
+          tip: "Sans -d, le conteneur tourne au premier plan et bloque ton terminal — c'est utile pour déboguer, mais -d est le réflexe en usage normal."
+        },
+        desc: "Construis l'image <code>monapp</code>, puis démarre un conteneur en arrière-plan nommé <code>web</code> à partir de cette image.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp . && docker run -d --name web monapp",
+        check: (out, s) => s.dockerRun === "web",
+        explanation: "Le conteneur « web » tourne maintenant, isolé du reste du système, avec exactement l'environnement défini dans le Dockerfile. Tu peux en lancer plusieurs, identiques, côte à côte — c'est la base du scaling horizontal."
+      },
+
+      {
+        id: 58,
+        name: "Étape 4 — Lister les conteneurs actifs",
+        cmd: "docker ps",
+        xp: 35,
+        lesson: {
+          title: "<code>docker ps</code> — Voir les conteneurs en cours",
+          intro: "Comme <code>ps</code> liste les processus du système, <code>docker ps</code> liste les <strong>conteneurs</strong> en cours d'exécution : leur identifiant, l'image utilisée, leur statut, leur nom.",
+          syntax: "docker ps [-a]",
+          options: [
+            { flag: "-a", desc: "Affiche AUSSI les conteneurs arrêtés (par défaut, seuls les actifs sont listés)" },
+          ],
+          examples: [
+            { cmd: "docker ps",    comment: "# conteneurs actifs seulement" },
+            { cmd: "docker ps -a", comment: "# tous les conteneurs, actifs ou arrêtés" },
+          ],
+          tip: "Si ton conteneur n'apparaît pas dans `docker ps`, deux possibilités : il ne s'est jamais lancé, ou il a planté juste après le démarrage. `docker ps -a` et `docker logs` t'aident à distinguer les deux."
+        },
+        desc: "Démarre le conteneur <code>web</code> à partir de l'image <code>monapp</code>, puis vérifie qu'il tourne bien avec la liste des conteneurs actifs.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp . && docker run -d --name web monapp && docker ps",
+        check: (out, s) => !!s.dockerPs && /web/.test(out) && /up/.test(out),
+        explanation: "« web » apparaît bien comme actif (Up). C'est le premier réflexe après un déploiement : est-ce que le conteneur tourne vraiment, ou a-t-il crashé silencieusement ?"
+      },
+
+      {
+        id: 59,
+        name: "Étape 5 — Consulter les logs",
+        cmd: "docker logs",
+        xp: 40,
+        lesson: {
+          title: "<code>docker logs</code> — Voir la sortie d'un conteneur",
+          intro: "Un conteneur tourne en arrière-plan, mais tout ce qu'il affiche (comme <code>console.log</code> dans une appli Node) part quelque part. <code>docker logs</code> récupère cette sortie — indispensable pour déboguer sans devoir se connecter DANS le conteneur.",
+          syntax: "docker logs nom",
+          options: [],
+          examples: [
+            { cmd: "docker logs web", comment: "# affiche tout ce que le conteneur « web » a produit" },
+          ],
+          tip: "En vrai usage, `docker logs -f nom` suit les logs en direct, exactement comme `tail -f` sur un fichier."
+        },
+        desc: "Démarre le conteneur <code>web</code>, puis consulte ses logs pour vérifier qu'il a bien démarré.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp . && docker run -d --name web monapp && docker logs web",
+        check: (out, s) => s.dockerLogs === "web" && /d.marr./.test(out),
+        explanation: "Les logs confirment que le serveur a bien démarré sur le port 3000. Sans cette commande, un conteneur qui tourne en arrière-plan serait une boîte noire totale."
+      },
+
+      {
+        id: 60,
+        name: "Étape 6 — Arrêter proprement",
+        cmd: "docker stop",
+        xp: 50,
+        lesson: {
+          title: "<code>docker stop</code> — Arrêter un conteneur",
+          intro: "Un conteneur qui tourne consomme des ressources. <code>docker stop</code> l'arrête proprement (il envoie un signal d'arrêt \"poli\", laissant le temps à l'appli de se fermer correctement, avant de couper si elle ne répond pas).",
+          syntax: "docker stop nom",
+          options: [],
+          examples: [
+            { cmd: "docker stop web", comment: "# arrête le conteneur « web »" },
+          ],
+          tip: "Un conteneur arrêté n'est pas supprimé : il reste visible avec `docker ps -a`. Pour le supprimer définitivement, `docker rm nom` (uniquement s'il est déjà arrêté)."
+        },
+        desc: "Fais le cycle complet : construis l'image, démarre le conteneur <code>web</code>, puis arrête-le proprement.",
+        fs: {
+          "Dockerfile": { type: "file", content: "FROM node:18\nCOPY . /app\nCMD [\"node\", \"server.js\"]" },
+          "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
+        },
+        hint: "docker build -t monapp . && docker run -d --name web monapp && docker stop web",
+        check: (out, s) => s.dockerStop === "web",
+        explanation: "Build → run → ps → logs → stop : tu viens de dérouler le cycle de vie complet d'un conteneur, celui que tout développeur backend répète des dizaines de fois par jour. Avec Git du scénario précédent, tu as maintenant les deux outils qui structurent le développement moderne. 🐳"
+      }
+
+    ]
   }
 ];
 
