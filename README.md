@@ -6,6 +6,10 @@ PWA 100 % vanilla JS (zéro dépendance, aucun build requis pour jouer ou contri
 
 **▶ Jouer : https://tommarcorelli.github.io/LinuxDojo/**
 
+Une [page d'atterrissage marketing](landing.html) existe aussi (screenshots-mockup du
+terminal, présentation des modes, chiffres réels du contenu) : utile pour un lien de bio
+ou un post sur les réseaux, pas nécessaire pour jouer directement.
+
 ## Les modes
 
 | Mode | Description |

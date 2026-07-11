@@ -132,6 +132,7 @@ function renderProfile() {
       badgesEl.appendChild(el);
     });
   }
+  renderBadgesShare(rank, xp);
 
   renderStats();
   renderHeatmap();
@@ -173,6 +174,51 @@ function renderHeatmap() {
 
   const count = document.getElementById("pf-heatmap-count");
   if (count) count.textContent = activeDays + " jour" + (activeDays > 1 ? "s" : "") + " actif" + (activeDays > 1 ? "s" : "");
+}
+
+/* ── Partage social des badges ─────────────────────────────── */
+function _badgesShareText(rank, xp) {
+  const unlocked = BADGES.filter(b => GAME.badges.includes(b.id) && !b.secret);
+  const secretsUnlocked = BADGES.filter(b => GAME.badges.includes(b.id) && b.secret).length;
+  const lines = [
+    "LinuxDojo — " + GAME.badges.length + "/" + BADGES.length + " badges débloqués 🏅",
+  ];
+  if (unlocked.length) {
+    lines.push(unlocked.slice(0, 8).map(b => b.label.split(" ")[0]).join(" "));
+  }
+  if (secretsUnlocked > 0) lines.push("dont " + secretsUnlocked + " badge(s) secret(s) 🤫");
+  lines.push("Rang : " + rank.name + " " + rank.icon + " · " + xp + " XP");
+  lines.push("https://tommarcorelli.github.io/LinuxDojo/");
+  return lines.join("\n");
+}
+
+function shareBadges() {
+  const rank = getRank(GAME.xp);
+  const text = _badgesShareText(rank, GAME.xp);
+  const done = () => { if (typeof showToast === "function") showToast("📋 Résultat copié — colle-le où tu veux !"); };
+  const share = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => prompt("Copie ton résultat :", text));
+    } else {
+      prompt("Copie ton résultat :", text);
+    }
+  };
+  if (navigator.share) {
+    navigator.share({ text, title: "LinuxDojo — Mes badges" }).catch(err => {
+      if (err && err.name !== "AbortError") share(); // AbortError = l'utilisateur a fermé la fenêtre de partage, pas d'échec à gérer
+    });
+  } else {
+    share();
+  }
+}
+
+function renderBadgesShare(rank, xp) {
+  const host = document.getElementById("pf-badges-share");
+  if (!host) return;
+  if (!GAME.badges.length) { host.innerHTML = ""; return; }
+  host.innerHTML = '<button class="btn-ghost" id="pf-badges-share-btn" type="button">📋 Partager mes badges</button>';
+  const btn = document.getElementById("pf-badges-share-btn");
+  if (btn) btn.addEventListener("click", shareBadges);
 }
 
 /* ── Export / Import de sauvegarde ─────────────────────────── */

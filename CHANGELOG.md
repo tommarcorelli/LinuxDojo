@@ -6,6 +6,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Page d'atterrissage marketing dédiée (`landing.html`, `css/landing.css`, `js/landing.js`) :
+  hero avec mockup de terminal animé, chiffres réels du contenu, grille des modes de jeu,
+  section « pourquoi » façon page de manuel (`man linuxdojo`). Séparée de `index.html`
+  (qui reste l'entrée du jeu), pensée pour les liens externes
+- Partage social des succès : bouton « Partager » sur le certificat de Ceinture Noire
+  (`js/certificate.js`, image PNG jointe via `navigator.share()` quand disponible, sinon
+  texte + lien dans le presse-papier) et bouton « Partager mes badges » dans le Profil
+  (`js/profile.js`, résumé texte des badges débloqués)
 - Script de build optionnel (`npm run build`, `scripts/build.js`) : minifie `js/*.js`
   (terser) et `css/style.css` (clean-css) dans un dossier `dist/` prêt à déployer, sans
   changer les chemins ni les noms de fichiers. ~28 % de poids en moins (535 Ko → 385 Ko).

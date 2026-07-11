@@ -213,6 +213,53 @@ function downloadCertificate() {
   if (typeof burstParticles === "function") burstParticles(window.innerWidth / 2, window.innerHeight / 2);
 }
 
+function _certificateShareText() {
+  const rank = (typeof getRank === "function") ? getRank(GAME.xp) : { name: "Root", icon: "" };
+  return "🥋 " + ninjaName() + " vient de décrocher sa Ceinture Noire sur LinuxDojo !\n" +
+    "Rang " + rank.name + " " + rank.icon + " · " + GAME.xp + " XP\n" +
+    "https://tommarcorelli.github.io/LinuxDojo/";
+}
+
+async function shareCertificate() {
+  if (!senseiDefeated()) return;
+  if (!hasNinjaName()) { setNinjaName(); if (!hasNinjaName()) return; }
+  const text = _certificateShareText();
+
+  const fallback = () => {
+    const done = () => { if (typeof showToast === "function") showToast("📋 Message copié — colle-le où tu veux !"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => prompt("Copie ton message :", text));
+    } else {
+      prompt("Copie ton message :", text);
+    }
+  };
+
+  if (navigator.share) {
+    try {
+      // On tente d'abord le partage avec l'image du certificat en pièce jointe
+      // (rendu bien plus engageant sur Twitter/LinkedIn qu'un simple lien texte).
+      if (navigator.canShare && typeof File !== "undefined") {
+        const canvas = buildCertificateCanvas(2);
+        const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+        if (blob) {
+          const file = new File([blob], "linuxdojo-ceinture-noire.png", { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text, title: "LinuxDojo — Ceinture Noire" });
+            return;
+          }
+        }
+      }
+      await navigator.share({ text, title: "LinuxDojo — Ceinture Noire" });
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // fenêtre de partage fermée par l'utilisateur, rien à faire
+      fallback();
+      return;
+    }
+  }
+  fallback();
+}
+
 // ── Rendu de la section profil ────────────────────────────────────
 function renderCertificate() {
   const host = document.getElementById("pf-cert");
@@ -234,6 +281,7 @@ function renderCertificate() {
     overlay.innerHTML =
       '<div class="cert-actions">' +
         '<button class="btn-primary" id="cert-download">⬇️ Télécharger le certificat (PNG)</button>' +
+        '<button class="btn-ghost" id="cert-share">📤 Partager</button>' +
         '<button class="btn-ghost" id="cert-name">✏️ ' + (hasNinjaName() ? "Changer mon nom" : "Définir mon nom") + '</button>' +
       '</div>';
   } else {
@@ -248,6 +296,8 @@ function renderCertificate() {
 
   const dl = document.getElementById("cert-download");
   if (dl) dl.addEventListener("click", downloadCertificate);
+  const sh = document.getElementById("cert-share");
+  if (sh) sh.addEventListener("click", shareCertificate);
   const nm = document.getElementById("cert-name");
   if (nm) nm.addEventListener("click", setNinjaName);
   const gb = document.getElementById("cert-goboss");

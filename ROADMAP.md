@@ -188,12 +188,32 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 
 - [ ] **Analytics respectueux de la vie privée** (type Plausible/Umami, sans cookies) — pour
       savoir quelles missions bloquent le plus de joueurs, sans tracking intrusif
-- [ ] **Partage social des succès** — bouton "partager" sur le certificat et les badges
+- [x] **Partage social des succès** — bouton "partager" sur le certificat et les badges
       (génère une image ou un lien préformaté pour Twitter/LinkedIn)
+      → **Certificat** (`js/certificate.js`) : bouton « 📤 Partager » à côté du téléchargement.
+      Utilise `navigator.share()` avec le PNG du certificat en pièce jointe quand le
+      navigateur le permet (`canShare({files})`, mobile surtout), avec repli automatique
+      sur texte + lien copiés dans le presse-papier (`prompt()` en dernier recours) —
+      même mécanique que l'export de sauvegarde. **Badges** (`js/profile.js`) : bouton
+      « 📋 Partager mes badges » sous la grille, génère un résumé texte (icônes des
+      badges débloqués, badges secrets comptés à part sans être nommés, rang, XP, lien)
+      copié ou partagé via la même logique. `AbortError` (fenêtre de partage fermée par
+      le joueur) traité comme un non-évènement, pas une erreur.
 - [ ] **Serveur Discord / espace communautaire** — pour centraliser feedback, entraide entre
       joueurs, et annonces de nouveaux scénarios
-- [ ] **Page d'atterrissage dédiée** — actuellement le jeu = la landing page ; une vraie page
+- [x] **Page d'atterrissage dédiée** — actuellement le jeu = la landing page ; une vraie page
       marketing (screenshots, témoignages) avant le `▶ Commencer` pourrait améliorer la conversion
+      → `landing.html` + `css/landing.css` (autonome, ne charge pas le CSS complet du jeu pour
+      rester légère) : hero avec mockup de terminal animé (boot séquence tapée en JS,
+      `js/landing.js`, dégradation propre sans JS et avec `prefers-reduced-motion`), bandeau de
+      chiffres réels du contenu (missions, boss, niveaux — pas de faux compteur de joueurs, le
+      projet n'a pas d'analytics pour l'instant), grille des 8 modes de jeu, section « pourquoi »
+      mise en forme comme une vraie page de manuel (`man linuxdojo`). Pas de témoignages
+      inventés : sans vrais retours de joueurs à citer, en fabriquer aurait été trompeur —
+      remplacés par du contenu factuel (stats + description). `index.html` reste l'entrée
+      principale du jeu (aucun changement d'URL racine, de service worker ou de manifest) ;
+      `landing.html` est un point d'entrée additionnel pensé pour les liens externes (bio
+      réseaux sociaux, Product Hunt...). Ajouté au sitemap, documenté dans le README.
 - [ ] **Page de stats publique agrégée** — ex: "X commandes tapées par la communauté", "Y
       certificats délivrés" ; teasing léger pour donner envie de rejoindre (nécessite un
       minimum de backend/compteur côté serveur, donc dépend des analytics ci-dessus)

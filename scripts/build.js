@@ -26,6 +26,7 @@ const DIST = path.join(ROOT, "dist");
 // mêmes noms de fichiers JS/CSS partout, donc aucune référence à réécrire).
 const STATIC_COPY = [
   "index.html",
+  "landing.html",
   "sw.js",
   "manifest.json",
   "robots.txt",
@@ -95,15 +96,18 @@ async function main() {
     rows.push([`js/${file}`, before, after]);
   }
 
-  // --- CSS ---
-  const cssPath = path.join(ROOT, "css", "style.css");
-  const { before: cssBefore, after: cssAfter } = minifyCssFile(
-    cssPath,
-    path.join(DIST, "css", "style.css")
-  );
-  totalBefore += cssBefore;
-  totalAfter += cssAfter;
-  rows.push(["css/style.css", cssBefore, cssAfter]);
+  // --- CSS (tous les fichiers de css/, pas seulement style.css) ---
+  const cssDir = path.join(ROOT, "css");
+  const cssFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith(".css"));
+  for (const file of cssFiles) {
+    const { before, after } = minifyCssFile(
+      path.join(cssDir, file),
+      path.join(DIST, "css", file)
+    );
+    totalBefore += before;
+    totalAfter += after;
+    rows.push([`css/${file}`, before, after]);
+  }
 
   // --- Fichiers statiques (copiés tels quels) ---
   for (const name of STATIC_COPY) {
