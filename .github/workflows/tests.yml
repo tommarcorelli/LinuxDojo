@@ -15,3 +15,5 @@ jobs:
           node-version: 20
       - name: Lancer les tests du simulateur de shell
         run: node tests/terminal.test.js
+      - name: Lancer les tests de progression (XP, badges, sauvegarde)
+        run: node tests/game.test.js

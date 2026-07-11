@@ -94,14 +94,30 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 
 ## 🔧 Phase 3 — Technique / fiabilité
 
-- [ ] **Étendre les tests** au-delà du parseur : XP, badges, sauvegarde/chargement (`game.js`)
-      — zone jamais testée actuellement
-- [ ] **Vérifier la migration de sauvegarde** — si la structure de `GAME` change un jour
+- [x] **Étendre les tests** au-delà du parseur : XP, badges, sauvegarde/chargement (`game.js`)
+      — `tests/game.test.js` (17 tests, zéro dépendance, exécution du script dans un
+      contexte `vm` avec un DOM stub minimal), branché à la CI GitHub Actions à côté de
+      `terminal.test.js`. Couvre : forme de `defaultSave()`, round-trip `persist()`/`loadSave()`,
+      repli sur sauvegarde par défaut si JSON corrompu, migration d'une ancienne sauvegarde
+      sans `reviewCounts`/`objectives`/`secrets`, déblocage de badges (mission, chapitre,
+      paliers XP, secrets), non-duplication des badges, cumul et persistance de l'XP
+- [x] **Vérifier la migration de sauvegarde** — si la structure de `GAME` change un jour
       (ex: nouveau champ), les anciennes sauvegardes `localStorage` doivent rester
       compatibles. Pas de système de versioning vérifié dessus pour l'instant.
-- [ ] **Gestion des sauvegardes multi-onglets** — si le joueur a le jeu ouvert dans 2 onglets,
+      → Ajout d'un champ `version` + `SAVE_VERSION`/`MIGRATIONS` dans `game.js` :
+      chaque sauvegarde est ramenée à la version courante à la volée dans `loadSave()`
+      (une sauvegarde sans champ `version` est traitée comme la version 0). Les anciens
+      correctifs ad hoc (ajout de `reviewCounts`/`objectives`/`secrets`) sont devenus la
+      migration v0→v1. Une sauvegarde plus récente que le code actuel n'est jamais
+      rabaissée (cas d'un vieux client rouvrant une sauvegarde faite par une version
+      plus neuve). 6 nouveaux tests dans `tests/game.test.js`.
+- [x] **Gestion des sauvegardes multi-onglets** — si le joueur a le jeu ouvert dans 2 onglets,
       la dernière sauvegarde écrase l'autre silencieusement ; pas de détection de conflit
       actuellement (piste : `storage` event pour détecter un changement externe)
+      → Écoute de l'event `storage` sur `SAVE_KEY` (`js/game.js`) : dès qu'un autre onglet
+      modifie la sauvegarde, une bannière (même style que celle de mise à jour du service
+      worker) invite à recharger avant de continuer à jouer ici. Pas de fusion automatique
+      des deux progressions (trop risqué), juste une alerte claire. 5 tests dédiés.
 - [ ] **Audit Lighthouse PWA complet** (icônes maskable, `theme-color`, performance) — pour
       le score d'installabilité
 - [ ] **Test de compatibilité navigateurs** — vérifié seulement sur Chromium jusqu'ici ;

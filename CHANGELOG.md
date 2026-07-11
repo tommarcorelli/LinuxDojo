@@ -6,6 +6,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Détection de sauvegarde concurrente entre onglets : si un autre onglet modifie la
+  progression (`localStorage`), une bannière prévient et propose de recharger, pour
+  éviter d'écraser par erreur le progrès le plus récent (`js/game.js`, event `storage`)
+- Versioning des sauvegardes (`SAVE_VERSION`, `MIGRATIONS`, `migrateSave()` dans
+  `game.js`) : les sauvegardes `localStorage` sont désormais migrées automatiquement
+  vers la structure courante au chargement, y compris les très anciennes sauvegardes
+  sans champ `version`. Prépare le terrain pour les futures évolutions du format de
+  sauvegarde sans casser la progression des joueurs existants. 6 tests dédiés
+- Suite de tests unitaires pour la progression (`tests/game.test.js`, désormais 27 tests,
+  zéro dépendance) : sauvegarde/chargement (round-trip, JSON corrompu, migration
+  d'anciennes sauvegardes, versioning), déblocage de badges, gain et persistance d'XP,
+  détection multi-onglets. Branchée à la CI GitHub Actions aux côtés des tests du parseur
 - Recherche arrière dans l'historique (`Ctrl+R`, façon bash) sur les terminaux Apprendre,
   Bac à sable et Exploration : tape pour filtrer l'historique, `Ctrl+R` pour remonter au
   résultat précédent, `Entrée` pour lancer la commande trouvée, `Échap` pour annuler
@@ -24,6 +36,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   du jour, la série 🔥 et l'XP gagné
 - Nouveau boss : **Le Gardien des Serrures**
 
+### Modifié
+- Réorganisation du dossier : `style.css` → `css/`, tous les `.js` → `js/`
+  (racine gardée pour `index.html`, `manifest.json`, `sw.js` — contrainte du scope
+  du service worker)
+- Compteur d'accueil mis à jour : 8 scénarios · 48 missions (au lieu de 7 · 42)
+- Certificat de fin de jeu : le total de missions affiché est maintenant calculé
+  dynamiquement au lieu d'un nombre figé obsolète (`/ 36`)
+
 ### Corrigé
 - L'enchaînement `cmd1 && cmd2` était purement décoratif : taper le hint exact d'une mission
   (ex. `git init && git add . && git commit -m "..."`) n'exécutait que la première commande.
@@ -31,7 +51,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   court-circuit sur échec, comme un shell réel. 3 tests de régression ajoutés.
 - `sort` ne détectait pas les flags combinés en un seul token (`-rn`, `-nr`) — seul `sort -r`
   ou `sort -n` séparément fonctionnait. Corrigé pour matcher le comportement déjà présent sur
-  `grep`/`ls`. 2 tests de régression ajoutés. (🔐) — 5 phases sur le thème des permissions
+  `grep`/`ls`. 2 tests de régression ajoutés.
+- Boss **Le Gardien des Serrures** (🔐) — 5 phases sur le thème des permissions
   (`ls -l`, `chmod`, `chown`), inséré avant le Sensei. Le Sensei exige désormais 5 boss
   vaincus (au lieu de 4). Tous les compteurs "5 boss" du site (README, page d'accueil,
   certificat, objectifs, profil) mis à jour en conséquence
@@ -61,16 +82,6 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   dépendance) + workflow CI GitHub Actions
 - `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, templates d'issues GitHub
 - `ROADMAP.md` — ligne de route du projet
-
-### Modifié
-- Réorganisation du dossier : `style.css` → `css/`, tous les `.js` → `js/`
-  (racine gardée pour `index.html`, `manifest.json`, `sw.js` — contrainte du scope
-  du service worker)
-- Compteur d'accueil mis à jour : 8 scénarios · 48 missions (au lieu de 7 · 42)
-- Certificat de fin de jeu : le total de missions affiché est maintenant calculé
-  dynamiquement au lieu d'un nombre figé obsolète (`/ 36`)
-
-### Corrigé
 - Suppression d'un fichier `nojekyll` dupliqué (sans le point, doublon du `.nojekyll`
   correct)
 - Le service worker rechargeait la page sans prévenir dès qu'une mise à jour était

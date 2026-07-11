@@ -2,20 +2,53 @@
 
 const SAVE_KEY = "linuxdojo_v3";
 
-function loadSave() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return defaultSave();
-    const s = JSON.parse(raw);
-    s.completed = new Set(s.completed || []);
-    s.quizzes   = new Set(s.quizzes || []);
+// ── Versioning de sauvegarde ────────────────────────────────────
+// SAVE_VERSION suit la STRUCTURE des données sauvegardées (pas la version
+// du jeu). Quand un futur changement modifie la forme de GAME (champ
+// renommé, restructuré...), incrémenter SAVE_VERSION et ajouter une étape
+// à MIGRATIONS. MIGRATIONS[i] transforme une sauvegarde de version i vers
+// i+1 : la liste doit toujours contenir exactement SAVE_VERSION étapes,
+// une sauvegarde sans champ "version" est traitée comme la version 0.
+const SAVE_VERSION = 1;
+const MIGRATIONS = [
+  // v0 → v1 : ajout de reviewCounts (répétition espacée), objectives
+  // (objectifs quotidiens) et secrets (badges cachés) — ces trois champs
+  // n'existaient pas dans les toutes premières sauvegardes.
+  s => {
     if (!s.reviewCounts) s.reviewCounts = {};
     if (!s.objectives)   s.objectives = [];
     if (!s.secrets)      s.secrets = {};
     return s;
+  },
+];
+
+// Fait remonter une sauvegarde brute (déjà parsée) jusqu'à SAVE_VERSION,
+// en appliquant les migrations une par une. Ne fait rien si la sauvegarde
+// est déjà à jour ; ne régresse jamais une sauvegarde plus récente que le
+// code actuel (cas d'un ancien client qui relirait une sauvegarde faite
+// par une version plus neuve du jeu).
+function migrateSave(s) {
+  let v = typeof s.version === "number" ? s.version : 0;
+  while (v < SAVE_VERSION) {
+    s = MIGRATIONS[v](s);
+    v++;
+  }
+  s.version = Math.max(v, s.version || 0);
+  return s;
+}
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return defaultSave();
+    let s = JSON.parse(raw);
+    s.completed = new Set(s.completed || []);
+    s.quizzes   = new Set(s.quizzes || []);
+    s = migrateSave(s);
+    return s;
   } catch { return defaultSave(); }
 }
-function defaultSave() { return { xp: 0, completed: new Set(), badges: [], quizzes: new Set(), reviewCounts: {}, objectives: [], secrets: {} }; }
+function defaultSave() { return { version: SAVE_VERSION, xp: 0, completed: new Set(), badges: [], quizzes: new Set(), reviewCounts: {}, objectives: [], secrets: {} }; }
 function persist() {
   const s = { ...GAME, completed: [...GAME.completed], quizzes: [...GAME.quizzes] };
   localStorage.setItem(SAVE_KEY, JSON.stringify(s));
@@ -45,6 +78,32 @@ function markSecret(key) {
   persist();
   if (typeof checkBadges === "function") checkBadges();
 }
+
+// ── Sauvegarde concurrente entre onglets ────────────────────────
+// Si le joueur a le jeu ouvert dans 2 onglets, le persist() le plus récent
+// écrase silencieusement l'autre onglet en localStorage. On ne tente pas
+// de fusionner automatiquement les deux progressions (risque de résultat
+// incohérent) : on détecte le changement externe via l'event "storage"
+// (déclenché sur CET onglet quand un AUTRE onglet écrit dans le même
+// localStorage) et on prévient le joueur, pour qu'il recharge avant de
+// continuer ici et risquer d'écraser par erreur le progrès le plus récent.
+let multiTabBannerShown = false;
+function showMultiTabBanner() {
+  if (multiTabBannerShown) return; // pas de spam si plusieurs events arrivent d'affilée
+  multiTabBannerShown = true;
+  const banner = document.getElementById("multitab-banner");
+  if (!banner) return; // sécurité si l'élément n'existe pas encore
+  banner.style.display = "flex";
+  const btn = document.getElementById("multitab-banner-btn");
+  const dismiss = document.getElementById("multitab-banner-dismiss");
+  if (btn) btn.onclick = () => window.location.reload();
+  if (dismiss) dismiss.onclick = () => { banner.style.display = "none"; multiTabBannerShown = false; };
+}
+window.addEventListener("storage", e => {
+  // e.newValue === null signifie une suppression (ex: reset de progression
+  // dans l'autre onglet) : pas un vrai conflit de sauvegarde, on ignore.
+  if (e.key === SAVE_KEY && e.newValue) showMultiTabBanner();
+});
 
 // Boss vaincus (lus depuis la sauvegarde du mode Boss)
 function bossKills() {
