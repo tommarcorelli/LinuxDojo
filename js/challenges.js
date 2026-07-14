@@ -256,10 +256,10 @@ class ChallengeMode {
 
     this.term.clear();
     this.term.loadFS(ch.fs);
-    this.term.printInfo("⚡ Défi " + (idx+1) + "/" + CHALLENGES.length + " — " + ch.category);
+    this.term.printInfo(t("challenge.header", { n: idx+1, total: CHALLENGES.length, cat: ch.category }));
     this.term.printOut("");
 
-    this.numEl.textContent = "Défi " + (idx+1);
+    this.numEl.textContent = t("challenge.num", { n: idx+1 });
     this.catEl.textContent = ch.category;
     this.xpEl.textContent  = "+" + ch.xp + " XP";
     this.descEl.innerHTML  = ch.desc;
@@ -272,10 +272,10 @@ class ChallengeMode {
 
   _updateComboUI() {
     if (this.comboEl) {
-      if (this.combo > 1) { this.comboEl.textContent = "🔥 Combo x" + Math.min(this.combo,5); this.comboEl.style.color = "var(--orange)"; }
+      if (this.combo > 1) { this.comboEl.textContent = t("challenge.combo", { n: Math.min(this.combo,5) }); this.comboEl.style.color = "var(--orange)"; }
       else this.comboEl.textContent = "";
     }
-    if (this.bestEl) this.bestEl.textContent = "★ Record : " + Math.max(this.best, this.score) + " pts  ·  Score : " + this.score;
+    if (this.bestEl) this.bestEl.textContent = t("challenge.best", { best: Math.max(this.best, this.score), score: this.score });
   }
 
   _run() {
@@ -300,7 +300,7 @@ class ChallengeMode {
       this._saveBest();
       this._updateComboUI();
       setTimeout(() => {
-        this.term.printOk("✅ Réussi ! +" + gain + " XP" + (mult > 1 ? "  (combo x" + mult + " !)" : ""));
+        this.term.printOk(t("challenge.success", { xp: gain }) + (mult > 1 ? t("challenge.comboSuffix", { m: mult }) : ""));
         if (typeof addXP === "function") addXP(gain);
         if (typeof SFX !== "undefined") SFX.success();
         if (mult >= 3 && typeof burstParticles === "function") burstParticles(window.innerWidth/2, window.innerHeight*0.3);
@@ -315,7 +315,7 @@ class ChallengeMode {
       this.current++;
       this._loadChallenge(this.current);
     } else {
-      this.term.printInfo("🏆 Tous les défis terminés !");
+      this.term.printInfo(t("challenge.allDone"));
     }
   }
 
@@ -329,7 +329,7 @@ class ChallengeMode {
       if (this.timeLeft <= 0) {
         clearInterval(this.timer);
         this.combo = 0; this._updateComboUI();
-        this.term.printErr("⏰ Temps écoulé ! Solution : " + CHALLENGES[this.current].solution);
+        this.term.printErr(t("challenge.timeout", { sol: CHALLENGES[this.current].solution }));
         setTimeout(() => this._next(), 2000);
       }
     }, 1000);

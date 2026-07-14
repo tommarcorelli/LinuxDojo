@@ -119,10 +119,22 @@ const UI = {
     "challenge.expected": "RÉSULTAT ATTENDU",
     "challenge.skip": "Passer →",
     "challenge.placeholder": "tape ta commande...",
+    "challenge.header": "⚡ Défi {n}/{total} — {cat}",
+    "challenge.num": "Défi {n}",
+    "challenge.combo": "🔥 Combo x{n}",
+    "challenge.best": "★ Record : {best} pts  ·  Score : {score}",
+    "challenge.success": "✅ Réussi ! +{xp} XP",
+    "challenge.comboSuffix": "  (combo x{m} !)",
+    "challenge.allDone": "🏆 Tous les défis terminés !",
+    "challenge.timeout": "⏰ Temps écoulé ! Solution : {sol}",
 
     // ── Infiltration ──
     "bandit.usefulCmds": "COMMANDES UTILES",
     "bandit.placeholder": "explore et trouve le mot de passe...",
+    "bandit.story": "Tu t'es infiltré dans le serveur d'une organisation obscure. Chaque niveau cache le mot de passe du suivant. Fouille, filtre, décode — et ne laisse aucune trace.",
+    "bandit.explore": "Explore le filesystem. Trouve le mot de passe pour passer au niveau suivant.",
+    "bandit.level": "Niveau {n}",
+    "bandit.found": "Mot de passe trouvé : {pw}\n\n+{xp} XP",
 
     // ── Boss ──
     "boss.roomTitle": "⚔️ Salle des Boss",
@@ -302,10 +314,22 @@ const UI = {
     "challenge.expected": "EXPECTED OUTPUT",
     "challenge.skip": "Skip →",
     "challenge.placeholder": "type your command...",
+    "challenge.header": "⚡ Challenge {n}/{total} — {cat}",
+    "challenge.num": "Challenge {n}",
+    "challenge.combo": "🔥 Combo x{n}",
+    "challenge.best": "★ Best: {best} pts  ·  Score: {score}",
+    "challenge.success": "✅ Success! +{xp} XP",
+    "challenge.comboSuffix": "  (combo x{m}!)",
+    "challenge.allDone": "🏆 All challenges complete!",
+    "challenge.timeout": "⏰ Time's up! Solution: {sol}",
 
     // ── Infiltration ──
     "bandit.usefulCmds": "USEFUL COMMANDS",
     "bandit.placeholder": "explore and find the password...",
+    "bandit.story": "You've infiltrated the server of a shadowy organization. Each level hides the password to the next. Search, filter, decode — and leave no trace.",
+    "bandit.explore": "Explore the filesystem. Find the password to move to the next level.",
+    "bandit.level": "Level {n}",
+    "bandit.found": "Password found: {pw}\n\n+{xp} XP",
 
     // ── Boss ──
     "boss.roomTitle": "⚔️ Boss Room",
@@ -518,6 +542,19 @@ const GLOSS_CATS_EN = {
   "Aide": "Help",
 };
 function glossCat(c) { return LANG === "en" ? (GLOSS_CATS_EN[c] || c) : c; }
+
+// Overlay générique pour les modes annexes : un tableau d'objets identifiés
+// par `id`, dont on remplace certains champs texte plats. `byId` = { [id]:
+// { champ: "traduction", ... } }. `fields` = liste des champs à traduire.
+// Ne touche à rien en français ; les champs absents de l'overlay sont laissés.
+function overlayArray(arr, byId, fields) {
+  if (LANG !== "en" || !Array.isArray(arr)) return;
+  for (const item of arr) {
+    const ov = byId[item.id];
+    if (!ov) continue;
+    for (const f of fields) _ov(item, f, ov[f]);
+  }
+}
 
 // ── Changement de langue ────────────────────────────────────────
 function setLang(l) {

@@ -58,7 +58,12 @@ function load(navLang) {
     read("js/i18n/quizzes.en.js") + "\n" +
     read("js/glossary.js") + "\n" +
     read("js/i18n/glossary.en.js") + "\n" +
-    "var __EXPORTS__ = { CHAPTERS, LEVELS_EN, QUIZZES, QUIZZES_EN, GLOSSARY, GLOSSARY_EN, glossCat, LANG };\n";
+    read("js/challenges.js") + "\n" +
+    read("js/i18n/challenges.en.js") + "\n" +
+    read("js/bandit.js") + "\n" +
+    read("js/i18n/bandit.en.js") + "\n" +
+    "var __EXPORTS__ = { CHAPTERS, LEVELS_EN, QUIZZES, QUIZZES_EN, GLOSSARY, GLOSSARY_EN, glossCat, " +
+    "CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN, LANG };\n";
   vm.createContext(sandbox);
   vm.runInContext(src, sandbox, { filename: "levels-i18n-bundle.js" });
   return sandbox.__EXPORTS__;
@@ -277,6 +282,38 @@ test("toutes les catégories du glossaire ont un libellé EN dans GLOSS_CATS_EN"
   const cats = new Set(["Tout", ...GLOSSARY.map(g => g.cat)]);
   const untranslated = [...cats].filter(c => glossCat(c) === c && c !== "Git" && c !== "Navigation" && c !== "Scripting");
   assert(untranslated.length === 0, "catégories sans libellé EN distinct : " + untranslated.join(", "));
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Modes annexes (Phase C) : défis + infiltration
+// ═══════════════════════════════════════════════════════════════
+test("LANG=en : overlayArray traduit les défis (category + desc), FR intact sinon", () => {
+  const en = load("en-US");
+  const c1en = en.CHALLENGES.find(c => c.id === 1);
+  assert(/current directory/i.test(c1en.desc), "desc défi 1 en anglais");
+  const fr = load("fr-FR");
+  const c1fr = fr.CHALLENGES.find(c => c.id === 1);
+  assert(/répertoire courant/.test(c1fr.desc), "desc reste FR");
+});
+
+test("chaque défi et chaque niveau d'infiltration a un overlay EN (desc)", () => {
+  const { CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN } = load("fr-FR");
+  const problems = [];
+  for (const c of CHALLENGES) {
+    const ov = CHALLENGES_EN[c.id];
+    if (!ov || !ov.desc || !ov.category) problems.push("défi " + c.id);
+  }
+  for (const lv of BANDIT_LEVELS) {
+    const ov = BANDIT_LEVELS_EN[lv.id];
+    if (!ov || !ov.desc || !ov.title) problems.push("infiltration " + lv.id);
+  }
+  assert(problems.length === 0, "overlays manquants : " + problems.join(", "));
+});
+
+test("LANG=en : titres d'infiltration gardent le séparateur « — » (rendu de la liste)", () => {
+  const { BANDIT_LEVELS } = load("en-US");
+  const bad = BANDIT_LEVELS.filter(lv => !lv.title.includes("—"));
+  assert(bad.length === 0, "titres sans « — » : " + bad.map(l => l.id).join(", "));
 });
 
 // ─────────────────────────────────────────────────────────────────────────

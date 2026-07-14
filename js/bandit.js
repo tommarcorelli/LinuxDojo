@@ -218,7 +218,7 @@ class BanditMode {
 
   init() {
     const story = document.getElementById("bandit-story");
-    if (story) story.textContent = "Tu t'es infiltré dans le serveur d'une organisation obscure. Chaque niveau cache le mot de passe du suivant. Fouille, filtre, décode — et ne laisse aucune trace.";
+    if (story) story.textContent = t("bandit.story");
     this._renderLevels();
     this._loadLevel(0);
   }
@@ -255,10 +255,10 @@ class BanditMode {
 
     this.term.printInfo("🔐 " + lv.title);
     this.term.printOut("");
-    this.term.printOut("Explore le filesystem. Trouve le mot de passe pour passer au niveau suivant.");
+    this.term.printOut(t("bandit.explore"));
     this.term.printOut("");
 
-    this.badgeEl.textContent = "Niveau " + idx;
+    this.badgeEl.textContent = t("bandit.level", { n: idx });
     this.titleEl.textContent = lv.title;
     this.descEl.innerHTML    = lv.desc;
 
@@ -316,7 +316,7 @@ class BanditMode {
       if (typeof SFX !== "undefined") SFX.success();
       if (typeof burstParticles === "function") burstParticles(window.innerWidth/2, window.innerHeight*0.4);
       setTimeout(() => {
-        this.winMsg.textContent = "Mot de passe trouvé : " + lv.password + "\n\n+" + reward + " XP";
+        this.winMsg.textContent = t("bandit.found", { pw: lv.password, xp: reward });
         const nextLv = BANDIT_LEVELS[this.current + 1];
         this.winNext.style.display = nextLv ? "" : "none";
         this.winModal.classList.add("open");
