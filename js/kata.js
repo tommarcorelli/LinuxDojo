@@ -69,9 +69,8 @@ class KataMode {
     this.reset();
     this.body.innerHTML =
       '<div class="kata-intro">' +
-        '<h2>🥋 Kata — la mémoire musculaire du shell</h2>' +
-        '<p>Tape chaque commande le plus vite et le plus juste possible. Un kata = 8 commandes. ' +
-        'On mesure ta vitesse (WPM) et ta précision. Répète, et tes doigts finiront par connaître le chemin.</p>' +
+        '<h2>' + t("kata.introTitle") + '</h2>' +
+        '<p>' + t("kata.introText") + '</p>' +
       '</div>' +
       '<div class="kata-grid" id="kata-grid"></div>';
     const grid = document.getElementById("kata-grid");
@@ -84,7 +83,7 @@ class KataMode {
         '<div class="kata-card-emoji">' + k.emoji + '</div>' +
         '<div class="kata-card-name">' + k.name + '</div>' +
         '<div class="kata-card-desc">' + k.desc + '</div>' +
-        '<div class="kata-card-best">' + (b ? "★ Record : " + b.score + " (" + b.wpm + " WPM · " + b.acc + "%)" : "Jamais tenté") + '</div>';
+        '<div class="kata-card-best">' + (b ? t("kata.record", { score: b.score, wpm: b.wpm, acc: b.acc }) : t("kata.never")) + '</div>';
       card.addEventListener("click", () => this.start(k));
       grid.appendChild(card);
     });
@@ -107,12 +106,12 @@ class KataMode {
           '<span id="kata-wpm">0 WPM</span>' +
           '<span id="kata-acc">100%</span>' +
           '<span id="kata-time">0.0s</span>' +
-          '<button class="btn-ghost" id="kata-quit">✕ Quitter</button>' +
+          '<button class="btn-ghost" id="kata-quit">' + t("kata.quit") + '</button>' +
         '</div>' +
         '<div class="kata-dots" id="kata-dots"></div>' +
         '<div class="kata-target" id="kata-target"></div>' +
-        '<input id="kata-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="tape la commande ci-dessus...">' +
-        '<div class="kata-hint">Entrée ou frappe complète pour valider · Échap pour quitter</div>' +
+        '<input id="kata-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + t("kata.playPlaceholder") + '">' +
+        '<div class="kata-hint">' + t("kata.playHint") + '</div>' +
       '</div>';
 
     this.input = document.getElementById("kata-input");
@@ -237,22 +236,22 @@ class KataMode {
     if (typeof burstParticles === "function") burstParticles(window.innerWidth / 2, window.innerHeight / 2);
 
     // Note façon arts martiaux
-    const grade = acc === 100 && wpm >= 60 ? "PARFAIT 🏆" : score >= 70 ? "Maître 🥋" : score >= 45 ? "Ceinture Marron" : score >= 25 ? "Ceinture Verte" : "Ceinture Blanche";
+    const grade = acc === 100 && wpm >= 60 ? t("kata.gradePerfect") : score >= 70 ? t("kata.gradeMaster") : score >= 45 ? t("kata.gradeBrown") : score >= 25 ? t("kata.gradeGreen") : t("kata.gradeWhite");
 
     this.body.innerHTML =
       '<div class="kata-result">' +
         '<div class="kata-result-grade">' + grade + '</div>' +
-        '<div class="kata-result-name">' + this.kata.emoji + ' ' + this.kata.name + (isRecord ? ' <span class="kata-record">★ NOUVEAU RECORD</span>' : '') + '</div>' +
+        '<div class="kata-result-name">' + this.kata.emoji + ' ' + this.kata.name + (isRecord ? ' <span class="kata-record">' + t("kata.newRecord") + '</span>' : '') + '</div>' +
         '<div class="kata-result-stats">' +
           '<div class="krs"><span>' + wpm + '</span><label>WPM</label></div>' +
-          '<div class="krs"><span>' + acc + '%</span><label>Précision</label></div>' +
-          '<div class="krs"><span>' + seconds + 's</span><label>Temps</label></div>' +
+          '<div class="krs"><span>' + acc + '%</span><label>' + t("kata.accuracy") + '</label></div>' +
+          '<div class="krs"><span>' + seconds + 's</span><label>' + t("kata.time") + '</label></div>' +
           '<div class="krs krs-score"><span>' + score + '</span><label>Score</label></div>' +
         '</div>' +
-        '<div class="kata-result-xp">+' + xpGain + ' XP' + (acc === 100 ? '  ·  sans-faute !' : '') + '</div>' +
+        '<div class="kata-result-xp">+' + xpGain + ' XP' + (acc === 100 ? t("kata.perfectSuffix") : '') + '</div>' +
         '<div class="kata-result-btns">' +
-          '<button class="btn-primary" id="kata-again">↻ Refaire ce kata</button>' +
-          '<button class="btn-ghost" id="kata-menu">Autres katas</button>' +
+          '<button class="btn-primary" id="kata-again">' + t("kata.again") + '</button>' +
+          '<button class="btn-ghost" id="kata-menu">' + t("kata.others") + '</button>' +
         '</div>' +
       '</div>';
     document.getElementById("kata-again").addEventListener("click", () => this.start(this.kata));

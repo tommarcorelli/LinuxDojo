@@ -128,6 +128,52 @@ const UI = {
     "challenge.allDone": "🏆 Tous les défis terminés !",
     "challenge.timeout": "⏰ Temps écoulé ! Solution : {sol}",
 
+    // ── Kata ──
+    "kata.introTitle": "🥋 Kata — la mémoire musculaire du shell",
+    "kata.introText": "Tape chaque commande le plus vite et le plus juste possible. Un kata = 8 commandes. On mesure ta vitesse (WPM) et ta précision. Répète, et tes doigts finiront par connaître le chemin.",
+    "kata.record": "★ Record : {score} ({wpm} WPM · {acc}%)",
+    "kata.never": "Jamais tenté",
+    "kata.quit": "✕ Quitter",
+    "kata.playPlaceholder": "tape la commande ci-dessus...",
+    "kata.playHint": "Entrée ou frappe complète pour valider · Échap pour quitter",
+    "kata.newRecord": "★ NOUVEAU RECORD",
+    "kata.accuracy": "Précision",
+    "kata.time": "Temps",
+    "kata.perfectSuffix": "  ·  sans-faute !",
+    "kata.again": "↻ Refaire ce kata",
+    "kata.others": "Autres katas",
+    "kata.gradePerfect": "PARFAIT 🏆",
+    "kata.gradeMaster": "Maître 🥋",
+    "kata.gradeBrown": "Ceinture Marron",
+    "kata.gradeGreen": "Ceinture Verte",
+    "kata.gradeWhite": "Ceinture Blanche",
+
+    // ── Défi du jour (bannière + modale, générés en JS) ──
+    "daily.banner.doneSub": "Reviens demain pour un nouveau défi.",
+    "daily.banner.doneBtn": "Revoir",
+    "daily.banner.todoSub": "Résous le défi du {day} pour +50 XP bonus.",
+    "daily.banner.todoBtn": "Relever le défi",
+    "daily.streakChip": "🔥 {n} j",
+    "daily.streakDate": "  ·  🔥 {n} j",
+    "daily.doneToday": "✓ Terminé aujourd'hui",
+    "daily.retrain": "Tu peux le refaire pour t'entraîner (sans récompense).",
+    "daily.hiddenHintDone": "Astuce cachée : {hint}",
+    "daily.hiddenHintTodo": "Astuce cachée : clique 3 fois sur le titre pour voir l'indice",
+    "daily.hintReveal": "💡 {hint}",
+    "daily.success": "✅ Défi du jour réussi ! +{gain} XP",
+    "daily.successStreakBonus": "  (série 🔥{streak} → +{bonus} bonus)",
+    "daily.successBonus": " bonus",
+    "daily.successBox": "🎉 Bravo ! {streak}Reviens demain pour la continuer.",
+    "daily.successBoxStreak": "Série de 🔥{streak} jours ! ",
+    "daily.achStreak": "Série de {streak} jours",
+    "daily.achTitle": "Défi du jour",
+    "daily.alreadyToday": "✅ Correct ! (déjà validé aujourd'hui)",
+    "daily.shareTitle": "LinuxDojo — Défi #{n}",
+    "daily.shareStreak": "🔥 Série de {streak} jours",
+    "daily.shareBtn": "📋 Partager mon résultat",
+    "daily.copied": "📋 Résultat copié — colle-le où tu veux !",
+    "daily.copyPrompt": "Copie ton résultat :",
+
     // ── Infiltration ──
     "bandit.usefulCmds": "COMMANDES UTILES",
     "bandit.placeholder": "explore et trouve le mot de passe...",
@@ -330,6 +376,52 @@ const UI = {
     "challenge.comboSuffix": "  (combo x{m}!)",
     "challenge.allDone": "🏆 All challenges complete!",
     "challenge.timeout": "⏰ Time's up! Solution: {sol}",
+
+    // ── Kata ──
+    "kata.introTitle": "🥋 Kata — shell muscle memory",
+    "kata.introText": "Type each command as fast and accurately as possible. One kata = 8 commands. We measure your speed (WPM) and accuracy. Repeat, and your fingers will learn the way.",
+    "kata.record": "★ Best: {score} ({wpm} WPM · {acc}%)",
+    "kata.never": "Never attempted",
+    "kata.quit": "✕ Quit",
+    "kata.playPlaceholder": "type the command above...",
+    "kata.playHint": "Enter or full typing to validate · Esc to quit",
+    "kata.newRecord": "★ NEW RECORD",
+    "kata.accuracy": "Accuracy",
+    "kata.time": "Time",
+    "kata.perfectSuffix": "  ·  flawless!",
+    "kata.again": "↻ Redo this kata",
+    "kata.others": "Other katas",
+    "kata.gradePerfect": "PERFECT 🏆",
+    "kata.gradeMaster": "Master 🥋",
+    "kata.gradeBrown": "Brown Belt",
+    "kata.gradeGreen": "Green Belt",
+    "kata.gradeWhite": "White Belt",
+
+    // ── Daily challenge (banner + modal, JS-generated) ──
+    "daily.banner.doneSub": "Come back tomorrow for a new challenge.",
+    "daily.banner.doneBtn": "Replay",
+    "daily.banner.todoSub": "Solve the {day} challenge for +50 bonus XP.",
+    "daily.banner.todoBtn": "Take the challenge",
+    "daily.streakChip": "🔥 {n} d",
+    "daily.streakDate": "  ·  🔥 {n} d",
+    "daily.doneToday": "✓ Done today",
+    "daily.retrain": "You can replay it to practice (no reward).",
+    "daily.hiddenHintDone": "Hidden tip: {hint}",
+    "daily.hiddenHintTodo": "Hidden tip: click the title 3 times to reveal the hint",
+    "daily.hintReveal": "💡 {hint}",
+    "daily.success": "✅ Daily challenge solved! +{gain} XP",
+    "daily.successStreakBonus": "  (streak 🔥{streak} → +{bonus} bonus)",
+    "daily.successBonus": " bonus",
+    "daily.successBox": "🎉 Well done! {streak}Come back tomorrow to keep it going.",
+    "daily.successBoxStreak": "🔥{streak}-day streak! ",
+    "daily.achStreak": "{streak}-day streak",
+    "daily.achTitle": "Daily challenge",
+    "daily.alreadyToday": "✅ Correct! (already solved today)",
+    "daily.shareTitle": "LinuxDojo — Challenge #{n}",
+    "daily.shareStreak": "🔥 {streak}-day streak",
+    "daily.shareBtn": "📋 Share my result",
+    "daily.copied": "📋 Result copied — paste it anywhere!",
+    "daily.copyPrompt": "Copy your result:",
 
     // ── Infiltration ──
     "bandit.usefulCmds": "USEFUL COMMANDS",
@@ -571,6 +663,21 @@ function overlayArray(arr, byId, fields) {
     for (const f of fields) _ov(item, f, ov[f]);
   }
 }
+
+// Variante par INDEX pour les tableaux sans `id` (ex: DAILY_POOL, dont l'entrée
+// du jour est choisie par position). `ovArr` est un tableau parallèle : ovArr[i]
+// fournit les champs traduits de arr[i].
+function overlayIndexed(arr, ovArr, fields) {
+  if (LANG !== "en" || !Array.isArray(arr) || !Array.isArray(ovArr)) return;
+  arr.forEach((item, i) => {
+    const ov = ovArr[i];
+    if (!ov) return;
+    for (const f of fields) _ov(item, f, ov[f]);
+  });
+}
+
+// Locale de formatage des dates selon la langue courante (toLocaleDateString).
+function dateLocale() { return LANG === "en" ? "en-US" : "fr-FR"; }
 
 // ── Changement de langue ────────────────────────────────────────
 function setLang(l) {

@@ -160,25 +160,25 @@ function updateDailyBanner() {
   const badge = document.getElementById("daily-banner-status");
   const sub   = document.getElementById("daily-banner-sub");
   const btn   = document.getElementById("daily-banner-btn");
-  const dayName = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const dayName = new Date().toLocaleDateString(dateLocale(), { weekday: "long", day: "numeric", month: "long" });
   if (!badge || !sub || !btn) return;
 
   // Puce de série 🔥
   const streakChip = document.getElementById("daily-banner-streak");
   if (streakChip) {
     const s = dailyStreak();
-    if (s >= 2) { streakChip.style.display = ""; streakChip.textContent = "🔥 " + s + " j"; }
+    if (s >= 2) { streakChip.style.display = ""; streakChip.textContent = t("daily.streakChip", { n: s }); }
     else { streakChip.style.display = "none"; }
   }
   if (status === "done") {
     badge.textContent = " ✓";
     badge.style.color = "var(--green-li)";
-    sub.textContent = "Reviens demain pour un nouveau défi.";
-    btn.textContent = "Revoir";
+    sub.textContent = t("daily.banner.doneSub");
+    btn.textContent = t("daily.banner.doneBtn");
   } else {
     badge.textContent = "";
-    sub.textContent = "Résous le défi du " + dayName + " pour +50 XP bonus.";
-    btn.textContent = "Relever le défi";
+    sub.textContent = t("daily.banner.todoSub", { day: dayName });
+    btn.textContent = t("daily.banner.todoBtn");
   }
 }
 
@@ -194,10 +194,10 @@ function openDaily() {
   const alreadyDone = state.date === today && state.done;
 
   const _s = dailyStreak();
-  document.getElementById("daily-date").textContent = "📅 " + new Date().toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" }) + (_s >= 2 ? "  ·  🔥 " + _s + " j" : "");
-  document.getElementById("daily-reward").textContent = alreadyDone ? "✓ Terminé aujourd'hui" : "+50 XP bonus";
+  document.getElementById("daily-date").textContent = "📅 " + new Date().toLocaleDateString(dateLocale(), { weekday:"long", day:"numeric", month:"long" }) + (_s >= 2 ? t("daily.streakDate", { n: _s }) : "");
+  document.getElementById("daily-reward").textContent = alreadyDone ? t("daily.doneToday") : t("daily.reward");
   document.getElementById("daily-title").textContent = ch.title;
-  document.getElementById("daily-desc").innerHTML = ch.desc + (alreadyDone ? '<br><span style="color:var(--green-li);font-size:12px">Tu peux le refaire pour t\'entraîner (sans récompense).</span>' : "");
+  document.getElementById("daily-desc").innerHTML = ch.desc + (alreadyDone ? '<br><span style="color:var(--green-li);font-size:12px">' + t("daily.retrain") + '</span>' : "");
   document.getElementById("daily-status").innerHTML = alreadyDone ? _dailyShareBlock(state) : "";
   _dailyAttempts = 0;
 
@@ -209,7 +209,7 @@ function openDaily() {
   _dailyTerm.loadFS(ch.fs);
   _dailyTerm.printInfo("🎯 " + ch.title);
   _dailyTerm.printOut("");
-  _dailyTerm.printOut("Astuce cachée : " + (alreadyDone ? ch.hint : "clique 3 fois sur le titre pour voir l'indice"));
+  _dailyTerm.printOut(alreadyDone ? t("daily.hiddenHintDone", { hint: ch.hint }) : t("daily.hiddenHintTodo"));
 
   // Astuce à révéler
   let clicks = 0;
@@ -218,7 +218,7 @@ function openDaily() {
   titleEl.onclick = () => {
     clicks++;
     if (clicks === 3 && !alreadyDone) {
-      _dailyTerm.printInfo("💡 " + ch.hint);
+      _dailyTerm.printInfo(t("daily.hintReveal", { hint: ch.hint }));
       titleEl.onclick = null;
     }
   };
@@ -260,15 +260,15 @@ function _dailyRun() {
     if (typeof addXP === "function") addXP(gain);
     if (typeof SFX !== "undefined") SFX.success();
     if (typeof burstParticles === "function") burstParticles(window.innerWidth/2, window.innerHeight*0.35);
-    _dailyTerm.printOk("✅ Défi du jour réussi ! +" + gain + " XP" + (streakBonus ? "  (série 🔥" + streak + " → +" + streakBonus + " bonus)" : " bonus"));
+    _dailyTerm.printOk(t("daily.success", { gain }) + (streakBonus ? t("daily.successStreakBonus", { streak, bonus: streakBonus }) : t("daily.successBonus")));
     document.getElementById("daily-status").innerHTML =
-      '<div class="daily-success">🎉 Bravo ! ' + (streak >= 2 ? "Série de 🔥" + streak + " jours ! " : "") + 'Reviens demain pour la continuer.</div>' +
+      '<div class="daily-success">' + t("daily.successBox", { streak: streak >= 2 ? t("daily.successBoxStreak", { streak }) : "" }) + '</div>' +
       _dailyShareBlock(_loadDaily());
     if (typeof showAchievement === "function")
-      showAchievement(streak >= 2 ? "🔥" : "📅", streak >= 2 ? "Série de " + streak + " jours" : "Défi du jour", "+" + gain + " XP");
+      showAchievement(streak >= 2 ? "🔥" : "📅", streak >= 2 ? t("daily.achStreak", { streak }) : t("daily.achTitle"), "+" + gain + " XP");
     updateDailyBanner();
   } else {
-    _dailyTerm.printOk("✅ Correct ! (déjà validé aujourd'hui)");
+    _dailyTerm.printOk(t("daily.alreadyToday"));
   }
 }
 
@@ -284,10 +284,10 @@ function _dailyShareGrid(attempts) {
 function _dailyShareText(state) {
   const grid = _dailyShareGrid(state.attempts);
   const lines = [
-    "LinuxDojo — Défi #" + (state.dayNumber || _dayNumber()),
+    t("daily.shareTitle", { n: state.dayNumber || _dayNumber() }),
     grid,
   ];
-  if ((state.streak || 0) >= 2) lines.push("🔥 Série de " + state.streak + " jours");
+  if ((state.streak || 0) >= 2) lines.push(t("daily.shareStreak", { streak: state.streak }));
   lines.push("+" + (state.gain || 50) + " XP");
   lines.push("https://tommarcorelli.github.io/LinuxDojo/");
   return lines.join("\n");
@@ -297,7 +297,7 @@ function _dailyShareBlock(state) {
   if (!state || !state.attempts) return "";
   return '<div class="daily-share">' +
     '<div class="daily-share-grid">' + _dailyShareGrid(state.attempts) + '</div>' +
-    '<button id="daily-share-btn" class="btn-ghost" type="button">📋 Partager mon résultat</button>' +
+    '<button id="daily-share-btn" class="btn-ghost" type="button">' + t("daily.shareBtn") + '</button>' +
     '</div>';
 }
 
@@ -305,11 +305,11 @@ function shareDailyResult() {
   const state = _loadDaily();
   if (!state || !state.attempts) return;
   const text = _dailyShareText(state);
-  const done = () => { if (typeof showToast === "function") showToast("📋 Résultat copié — colle-le où tu veux !"); };
+  const done = () => { if (typeof showToast === "function") showToast(t("daily.copied")); };
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(() => prompt("Copie ton résultat :", text));
+    navigator.clipboard.writeText(text).then(done).catch(() => prompt(t("daily.copyPrompt"), text));
   } else {
-    prompt("Copie ton résultat :", text);
+    prompt(t("daily.copyPrompt"), text);
   }
 }
 

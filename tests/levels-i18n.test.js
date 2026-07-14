@@ -68,9 +68,13 @@ function load(navLang) {
     read("js/i18n/objectives.en.js") + "\n" +
     read("js/seasonal.js") + "\n" +
     read("js/i18n/seasonal.en.js") + "\n" +
+    read("js/kata.js") + "\n" +
+    read("js/i18n/kata.en.js") + "\n" +
+    read("js/daily.js") + "\n" +
+    read("js/i18n/daily.en.js") + "\n" +
     "var __EXPORTS__ = { CHAPTERS, LEVELS_EN, QUIZZES, QUIZZES_EN, GLOSSARY, GLOSSARY_EN, glossCat, " +
     "CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN, EXPERT_MISSIONS, EXPERT_MISSIONS_EN, " +
-    "OBJECTIVES, OBJECTIVES_EN, SEASONAL_EVENTS, SEASONAL_EVENTS_EN, LANG };\n";
+    "OBJECTIVES, OBJECTIVES_EN, SEASONAL_EVENTS, SEASONAL_EVENTS_EN, KATAS, KATAS_EN, DAILY_POOL, DAILY_POOL_EN, LANG };\n";
   vm.createContext(sandbox);
   vm.runInContext(src, sandbox, { filename: "levels-i18n-bundle.js" });
   return sandbox.__EXPORTS__;
@@ -330,6 +334,28 @@ test("LANG=en : missions Expert, objectifs et événements saisonniers traduits 
   assertEqual(en.SEASONAL_EVENTS.find(e => e.id === "noel").name, "Christmas", "Noël → Christmas");
   const fr = load("fr-FR");
   assertEqual(fr.OBJECTIVES.find(o => o.id === "first").title, "Premier pas", "objectif reste FR");
+});
+
+test("LANG=en : katas et défis du jour traduits (name/desc, title/desc), FR intact", () => {
+  const en = load("en-US");
+  assertEqual(en.KATAS.find(k => k.id === "bases").name, "The Fundamentals", "kata 'bases' EN");
+  assert(/first commit/.test(en.KATAS.find(k => k.id === "git").cmds[3]), "kata Git : message de commit traduit");
+  assert(/Error hunt/.test(en.DAILY_POOL[0].title), "daily 0 titre EN");
+  const fr = load("fr-FR");
+  assertEqual(fr.KATAS.find(k => k.id === "bases").name, "Les Fondamentaux", "kata reste FR");
+  assert(/premier commit/.test(fr.KATAS.find(k => k.id === "git").cmds[3]), "kata Git FR : commit inchangé");
+});
+
+test("complétude : chaque kata et chaque défi du jour a un overlay EN", () => {
+  const { KATAS, KATAS_EN, DAILY_POOL, DAILY_POOL_EN } = load("fr-FR");
+  const problems = [];
+  for (const k of KATAS) {
+    const ov = KATAS_EN[k.id];
+    if (!ov || !ov.name || !ov.desc) problems.push("kata " + k.id);
+  }
+  if (DAILY_POOL_EN.length !== DAILY_POOL.length) problems.push("daily: " + DAILY_POOL_EN.length + "≠" + DAILY_POOL.length + " entrées");
+  DAILY_POOL_EN.forEach((ov, i) => { if (!ov.title || !ov.desc) problems.push("daily #" + i); });
+  assert(problems.length === 0, "overlays manquants : " + problems.join(", "));
 });
 
 test("complétude : chaque mission Expert, objectif et événement a un overlay EN", () => {
