@@ -57,7 +57,7 @@ function markSeasonalSecret(eventId) {
   if (!already) {
     if (typeof addXP === "function") addXP(100);
     if (typeof showAchievement === "function") {
-      showAchievement(ev.icon, ev.badge.label.split(" ").slice(1).join(" "), "Secret saisonnier débloqué ! +100 XP");
+      showAchievement(ev.icon, ev.badge.label.split(" ").slice(1).join(" "), t("season.secret"));
     }
     if (typeof SFX !== "undefined") SFX.levelup();
   }
@@ -162,11 +162,11 @@ function renderSeasonalBanner() {
     <div class="daily-banner-left">
       <span class="daily-banner-icon">${ev.icon}</span>
       <div>
-        <div class="daily-banner-title">Événement ${ev.name}</div>
+        <div class="daily-banner-title">${t("season.event", { name: ev.name })}</div>
         <div class="daily-banner-sub">${ev.banner}</div>
       </div>
     </div>
-    <button class="seasonal-banner-close" aria-label="Fermer la bannière">✕</button>`;
+    <button class="seasonal-banner-close" aria-label="${t("season.close")}">✕</button>`;
 
   if (dailyBanner) home.insertBefore(div, dailyBanner);
   else home.insertBefore(div, home.firstChild);

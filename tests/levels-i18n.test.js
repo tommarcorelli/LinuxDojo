@@ -62,8 +62,15 @@ function load(navLang) {
     read("js/i18n/challenges.en.js") + "\n" +
     read("js/bandit.js") + "\n" +
     read("js/i18n/bandit.en.js") + "\n" +
+    read("js/expert.js") + "\n" +
+    read("js/i18n/expert.en.js") + "\n" +
+    read("js/objectives.js") + "\n" +
+    read("js/i18n/objectives.en.js") + "\n" +
+    read("js/seasonal.js") + "\n" +
+    read("js/i18n/seasonal.en.js") + "\n" +
     "var __EXPORTS__ = { CHAPTERS, LEVELS_EN, QUIZZES, QUIZZES_EN, GLOSSARY, GLOSSARY_EN, glossCat, " +
-    "CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN, LANG };\n";
+    "CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN, EXPERT_MISSIONS, EXPERT_MISSIONS_EN, " +
+    "OBJECTIVES, OBJECTIVES_EN, SEASONAL_EVENTS, SEASONAL_EVENTS_EN, LANG };\n";
   vm.createContext(sandbox);
   vm.runInContext(src, sandbox, { filename: "levels-i18n-bundle.js" });
   return sandbox.__EXPORTS__;
@@ -314,6 +321,33 @@ test("LANG=en : titres d'infiltration gardent le séparateur « — » (rendu de
   const { BANDIT_LEVELS } = load("en-US");
   const bad = BANDIT_LEVELS.filter(lv => !lv.title.includes("—"));
   assert(bad.length === 0, "titres sans « — » : " + bad.map(l => l.id).join(", "));
+});
+
+test("LANG=en : missions Expert, objectifs et événements saisonniers traduits ; FR intact", () => {
+  const en = load("en-US");
+  assert(/Noise elimination/.test(en.EXPERT_MISSIONS.find(m => m.id === 9001).name), "expert 9001 EN");
+  assertEqual(en.OBJECTIVES.find(o => o.id === "first").title, "First step", "objectif 'first' EN");
+  assertEqual(en.SEASONAL_EVENTS.find(e => e.id === "noel").name, "Christmas", "Noël → Christmas");
+  const fr = load("fr-FR");
+  assertEqual(fr.OBJECTIVES.find(o => o.id === "first").title, "Premier pas", "objectif reste FR");
+});
+
+test("complétude : chaque mission Expert, objectif et événement a un overlay EN", () => {
+  const { EXPERT_MISSIONS, EXPERT_MISSIONS_EN, OBJECTIVES, OBJECTIVES_EN, SEASONAL_EVENTS, SEASONAL_EVENTS_EN } = load("fr-FR");
+  const problems = [];
+  for (const m of EXPERT_MISSIONS) {
+    const ov = EXPERT_MISSIONS_EN[m.id];
+    if (!ov || !ov.name || !ov.desc || !ov.explanation) problems.push("expert " + m.id);
+  }
+  for (const o of OBJECTIVES) {
+    const ov = OBJECTIVES_EN[o.id];
+    if (!ov || !ov.title || !ov.desc) problems.push("objectif " + o.id);
+  }
+  for (const e of SEASONAL_EVENTS) {
+    const ov = SEASONAL_EVENTS_EN[e.id];
+    if (!ov || !ov.name || !ov.banner) problems.push("saisonnier " + e.id);
+  }
+  assert(problems.length === 0, "overlays manquants : " + problems.join(", "));
 });
 
 // ─────────────────────────────────────────────────────────────────────────

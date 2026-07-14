@@ -55,9 +55,9 @@ function checkObjectives() {
       // Récompense directe (on évite addXP pour ne pas ré-entrer dans checkObjectives)
       GAME.xp += o.xp;
       if (typeof showAchievement === "function") {
-        showAchievement(o.icon, "Objectif : " + o.title, "+" + o.xp + " XP");
+        showAchievement(o.icon, t("obj.achieved", { title: o.title }), "+" + o.xp + " XP");
       } else if (typeof showToast === "function") {
-        showToast(o.icon + " Objectif accompli : " + o.title + " (+" + o.xp + " XP)");
+        showToast(t("obj.toast", { icon: o.icon, title: o.title, xp: o.xp }));
       }
     }
   });

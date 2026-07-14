@@ -220,6 +220,14 @@ const UI = {
     "multitab.reload": "Recharger",
     "multitab.ignore": "Ignorer",
 
+    // ── Objectifs (générés en JS) ──
+    "obj.achieved": "Objectif : {title}",
+    "obj.toast": "{icon} Objectif accompli : {title} (+{xp} XP)",
+    // ── Événements saisonniers ──
+    "season.event": "Événement {name}",
+    "season.close": "Fermer la bannière",
+    "season.secret": "Secret saisonnier débloqué ! +100 XP",
+
     // ── Rangs (générés en JS) ──
     "rank.new": "Nouveau rang : {name}",
     "rank.reached": "Tu as atteint {xp} XP !",
@@ -414,6 +422,14 @@ const UI = {
     "multitab.text": "Your progress changed in another tab.",
     "multitab.reload": "Reload",
     "multitab.ignore": "Ignore",
+
+    // ── Objectives (JS-generated) ──
+    "obj.achieved": "Objective: {title}",
+    "obj.toast": "{icon} Objective complete: {title} (+{xp} XP)",
+    // ── Seasonal events ──
+    "season.event": "{name} event",
+    "season.close": "Close the banner",
+    "season.secret": "Seasonal secret unlocked! +100 XP",
 
     // ── Ranks (JS-generated) ──
     "rank.new": "New rank: {name}",
