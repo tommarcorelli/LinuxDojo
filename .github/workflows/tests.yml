@@ -19,3 +19,5 @@ jobs:
         run: node tests/game.test.js
       - name: Lancer les tests du journal d'erreurs
         run: node tests/errors.test.js
+      - name: Lancer les tests d'internationalisation (i18n)
+        run: node tests/i18n.test.js

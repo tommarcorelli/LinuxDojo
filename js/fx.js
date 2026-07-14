@@ -167,14 +167,14 @@ function typewriter(el, text, speed=30, cb) {
 
 /* ── 8. RANGS ─────────────────────────────────────────────── */
 const RANKS = [
-  { min: 0,    name: "Bleu",         icon: "🥚", color: "#94a3b8" },
-  { min: 100,  name: "Novice",       icon: "🌱", color: "#10b981" },
-  { min: 250,  name: "Apprenti",     icon: "⚡", color: "#3b82f6" },
-  { min: 500,  name: "Opérateur",    icon: "🔧", color: "#06b6d4" },
-  { min: 800,  name: "Hacker",       icon: "💻", color: "#7c3aed" },
-  { min: 1200, name: "Sysadmin",     icon: "🛡️", color: "#a78bfa" },
-  { min: 1800, name: "Root",         icon: "👑", color: "#eab308" },
-  { min: 2500, name: "Légende",      icon: "🔥", color: "#f97316" },
+  { min: 0,    name: { fr: "Bleu",      en: "Blue" },       icon: "🥚", color: "#94a3b8" },
+  { min: 100,  name: { fr: "Novice",    en: "Novice" },     icon: "🌱", color: "#10b981" },
+  { min: 250,  name: { fr: "Apprenti",  en: "Apprentice" }, icon: "⚡", color: "#3b82f6" },
+  { min: 500,  name: { fr: "Opérateur", en: "Operator" },   icon: "🔧", color: "#06b6d4" },
+  { min: 800,  name: { fr: "Hacker",    en: "Hacker" },     icon: "💻", color: "#7c3aed" },
+  { min: 1200, name: { fr: "Sysadmin",  en: "Sysadmin" },   icon: "🛡️", color: "#a78bfa" },
+  { min: 1800, name: { fr: "Root",      en: "Root" },       icon: "👑", color: "#eab308" },
+  { min: 2500, name: { fr: "Légende",   en: "Legend" },     icon: "🔥", color: "#f97316" },
 ];
 function getRank(xp) { let r = RANKS[0]; for (const rank of RANKS) if (xp >= rank.min) r = rank; return r; }
 function getNextRank(xp) { for (const rank of RANKS) if (xp < rank.min) return rank; return null; }

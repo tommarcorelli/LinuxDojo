@@ -52,9 +52,9 @@ function renderProfile() {
   const av = document.getElementById("pf-avatar");
   if (av) av.textContent = rank.icon;
   const rn = document.getElementById("pf-rank");
-  if (rn) { rn.textContent = rank.name; rn.style.color = rank.color; }
+  if (rn) { rn.textContent = rankName(rank); rn.style.color = rank.color; }
   const sub = document.getElementById("pf-sub");
-  if (sub) sub.textContent = xp + " XP · Niveau " + (Math.floor(xp/100)+1);
+  if (sub) sub.textContent = t("profile.rankSub", { xp, lv: Math.floor(xp/100)+1 });
 
   // Barre vers le prochain rang
   const fill = document.getElementById("pf-rank-fill");
@@ -187,7 +187,7 @@ function _badgesShareText(rank, xp) {
     lines.push(unlocked.slice(0, 8).map(b => b.label.split(" ")[0]).join(" "));
   }
   if (secretsUnlocked > 0) lines.push("dont " + secretsUnlocked + " badge(s) secret(s) 🤫");
-  lines.push("Rang : " + rank.name + " " + rank.icon + " · " + xp + " XP");
+  lines.push("Rang : " + rankName(rank) + " " + rank.icon + " · " + xp + " XP");
   lines.push("https://tommarcorelli.github.io/LinuxDojo/");
   return lines.join("\n");
 }
@@ -311,7 +311,7 @@ function updateNavRank() {
   const icon = document.querySelector("#nav-rank .rank-icon");
   const name = document.getElementById("nav-rank-name");
   if (icon) icon.textContent = rank.icon;
-  if (name) { name.textContent = rank.name; name.style.color = rank.color; }
+  if (name) { name.textContent = rankName(rank); name.style.color = rank.color; }
 }
 
 function renderStats() {

@@ -176,9 +176,9 @@ function addXP(amount) {
   if (typeof updateNavRank === "function") updateNavRank();
   // Level up de rang ?
   const after = getRank(GAME.xp);
-  if (after.name !== before.name) {
+  if (after.min !== before.min) {
     setTimeout(() => {
-      showAchievement(after.icon, "Nouveau rang : " + after.name, "Tu as atteint " + GAME.xp + " XP !");
+      showAchievement(after.icon, t("rank.new", { name: rankName(after) }), t("rank.reached", { xp: GAME.xp }));
       if (typeof SFX !== "undefined") SFX.levelup();
       burstParticles(window.innerWidth/2, window.innerHeight/2);
     }, 600);
@@ -759,7 +759,7 @@ if (pfSound) {
   pfSound.addEventListener("click", () => {
     soundOn = !soundOn;
     SFX.enabled = soundOn;
-    pfSound.textContent = soundOn ? "🔊 Son : ON" : "🔇 Son : OFF";
+    pfSound.textContent = soundOn ? t("sound.on") : t("sound.off");
     if (soundBtn) soundBtn.textContent = soundOn ? "🔊" : "🔇";
   });
 }

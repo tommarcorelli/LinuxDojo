@@ -1,0 +1,468 @@
+// i18n.js — Système d'internationalisation de LinuxDojo (FR / EN)
+//
+// Chargé très tôt (juste après errors.js), avant tous les autres scripts,
+// pour que t() / pick() / LANG soient disponibles partout.
+//
+// Deux mécanismes complémentaires :
+//   1. UI (chaînes d'interface) — table clé → traduction, lue par t("clé").
+//      Le HTML statique est annoté avec data-i18n / data-i18n-attr /
+//      data-i18n-html : applyStaticI18n() parcourt le DOM et remplit les
+//      textes au chargement. Le JS qui génère de l'UI appelle t() directement.
+//   2. Contenu (missions, glossaire...) — champs { fr, en } lus par pick().
+//      pick("chaîne simple") renvoie la chaîne telle quelle : le contenu pas
+//      encore traduit continue de s'afficher (fallback FR = dégradation propre).
+//
+// Changer de langue = setLang() qui persiste puis recharge la page : sur une
+// base de code de cette taille, un reload complet re-rend tout proprement dans
+// la nouvelle langue, sans plomberie réactive fragile.
+
+const LANGS = ["fr", "en"];
+const LANG_KEY = "linuxdojo_lang";
+
+function _detectLang() {
+  let saved = null;
+  try { saved = localStorage.getItem(LANG_KEY); } catch {}
+  if (LANGS.includes(saved)) return saved;
+  const nav = (navigator.language || "fr").toLowerCase();
+  return nav.startsWith("en") ? "en" : "fr";
+}
+
+let LANG = _detectLang();
+
+// ── Table des chaînes d'interface ───────────────────────────────
+// Clés en notation pointée (plates), regroupées par zone. Toute clé
+// absente de `en` retombe automatiquement sur `fr` (voir t()).
+const UI = {
+  fr: {
+    // ── Navigation ──
+    "nav.hamburger": "Ouvrir le menu de navigation",
+    "nav.home": "Accueil",
+    "nav.learn": "Apprendre",
+    "nav.explore": "Explorer",
+    "nav.challenge": "Défis",
+    "nav.bandit": "Infiltration",
+    "nav.boss": "⚔️ Boss",
+    "nav.kata": "🥋 Kata",
+    "nav.sandbox": "Bac à sable",
+    "nav.glossary": "Glossaire",
+    "nav.profile": "Profil",
+    "nav.shortcuts": "Raccourcis clavier (?)",
+    "nav.shortcutsAria": "Afficher les raccourcis clavier",
+    "nav.sound": "Son on/off",
+    "nav.soundAria": "Activer ou couper le son",
+    "nav.lang": "Changer de langue / Switch language",
+
+    // ── Accueil : bandeau défi du jour ──
+    "daily.banner.title": "Défi du jour",
+    "daily.banner.sub": "Résous le défi quotidien pour +50 XP bonus",
+    "daily.banner.btn": "Relever le défi",
+
+    // ── Accueil : héros ──
+    "hero.badge": "Terminal · Linux · Hacking",
+    "hero.sub": "Apprends Linux comme un pro.<br>En jouant. Pour de vrai.",
+    "hero.start": "▶ Commencer",
+    "hero.exploreWorld": "🗺 Explorer le monde",
+
+    // ── Accueil : cartes de modes ──
+    "mode.learn.title": "Apprendre",
+    "mode.learn.desc": "Leçons + scénarios réels. Tu comprends pourquoi avant de taper.",
+    "mode.learn.tag": "10 scénarios · 60 missions",
+    "mode.explore.title": "Explorer",
+    "mode.explore.desc": "Un monde ouvert : inventaire, PNJ, portes verrouillées. Réunis les 3 gemmes.",
+    "mode.explore.tag": "18 zones · Aventure",
+    "mode.challenge.title": "Défis",
+    "mode.challenge.desc": "Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à x5.",
+    "mode.challenge.tag": "20 défis · Combo & record",
+    "mode.bandit.title": "Infiltration",
+    "mode.bandit.desc": "Trouve le mot de passe caché. Fouille, filtre, et décode (base64, ROT13, hex).",
+    "mode.bandit.tag": "Style Bandit · 15 niveaux",
+    "mode.boss.title": "Salle des Boss",
+    "mode.boss.desc": "Affronte le Kraken, le Spectre, l'Hydre, le Golem… et le Sensei. HP, cœurs, chrono.",
+    "mode.boss.tag": "6 boss · Ceinture Noire",
+    "mode.kata.title": "Kata",
+    "mode.kata.desc": "La mémoire musculaire du shell : tape des enchaînements de commandes au chrono. WPM & précision.",
+    "mode.kata.tag": "7 katas · Vitesse & record",
+    "mode.sandbox.title": "Bac à sable",
+    "mode.sandbox.desc": "Un terminal libre, sans objectif. Teste toutes les commandes tranquillement.",
+    "mode.sandbox.tag": "Libre · Toutes commandes",
+    "mode.profile.title": "Profil",
+    "mode.profile.desc": "Ta progression, tes 8 rangs, tes badges et tes commandes préférées.",
+    "mode.profile.tag": "Rangs · Badges · Stats",
+
+    // ── Accueil : objectifs + stats ──
+    "home.objectives": "🎯 Objectifs",
+    "home.stat.xp": "XP total",
+    "home.stat.done": "Missions",
+    "home.stat.lv": "Niveau",
+    "home.stat.badges": "Badges",
+
+    // ── Apprendre ──
+    "learn.scenarios": "Scénarios",
+    "lesson.stepBadge": "📖 Leçon",
+    "lesson.label.syntax": "SYNTAXE",
+    "lesson.label.options": "OPTIONS",
+    "lesson.label.examples": "EXEMPLES",
+    "lesson.goExercise": "Je comprends — À moi de jouer →",
+    "mission.backLesson": "← Leçon",
+    "mission.hint": "💡 Indice <span class=\"cost free\">gratuit</span>",
+    "term.placeholder": "tape une commande...",
+    "term.cmdAria": "Ligne de commande du terminal",
+    "term.runAria": "Exécuter la commande",
+
+    // ── Explorer ──
+    "explore.tab.world": "🗺️ Monde",
+    "explore.tab.term": "💻 Terminal",
+    "explore.location": "🌍 Le Monde",
+    "explore.placeholder": "ls, cd, cat, read...",
+
+    // ── Défis ──
+    "challenge.expected": "RÉSULTAT ATTENDU",
+    "challenge.skip": "Passer →",
+    "challenge.placeholder": "tape ta commande...",
+
+    // ── Infiltration ──
+    "bandit.usefulCmds": "COMMANDES UTILES",
+    "bandit.placeholder": "explore et trouve le mot de passe...",
+
+    // ── Boss ──
+    "boss.roomTitle": "⚔️ Salle des Boss",
+    "boss.roomIntro": "Chaque commande juste inflige des dégâts.<br>Timer écoulé = tu perds un cœur. 3 cœurs, pas un de plus.",
+    "boss.nameDefault": "Salle des Boss",
+    "boss.flee": "🏃 Fuir",
+    "boss.hint": "💡 Indice <span class=\"cost\">−10 XP</span>",
+    "boss.placeholder": "frappe avec la bonne commande...",
+
+    // ── Profil ──
+    "profile.cert": "🖤 Certificat de Ceinture Noire",
+    "profile.objectives": "🎯 Objectifs",
+    "profile.badges": "🏅 Badges",
+    "profile.topCmds": "📊 Tes commandes les plus utilisées",
+    "profile.activity": "🗓️ Ton activité",
+    "profile.themes": "🎨 Thèmes",
+    "profile.options": "⚙️ Options",
+    "profile.name": "🥷 Mon nom de ninja",
+    "profile.export": "📤 Exporter la sauvegarde",
+    "profile.import": "📥 Importer",
+    "profile.reset": "↺ Réinitialiser la progression",
+    "profile.errLog": "🐛 Journal d'erreurs",
+    "profile.errNone": "Aucune erreur détectée 👍",
+    "profile.errCopy": "📋 Copier le rapport",
+    "profile.errClear": "🗑️ Vider le journal",
+
+    // ── Bac à sable ──
+    "sandbox.title": "🧪 Bac à sable",
+    "sandbox.intro": "Terminal libre. Aucun objectif — expérimente toutes les commandes. Tape <code style=\"color:var(--orange)\">help</code> pour la liste.",
+    "sandbox.reset": "↺ Réinitialiser",
+    "sandbox.placeholder": "ls, cat, grep, base64, rot13, sed, awk...",
+
+    // ── Glossaire ──
+    "glossary.title": "📖 Glossaire des commandes",
+    "glossary.intro": "La référence complète. Clique sur une commande pour voir sa syntaxe, ses options et des exemples.",
+    "glossary.search": "🔍 Rechercher une commande (ls, grep, permissions...)",
+    "glossary.searchAria": "Rechercher une commande dans le glossaire",
+
+    // ── Modale défi du jour ──
+    "daily.reward": "+50 XP bonus",
+    "daily.title": "🎯 Défi du jour",
+    "daily.placeholder": "tape ta commande...",
+    "daily.close": "Fermer",
+
+    // ── Modale succès ──
+    "win.title": "Mission accomplie !",
+    "win.whyLabel": "POURQUOI ÇA A MARCHÉ",
+    "win.next": "Suite →",
+    "win.stay": "Rester ici",
+
+    // ── Modale infiltration réussie ──
+    "banditWin.title": "Mot de passe trouvé !",
+    "banditWin.next": "Niveau suivant →",
+    "banditWin.stay": "Rester",
+
+    // ── Modale quiz ──
+    "quiz.close": "Fermer",
+
+    // ── Modale raccourcis clavier ──
+    "shortcuts.title": "⌨️ Raccourcis clavier",
+    "shortcuts.intro": "Valables dans n'importe quel terminal du dojo (Apprendre, Bac à sable, Défis, Infiltration…).",
+    "shortcuts.tab": "Autocomplétion — commandes et chemins de fichiers",
+    "shortcuts.up": "Commande précédente dans l'historique",
+    "shortcuts.down": "Commande suivante dans l'historique",
+    "shortcuts.ctrlr": "Recherche inversée dans l'historique (façon bash) — tape pour filtrer, Ctrl+R pour le résultat précédent, Entrée pour lancer, Échap pour annuler. <em>(Apprendre, Bac à sable, Exploration)</em>",
+    "shortcuts.enter": "Exécuter la commande",
+    "shortcuts.esc": "Fermer la fenêtre ouverte (indice, quiz, victoire…)",
+    "shortcuts.help": "Afficher / masquer cet écran",
+    "shortcuts.tip": "💡 Tape <code>help</code> dans un terminal pour la liste des commandes, ou <code>man &lt;commande&gt;</code> pour le détail d'une seule.",
+    "shortcuts.close": "Fermer",
+
+    // ── Bannières ──
+    "update.text": "Une nouvelle version du dojo est prête.",
+    "update.reload": "Recharger",
+    "update.later": "Plus tard",
+    "multitab.text": "Ta progression a changé dans un autre onglet.",
+    "multitab.reload": "Recharger",
+    "multitab.ignore": "Ignorer",
+
+    // ── Rangs (générés en JS) ──
+    "rank.new": "Nouveau rang : {name}",
+    "rank.reached": "Tu as atteint {xp} XP !",
+    "profile.rankSub": "{xp} XP · Niveau {lv}",
+    "sound.on": "🔊 Son : ON",
+    "sound.off": "🔇 Son : OFF",
+  },
+
+  en: {
+    // ── Navigation ──
+    "nav.hamburger": "Open navigation menu",
+    "nav.home": "Home",
+    "nav.learn": "Learn",
+    "nav.explore": "Explore",
+    "nav.challenge": "Challenges",
+    "nav.bandit": "Infiltration",
+    "nav.boss": "⚔️ Boss",
+    "nav.kata": "🥋 Kata",
+    "nav.sandbox": "Sandbox",
+    "nav.glossary": "Glossary",
+    "nav.profile": "Profile",
+    "nav.shortcuts": "Keyboard shortcuts (?)",
+    "nav.shortcutsAria": "Show keyboard shortcuts",
+    "nav.sound": "Sound on/off",
+    "nav.soundAria": "Toggle sound",
+    "nav.lang": "Changer de langue / Switch language",
+
+    // ── Home: daily banner ──
+    "daily.banner.title": "Daily challenge",
+    "daily.banner.sub": "Solve the daily challenge for +50 bonus XP",
+    "daily.banner.btn": "Take the challenge",
+
+    // ── Home: hero ──
+    "hero.badge": "Terminal · Linux · Hacking",
+    "hero.sub": "Learn Linux like a pro.<br>By playing. For real.",
+    "hero.start": "▶ Start",
+    "hero.exploreWorld": "🗺 Explore the world",
+
+    // ── Home: mode cards ──
+    "mode.learn.title": "Learn",
+    "mode.learn.desc": "Lessons + real scenarios. You understand why before you type.",
+    "mode.learn.tag": "10 scenarios · 60 missions",
+    "mode.explore.title": "Explore",
+    "mode.explore.desc": "An open world: inventory, NPCs, locked doors. Collect the 3 gems.",
+    "mode.explore.tag": "18 zones · Adventure",
+    "mode.challenge.title": "Challenges",
+    "mode.challenge.desc": "One problem, one command, one timer. Chain them for a combo up to x5.",
+    "mode.challenge.tag": "20 challenges · Combo & record",
+    "mode.bandit.title": "Infiltration",
+    "mode.bandit.desc": "Find the hidden password. Search, filter, and decode (base64, ROT13, hex).",
+    "mode.bandit.tag": "Bandit-style · 15 levels",
+    "mode.boss.title": "Boss Room",
+    "mode.boss.desc": "Face the Kraken, the Wraith, the Hydra, the Golem… and the Sensei. HP, hearts, timer.",
+    "mode.boss.tag": "6 bosses · Black Belt",
+    "mode.kata.title": "Kata",
+    "mode.kata.desc": "Shell muscle memory: type command sequences against the clock. WPM & accuracy.",
+    "mode.kata.tag": "7 katas · Speed & record",
+    "mode.sandbox.title": "Sandbox",
+    "mode.sandbox.desc": "A free terminal, no objective. Try every command at your own pace.",
+    "mode.sandbox.tag": "Free · All commands",
+    "mode.profile.title": "Profile",
+    "mode.profile.desc": "Your progress, your 8 ranks, your badges and your favorite commands.",
+    "mode.profile.tag": "Ranks · Badges · Stats",
+
+    // ── Home: objectives + stats ──
+    "home.objectives": "🎯 Objectives",
+    "home.stat.xp": "Total XP",
+    "home.stat.done": "Missions",
+    "home.stat.lv": "Level",
+    "home.stat.badges": "Badges",
+
+    // ── Learn ──
+    "learn.scenarios": "Scenarios",
+    "lesson.stepBadge": "📖 Lesson",
+    "lesson.label.syntax": "SYNTAX",
+    "lesson.label.options": "OPTIONS",
+    "lesson.label.examples": "EXAMPLES",
+    "lesson.goExercise": "Got it — Let me try →",
+    "mission.backLesson": "← Lesson",
+    "mission.hint": "💡 Hint <span class=\"cost free\">free</span>",
+    "term.placeholder": "type a command...",
+    "term.cmdAria": "Terminal command line",
+    "term.runAria": "Run command",
+
+    // ── Explore ──
+    "explore.tab.world": "🗺️ World",
+    "explore.tab.term": "💻 Terminal",
+    "explore.location": "🌍 The World",
+    "explore.placeholder": "ls, cd, cat, read...",
+
+    // ── Challenges ──
+    "challenge.expected": "EXPECTED OUTPUT",
+    "challenge.skip": "Skip →",
+    "challenge.placeholder": "type your command...",
+
+    // ── Infiltration ──
+    "bandit.usefulCmds": "USEFUL COMMANDS",
+    "bandit.placeholder": "explore and find the password...",
+
+    // ── Boss ──
+    "boss.roomTitle": "⚔️ Boss Room",
+    "boss.roomIntro": "Every correct command deals damage.<br>Timer runs out = you lose a heart. 3 hearts, not one more.",
+    "boss.nameDefault": "Boss Room",
+    "boss.flee": "🏃 Flee",
+    "boss.hint": "💡 Hint <span class=\"cost\">−10 XP</span>",
+    "boss.placeholder": "strike with the right command...",
+
+    // ── Profile ──
+    "profile.cert": "🖤 Black Belt Certificate",
+    "profile.objectives": "🎯 Objectives",
+    "profile.badges": "🏅 Badges",
+    "profile.topCmds": "📊 Your most-used commands",
+    "profile.activity": "🗓️ Your activity",
+    "profile.themes": "🎨 Themes",
+    "profile.options": "⚙️ Options",
+    "profile.name": "🥷 My ninja name",
+    "profile.export": "📤 Export save",
+    "profile.import": "📥 Import",
+    "profile.reset": "↺ Reset progress",
+    "profile.errLog": "🐛 Error log",
+    "profile.errNone": "No errors detected 👍",
+    "profile.errCopy": "📋 Copy report",
+    "profile.errClear": "🗑️ Clear log",
+
+    // ── Sandbox ──
+    "sandbox.title": "🧪 Sandbox",
+    "sandbox.intro": "Free terminal. No objective — experiment with every command. Type <code style=\"color:var(--orange)\">help</code> for the list.",
+    "sandbox.reset": "↺ Reset",
+    "sandbox.placeholder": "ls, cat, grep, base64, rot13, sed, awk...",
+
+    // ── Glossary ──
+    "glossary.title": "📖 Command glossary",
+    "glossary.intro": "The complete reference. Click a command to see its syntax, options and examples.",
+    "glossary.search": "🔍 Search a command (ls, grep, permissions...)",
+    "glossary.searchAria": "Search a command in the glossary",
+
+    // ── Daily challenge modal ──
+    "daily.reward": "+50 bonus XP",
+    "daily.title": "🎯 Daily challenge",
+    "daily.placeholder": "type your command...",
+    "daily.close": "Close",
+
+    // ── Win modal ──
+    "win.title": "Mission complete!",
+    "win.whyLabel": "WHY IT WORKED",
+    "win.next": "Next →",
+    "win.stay": "Stay here",
+
+    // ── Infiltration win modal ──
+    "banditWin.title": "Password found!",
+    "banditWin.next": "Next level →",
+    "banditWin.stay": "Stay",
+
+    // ── Quiz modal ──
+    "quiz.close": "Close",
+
+    // ── Keyboard shortcuts modal ──
+    "shortcuts.title": "⌨️ Keyboard shortcuts",
+    "shortcuts.intro": "Valid in any dojo terminal (Learn, Sandbox, Challenges, Infiltration…).",
+    "shortcuts.tab": "Autocomplete — commands and file paths",
+    "shortcuts.up": "Previous command in history",
+    "shortcuts.down": "Next command in history",
+    "shortcuts.ctrlr": "Reverse search in history (bash-style) — type to filter, Ctrl+R for the previous match, Enter to run, Esc to cancel. <em>(Learn, Sandbox, Explore)</em>",
+    "shortcuts.enter": "Run the command",
+    "shortcuts.esc": "Close the open window (hint, quiz, win…)",
+    "shortcuts.help": "Show / hide this screen",
+    "shortcuts.tip": "💡 Type <code>help</code> in a terminal for the command list, or <code>man &lt;command&gt;</code> for the details of a single one.",
+    "shortcuts.close": "Close",
+
+    // ── Banners ──
+    "update.text": "A new version of the dojo is ready.",
+    "update.reload": "Reload",
+    "update.later": "Later",
+    "multitab.text": "Your progress changed in another tab.",
+    "multitab.reload": "Reload",
+    "multitab.ignore": "Ignore",
+
+    // ── Ranks (JS-generated) ──
+    "rank.new": "New rank: {name}",
+    "rank.reached": "You reached {xp} XP!",
+    "profile.rankSub": "{xp} XP · Level {lv}",
+    "sound.on": "🔊 Sound: ON",
+    "sound.off": "🔇 Sound: OFF",
+  },
+};
+
+// ── Traduction d'une chaîne d'interface ─────────────────────────
+// t("clé") → traduction dans LANG, repli sur FR, puis sur la clé
+// elle-même (visible = signale une clé manquante sans planter).
+// Interpolation optionnelle : t("rank.new", { name: "Root" }).
+function t(key, vars) {
+  let s = (UI[LANG] && UI[LANG][key]) ?? UI.fr[key] ?? key;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+}
+
+// ── Sélection d'un champ de contenu multilingue ─────────────────
+// pick({ fr, en }) → variante de la langue courante (repli FR).
+// pick("texte") → renvoie le texte tel quel (contenu non encore
+// traduit : dégradation propre, rien à casser).
+function pick(v) {
+  if (v && typeof v === "object" && !Array.isArray(v) && ("fr" in v || "en" in v)) {
+    return v[LANG] ?? v.fr ?? v.en ?? "";
+  }
+  return v;
+}
+
+// Nom de rang traduit (RANKS.name peut être une chaîne ou un { fr, en }).
+function rankName(rank) { return rank ? pick(rank.name) : ""; }
+
+// ── Changement de langue ────────────────────────────────────────
+function setLang(l) {
+  if (!LANGS.includes(l) || l === LANG) return;
+  try { localStorage.setItem(LANG_KEY, l); } catch {}
+  location.reload();
+}
+
+// ── Application des traductions au HTML statique ────────────────
+// data-i18n="clé"          → textContent = t(clé)
+// data-i18n-html="clé"     → innerHTML   = t(clé)   (pour <br>, <code>…)
+// data-i18n-attr="a:cle;b:cle2" → attribut a = t(cle), b = t(cle2)
+function applyStaticI18n(root) {
+  root = root || document;
+  root.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = t(el.getAttribute("data-i18n"));
+  });
+  root.querySelectorAll("[data-i18n-html]").forEach(el => {
+    el.innerHTML = t(el.getAttribute("data-i18n-html"));
+  });
+  root.querySelectorAll("[data-i18n-attr]").forEach(el => {
+    el.getAttribute("data-i18n-attr").split(";").forEach(pair => {
+      const [attr, key] = pair.split(":");
+      if (attr && key) el.setAttribute(attr.trim(), t(key.trim()));
+    });
+  });
+}
+
+// ── Sélecteur de langue dans la barre de navigation ─────────────
+function injectLangToggle() {
+  const host = document.querySelector(".nav-right");
+  if (!host || document.getElementById("lang-toggle")) return;
+  const btn = document.createElement("button");
+  btn.id = "lang-toggle";
+  btn.type = "button";
+  btn.title = t("nav.lang");
+  btn.setAttribute("aria-label", t("nav.lang"));
+  btn.textContent = LANG === "fr" ? "🇫🇷" : "🇬🇧";
+  btn.addEventListener("click", () => setLang(LANG === "fr" ? "en" : "fr"));
+  // Placé avant le bouton son pour rester groupé avec les réglages.
+  const sound = document.getElementById("sound-toggle");
+  if (sound) host.insertBefore(btn, sound); else host.appendChild(btn);
+}
+
+function initI18n() {
+  document.documentElement.lang = LANG;
+  applyStaticI18n(document);
+  injectLangToggle();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initI18n);
+} else {
+  initI18n();
+}

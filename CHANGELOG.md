@@ -6,6 +6,23 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Internationalisation FR / EN — **Phase 1 (coquille d'interface)** : nouveau module
+  `js/i18n.js` chargé très tôt (après `errors.js`). Détection de langue
+  (`localStorage` puis `navigator.language`), `t("clé")` avec repli FR puis sur la clé
+  et interpolation `{var}`, `pick({fr,en})` pour le contenu (repli FR = dégradation
+  propre), sélecteur 🇫🇷/🇬🇧 injecté dans la barre de navigation, `<html lang>` mis à
+  jour dynamiquement. Le HTML statique est annoté avec `data-i18n` / `data-i18n-html` /
+  `data-i18n-attr` (aucune réécriture de structure, juste des attributs) et traduit au
+  chargement par `applyStaticI18n()`. Toute l'interface bascule FR↔EN — navigation,
+  accueil (héros, cartes de modes, objectifs, stats), panneaux Apprendre/Explorer/Défis/
+  Infiltration/Boss/Bac à sable/Glossaire/Profil, modales (succès, quiz, défi du jour,
+  raccourcis), bannières (mise à jour, multi-onglets) et noms de rangs (`RANKS` passés en
+  `{fr,en}` + helper `rankName()`). Le choix de langue est mémorisé (reload complet).
+  Le **contenu des missions reste en français** (fallback) en attendant les phases
+  suivantes (levels/quiz/glossaire, puis modes annexes). 10 tests dédiés
+  (`tests/i18n.test.js`) : `t()`/`pick()`/`rankName()`, **parité stricte des clés fr↔en**
+  et **couverture** (toute clé `data-i18n*` d'`index.html` existe dans la table).
+  Vérifié en rendu navigateur réel (Chrome headless) dans les deux langues. SW v19 → v20
 - Page d'atterrissage marketing dédiée (`landing.html`, `css/landing.css`, `js/landing.js`) :
   hero avec mockup de terminal animé, chiffres réels du contenu, grille des modes de jeu,
   section « pourquoi » façon page de manuel (`man linuxdojo`). Séparée de `index.html`

@@ -237,14 +237,23 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
 Ces items changent l'architecture du projet ou demandent une infra nouvelle. À ne lancer
 que si vraiment décidé, car ils engagent sur la durée (maintenance double, backend à opérer...).
 
-- **Version anglaise complète** (UI + 60 missions + terminal) — traduire ~17 fichiers JS +
-  tout le contenu pédagogique. 3 architectures possibles :
-  1. Dossier `/en/` séparé avec copie complète du site (simple, mais double la maintenance
-     à chaque futur changement)
-  2. Traduire seulement l'UI (menus/boutons), missions restent en français (rapide, mais incomplet)
-  3. Vrai système i18n — dictionnaire de traduction centralisé (`fr.js`/`en.js`), sélecteur
-     de langue qui bascule tout dynamiquement (le mieux sur le long terme, mais gros refactor
-     de 17 fichiers, donc plus risqué)
+- **Version anglaise complète** (UI + 60 missions + terminal) — **EN COURS**. Architecture
+  retenue : vrai système i18n (option 3), module central `js/i18n.js` (dictionnaire `UI` +
+  `t()` pour l'interface, `pick({fr,en})` pour le contenu), sélecteur de langue qui bascule
+  tout dynamiquement (reload). Repli FR systématique → on peut traduire progressivement sans
+  jamais casser l'affichage. Découpage :
+  - [x] **Phase A — Coquille d'interface** : `i18n.js`, sélecteur 🇫🇷/🇬🇧, annotation
+    `data-i18n*` de tout `index.html`, rangs (`RANKS` en `{fr,en}`), labels JS de `game.js`.
+    Toute l'UI bascule FR↔EN. 10 tests (`tests/i18n.test.js`, parité + couverture des clés).
+  - [ ] **Phase B — Contenu pédagogique** : `levels.js` (60 missions), `quizzes.js`,
+    `glossary.js`. Approche prévue : overlay EN par `id` dans des fichiers séparés
+    (`js/i18n/*.en.js`) fusionnés au boot → les fichiers FR restent intacts, l'EN est additif.
+  - [ ] **Phase C — Modes annexes** : `boss.js`, `bandit.js`, `challenges.js`, `daily.js`,
+    `kata.js`, `gameshell.js` (Explorer), `certificate.js`, `objectives.js`, `expert.js`,
+    `seasonal.js`, `terminal.js` (messages du shell).
+  - [ ] **Phase D — Finitions** : `landing.html`, meta OG/Twitter par langue, doc, SW bump.
+  Anciennes pistes écartées : dossier `/en/` dupliqué (double la maintenance), UI-seule
+  (incomplet).
 - **Compte utilisateur + sync cross-device** — actuellement tout est en `localStorage`, donc
   la progression est piégée sur un seul navigateur/appareil. Nécessite un vrai backend
   (auth + base de données), gros chantier d'infra.
