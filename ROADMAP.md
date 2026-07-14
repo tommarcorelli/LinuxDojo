@@ -245,9 +245,11 @@ que si vraiment décidé, car ils engagent sur la durée (maintenance double, ba
   - [x] **Phase A — Coquille d'interface** : `i18n.js`, sélecteur 🇫🇷/🇬🇧, annotation
     `data-i18n*` de tout `index.html`, rangs (`RANKS` en `{fr,en}`), labels JS de `game.js`.
     Toute l'UI bascule FR↔EN. 10 tests (`tests/i18n.test.js`, parité + couverture des clés).
-  - [ ] **Phase B — Contenu pédagogique** : `levels.js` (60 missions), `quizzes.js`,
-    `glossary.js`. Approche prévue : overlay EN par `id` dans des fichiers séparés
-    (`js/i18n/*.en.js`) fusionnés au boot → les fichiers FR restent intacts, l'EN est additif.
+  - [x] **Phase B — Contenu pédagogique (missions)** : les 10 scénarios / 60 missions de
+    `levels.js` sont traduits via overlay EN par `id` (`js/i18n/levels.en.js`) fusionné au boot
+    par `overlayLevels()` — fichier FR intact, EN additif. Littéraux (fichiers/chemins/hôtes/
+    valeurs) gardés à l'identique pour ne pas casser les checks. 8 tests (`tests/levels-i18n.test.js`).
+    Restent dans cette phase : `quizzes.js` et `glossary.js`.
   - [ ] **Phase C — Modes annexes** : `boss.js`, `bandit.js`, `challenges.js`, `daily.js`,
     `kata.js`, `gameshell.js` (Explorer), `certificate.js`, `objectives.js`, `expert.js`,
     `seasonal.js`, `terminal.js` (messages du shell).

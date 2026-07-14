@@ -18,11 +18,24 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   Infiltration/Boss/Bac à sable/Glossaire/Profil, modales (succès, quiz, défi du jour,
   raccourcis), bannières (mise à jour, multi-onglets) et noms de rangs (`RANKS` passés en
   `{fr,en}` + helper `rankName()`). Le choix de langue est mémorisé (reload complet).
-  Le **contenu des missions reste en français** (fallback) en attendant les phases
-  suivantes (levels/quiz/glossaire, puis modes annexes). 10 tests dédiés
-  (`tests/i18n.test.js`) : `t()`/`pick()`/`rankName()`, **parité stricte des clés fr↔en**
-  et **couverture** (toute clé `data-i18n*` d'`index.html` existe dans la table).
-  Vérifié en rendu navigateur réel (Chrome headless) dans les deux langues. SW v19 → v20
+  10 tests dédiés (`tests/i18n.test.js`) : `t()`/`pick()`/`rankName()`, **parité stricte
+  des clés fr↔en** et **couverture** (toute clé `data-i18n*` d'`index.html` existe dans
+  la table). Vérifié en rendu navigateur réel (Chrome headless) dans les deux langues
+- Internationalisation FR / EN — **Phase B (contenu des scénarios)** : les **10 scénarios /
+  60 missions** de `js/levels.js` sont traduits en anglais dans un fichier d'overlay séparé
+  `js/i18n/levels.en.js` (chargé juste après `levels.js`). Chaque mission redéfinit
+  `name` / `desc` / `hint` / `explanation` et, dans `lesson`, `title` / `intro` / `syntax` /
+  `tip` + les tableaux `options` / `examples` (par index) ; `cmd`, `xp`, `fs`, `check` et les
+  `flag`/`cmd` restent partagés (indépendants de la langue). Le helper `overlayLevels()`
+  (`js/i18n.js`) fusionne l'overlay sur `CHAPTERS` **uniquement si la langue est l'anglais** :
+  en français, `levels.js` reste la source de vérité intacte et l'anglais est purement additif.
+  Les noms de fichiers, chemins, hôtes et valeurs (`config.json`, `prod.monserveur.com`,
+  `webserver01`, `initial commit`…) sont volontairement gardés à l'identique pour ne pas casser
+  la validation des missions. 8 tests dédiés (`tests/levels-i18n.test.js`) : overlay appliqué en
+  EN / inactif en FR, **complétude** (chaque chapitre+mission a sa traduction), pas d'overlay
+  orphelin, longueurs `options`/`examples` cohérentes, et **littéraux `<code>` avec `.`/`/`
+  identiques en EN**. Vérifié en navigateur réel (titre de chapitre + leçon rendus en anglais).
+  SW v20 → v21 (précache de `levels.en.js`)
 - Page d'atterrissage marketing dédiée (`landing.html`, `css/landing.css`, `js/landing.js`) :
   hero avec mockup de terminal animé, chiffres réels du contenu, grille des modes de jeu,
   section « pourquoi » façon page de manuel (`man linuxdojo`). Séparée de `index.html`

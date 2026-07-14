@@ -412,6 +412,50 @@ function pick(v) {
 // Nom de rang traduit (RANKS.name peut être une chaîne ou un { fr, en }).
 function rankName(rank) { return rank ? pick(rank.name) : ""; }
 
+// ── Overlays de contenu EN (Phase B) ────────────────────────────
+// Le contenu (missions, glossaire...) reste défini en français dans ses
+// fichiers d'origine. Les traductions anglaises vivent dans des fichiers
+// séparés `js/i18n/*.en.js`, chargés juste APRÈS le fichier source FR, qui
+// fournissent les textes par identifiant et appellent le helper de fusion
+// ci-dessous. La fusion n'a lieu que si LANG === "en" : en français, rien
+// n'est chargé ni modifié. Les fichiers FR restent donc la source de vérité
+// et l'anglais est purement additif (aucun risque pour l'existant).
+function _ov(target, key, val) { if (val != null && target != null) target[key] = val; }
+
+// Applique un overlay EN sur CHAPTERS (levels.js). `byId` est indexé par id
+// de chapitre : { [chapId]: { title, scenario, missions: { [missId]: {...} } } }.
+// Chaque mission peut redéfinir name/desc/hint/explanation et, dans lesson,
+// title/intro/syntax/tip ainsi que les tableaux options (desc par index) et
+// examples (comment par index) — le reste (cmd, flag, xp, fs, check) est
+// inchangé, car indépendant de la langue.
+function overlayLevels(byId) {
+  if (LANG !== "en" || typeof CHAPTERS === "undefined") return;
+  for (const ch of CHAPTERS) {
+    const co = byId[ch.id];
+    if (!co) continue;
+    _ov(ch, "title", co.title);
+    _ov(ch, "scenario", co.scenario);
+    if (!co.missions) continue;
+    for (const m of ch.missions) {
+      const mo = co.missions[m.id];
+      if (!mo) continue;
+      _ov(m, "name", mo.name);
+      _ov(m, "desc", mo.desc);
+      _ov(m, "hint", mo.hint);
+      _ov(m, "explanation", mo.explanation);
+      if (mo.lesson && m.lesson) {
+        const L = m.lesson, lo = mo.lesson;
+        _ov(L, "title", lo.title);
+        _ov(L, "intro", lo.intro);
+        _ov(L, "syntax", lo.syntax);
+        _ov(L, "tip", lo.tip);
+        if (lo.options && L.options) lo.options.forEach((d, i) => { if (d != null && L.options[i]) L.options[i].desc = d; });
+        if (lo.examples && L.examples) lo.examples.forEach((c, i) => { if (c != null && L.examples[i]) L.examples[i].comment = c; });
+      }
+    }
+  }
+}
+
 // ── Changement de langue ────────────────────────────────────────
 function setLang(l) {
   if (!LANGS.includes(l) || l === LANG) return;

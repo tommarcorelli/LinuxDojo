@@ -21,3 +21,5 @@ jobs:
         run: node tests/errors.test.js
       - name: Lancer les tests d'internationalisation (i18n)
         run: node tests/i18n.test.js
+      - name: Lancer les tests de traduction des scénarios (levels EN)
+        run: node tests/levels-i18n.test.js
