@@ -272,19 +272,19 @@ function renderGlossary() {
       || g.options.some(o => (o[0]+o[1]).toLowerCase().includes(q));
     return catOk && searchOk;
   });
-  if (!items.length) { list.innerHTML = '<p style="color:var(--text-dim);padding:20px">Aucune commande trouvée.</p>'; return; }
+  if (!items.length) { list.innerHTML = `<p style="color:var(--text-dim);padding:20px">${t("glossary.noResult")}</p>`; return; }
   list.innerHTML = items.map(g => `
     <div class="gloss-card" data-cmd="${g.cmd}">
       <div class="gloss-card-head">
         <span class="gloss-cmd">${g.cmd}</span>
         <span class="gloss-desc">${g.desc}</span>
-        <span class="gloss-cat">${g.cat}</span>
+        <span class="gloss-cat">${glossCat(g.cat)}</span>
         <span class="gloss-chevron">▾</span>
       </div>
       <div class="gloss-body">
         <div class="gloss-syntax">${g.syntax.replace(/</g,"&lt;")}</div>
-        ${g.options.length ? '<div class="gloss-sub">OPTIONS</div>' + g.options.map(o => `<div class="gloss-opt"><span>${o[0]}</span><em>${o[1]}</em></div>`).join("") : ""}
-        <div class="gloss-sub">EXEMPLES</div>
+        ${g.options.length ? '<div class="gloss-sub">' + t("lesson.label.options") + '</div>' + g.options.map(o => `<div class="gloss-opt"><span>${o[0]}</span><em>${o[1]}</em></div>`).join("") : ""}
+        <div class="gloss-sub">${t("lesson.label.examples")}</div>
         ${g.examples.map(e => `<div class="gloss-ex"><code>$ ${e[0].replace(/</g,"&lt;")}</code><span># ${e[1]}</span></div>`).join("")}
       </div>
     </div>`).join("");
@@ -298,7 +298,7 @@ function renderGlossaryCats() {
   const el = document.getElementById("glossary-cats");
   if (!el) return;
   el.innerHTML = GLOSSARY_CATS.map(c =>
-    `<button class="gloss-chip${c===glossaryFilter?" active":""}" data-cat="${c}">${c}</button>`).join("");
+    `<button class="gloss-chip${c===glossaryFilter?" active":""}" data-cat="${c}">${glossCat(c)}</button>`).join("");
   el.querySelectorAll(".gloss-chip").forEach(b =>
     b.addEventListener("click", () => { glossaryFilter = b.dataset.cat; renderGlossaryCats(); renderGlossary(); }));
 }

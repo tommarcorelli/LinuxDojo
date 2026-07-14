@@ -78,8 +78,8 @@ const Quiz = {
   _render() {
     const qs = QUIZZES[this.chapterId];
     const q = qs[this.idx];
-    document.getElementById("quiz-chapter").textContent = "🎓 Quiz — " + (CHAPTERS.find(c => c.id === this.chapterId)?.title || "");
-    document.getElementById("quiz-progress").textContent = "Question " + (this.idx + 1) + "/" + qs.length;
+    document.getElementById("quiz-chapter").textContent = t("quiz.title", { chapter: CHAPTERS.find(c => c.id === this.chapterId)?.title || "" });
+    document.getElementById("quiz-progress").textContent = t("quiz.progress", { n: this.idx + 1, total: qs.length });
     document.getElementById("quiz-question").textContent = q.q;
     const opt = document.getElementById("quiz-options");
     opt.innerHTML = "";
@@ -122,7 +122,7 @@ const Quiz = {
     res.style.display = "block";
     res.innerHTML =
       `<div class="quiz-score">${this.score}/${qs.length}</div>
-       <p>${perfect ? "🏆 Sans faute ! Bonus +25 XP" : (this.score >= 2 ? "👍 Bien joué !" : "📚 Revois le chapitre et retente !")}</p>
+       <p>${perfect ? t("quiz.perfect") : (this.score >= 2 ? t("quiz.good") : t("quiz.retry"))}</p>
        <p class="quiz-gain">+${gain} XP</p>`;
 
     // Récompense + marquage (une seule fois, ou si meilleur score)

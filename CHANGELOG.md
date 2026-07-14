@@ -34,8 +34,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
   la validation des missions. 8 tests dédiés (`tests/levels-i18n.test.js`) : overlay appliqué en
   EN / inactif en FR, **complétude** (chaque chapitre+mission a sa traduction), pas d'overlay
   orphelin, longueurs `options`/`examples` cohérentes, et **littéraux `<code>` avec `.`/`/`
-  identiques en EN**. Vérifié en navigateur réel (titre de chapitre + leçon rendus en anglais).
-  SW v20 → v21 (précache de `levels.en.js`)
+  identiques en EN**. Vérifié en navigateur réel (titre de chapitre + leçon rendus en anglais)
+- Internationalisation FR / EN — **Phase B (suite) : quiz de fin de chapitre + glossaire** :
+  les **quiz** (`js/quizzes.js`, ~34 questions/options) sont traduits via overlay
+  `js/i18n/quizzes.en.js` (helper `overlayQuizzes()`, l'indice de bonne réponse `answer`
+  reste partagé), et les libellés de la modale (progression, résultat) passent par `t()`.
+  Le **glossaire** (`js/glossary.js`, **62 commandes**) est traduit via
+  `js/i18n/glossary.en.js` (helper `overlayGlossary()` : `desc`, `syntax`, et le libellé de
+  chaque option/exemple) ; les **catégories restent des clés FR pour le filtrage** et seul
+  leur libellé affiché est traduit par `glossCat()` (aucun risque pour le filtre). 8 tests
+  supplémentaires (`tests/levels-i18n.test.js`, 16 au total). Vérifié en navigateur réel
+  (chip `Search`/clé `Recherche`, descriptions de commandes rendues en anglais).
+  SW v20 → v23 (précache de `levels.en.js`, `quizzes.en.js`, `glossary.en.js`)
 - Page d'atterrissage marketing dédiée (`landing.html`, `css/landing.css`, `js/landing.js`) :
   hero avec mockup de terminal animé, chiffres réels du contenu, grille des modes de jeu,
   section « pourquoi » façon page de manuel (`man linuxdojo`). Séparée de `index.html`

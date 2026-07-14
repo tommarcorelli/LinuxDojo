@@ -160,6 +160,7 @@ const UI = {
     "glossary.intro": "La référence complète. Clique sur une commande pour voir sa syntaxe, ses options et des exemples.",
     "glossary.search": "🔍 Rechercher une commande (ls, grep, permissions...)",
     "glossary.searchAria": "Rechercher une commande dans le glossaire",
+    "glossary.noResult": "Aucune commande trouvée.",
 
     // ── Modale défi du jour ──
     "daily.reward": "+50 XP bonus",
@@ -180,6 +181,11 @@ const UI = {
 
     // ── Modale quiz ──
     "quiz.close": "Fermer",
+    "quiz.title": "🎓 Quiz — {chapter}",
+    "quiz.progress": "Question {n}/{total}",
+    "quiz.perfect": "🏆 Sans faute ! Bonus +25 XP",
+    "quiz.good": "👍 Bien joué !",
+    "quiz.retry": "📚 Revois le chapitre et retente !",
 
     // ── Modale raccourcis clavier ──
     "shortcuts.title": "⌨️ Raccourcis clavier",
@@ -337,6 +343,7 @@ const UI = {
     "glossary.intro": "The complete reference. Click a command to see its syntax, options and examples.",
     "glossary.search": "🔍 Search a command (ls, grep, permissions...)",
     "glossary.searchAria": "Search a command in the glossary",
+    "glossary.noResult": "No command found.",
 
     // ── Daily challenge modal ──
     "daily.reward": "+50 bonus XP",
@@ -357,6 +364,11 @@ const UI = {
 
     // ── Quiz modal ──
     "quiz.close": "Close",
+    "quiz.title": "🎓 Quiz — {chapter}",
+    "quiz.progress": "Question {n}/{total}",
+    "quiz.perfect": "🏆 Flawless! +25 XP bonus",
+    "quiz.good": "👍 Well done!",
+    "quiz.retry": "📚 Review the chapter and try again!",
 
     // ── Keyboard shortcuts modal ──
     "shortcuts.title": "⌨️ Keyboard shortcuts",
@@ -455,6 +467,57 @@ function overlayLevels(byId) {
     }
   }
 }
+
+// Applique un overlay EN sur QUIZZES (quizzes.js). `byId` est indexé par id
+// de chapitre, chaque valeur étant un tableau parallèle de { q, options }.
+// La bonne réponse (answer) ne change pas : c'est un indice, indépendant de
+// la langue. On fusionne question et libellés d'options par index.
+function overlayQuizzes(byId) {
+  if (LANG !== "en" || typeof QUIZZES === "undefined") return;
+  for (const chId in byId) {
+    const src = QUIZZES[chId], ov = byId[chId];
+    if (!src || !ov) continue;
+    ov.forEach((o, i) => {
+      if (!o || !src[i]) return;
+      _ov(src[i], "q", o.q);
+      if (o.options && src[i].options) o.options.forEach((opt, j) => { if (opt != null && src[i].options[j] != null) src[i].options[j] = opt; });
+    });
+  }
+}
+
+// Applique un overlay EN sur GLOSSARY (glossary.js). `byCmd` est indexé par
+// nom de commande, chaque valeur : { desc, syntax, options:[...], examples:[...] }
+// où options/examples sont des tableaux du 2e élément de chaque paire
+// [flag, desc] / [cmd, desc] (le 1er élément — flag ou commande — est neutre).
+// IMPORTANT : on NE traduit PAS `cat`, qui reste la clé de filtrage FR ; seul
+// son LIBELLÉ affiché est traduit à part par glossCat() (voir ci-dessous).
+function overlayGlossary(byCmd) {
+  if (LANG !== "en" || typeof GLOSSARY === "undefined") return;
+  for (const entry of GLOSSARY) {
+    const ov = byCmd[entry.cmd];
+    if (!ov) continue;
+    _ov(entry, "desc", ov.desc);
+    _ov(entry, "syntax", ov.syntax);
+    if (ov.options && entry.options) ov.options.forEach((d, i) => { if (d != null && entry.options[i]) entry.options[i][1] = d; });
+    if (ov.examples && entry.examples) ov.examples.forEach((d, i) => { if (d != null && entry.examples[i]) entry.examples[i][1] = d; });
+  }
+}
+
+// Libellé traduit d'une catégorie de glossaire. La catégorie reste stockée en
+// français partout (clé de filtrage) ; seul l'affichage passe par ici.
+const GLOSS_CATS_EN = {
+  "Tout": "All",
+  "Navigation": "Navigation",
+  "Fichiers": "Files",
+  "Recherche": "Search",
+  "Permissions & Système": "Permissions & System",
+  "Réseau & Archives": "Network & Archives",
+  "Texte & Décodage": "Text & Decoding",
+  "Scripting": "Scripting",
+  "Git": "Git",
+  "Aide": "Help",
+};
+function glossCat(c) { return LANG === "en" ? (GLOSS_CATS_EN[c] || c) : c; }
 
 // ── Changement de langue ────────────────────────────────────────
 function setLang(l) {
