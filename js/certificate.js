@@ -5,15 +5,15 @@
 const NAME_KEY = "linuxdojo_name";
 
 function ninjaName() {
-  try { return (localStorage.getItem(NAME_KEY) || "").trim() || "Ninja Anonyme"; }
-  catch { return "Ninja Anonyme"; }
+  try { return (localStorage.getItem(NAME_KEY) || "").trim() || t("cert.defaultName"); }
+  catch { return t("cert.defaultName"); }
 }
 function hasNinjaName() {
   try { return !!(localStorage.getItem(NAME_KEY) || "").trim(); } catch { return false; }
 }
 function setNinjaName() {
   const cur = hasNinjaName() ? ninjaName() : "";
-  const v = prompt("Ton nom de ninja (il figurera sur le certificat) :", cur);
+  const v = prompt(t("cert.namePrompt"), cur);
   if (v === null) return;
   try { localStorage.setItem(NAME_KEY, v.trim().slice(0, 32)); } catch {}
   if (typeof renderCertificate === "function") renderCertificate();
@@ -127,11 +127,11 @@ function buildCertificateCanvas(scale) {
   tg.addColorStop(0, "#f9a8d4"); tg.addColorStop(0.5, "#c4b5fd"); tg.addColorStop(1, "#67e8f9");
   ctx.fillStyle = tg;
   ctx.font = "800 52px 'Inter', system-ui, sans-serif";
-  ctx.fillText("CERTIFICAT DE CEINTURE NOIRE", W / 2, 372);
+  ctx.fillText(t("cert.title"), W / 2, 372);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "400 18px 'Inter', sans-serif";
-  ctx.fillText("La voie du shell reconnaît solennellement", W / 2, 410);
+  ctx.fillText(t("cert.line1"), W / 2, 410);
 
   // Nom
   ctx.fillStyle = "#fde68a";
@@ -144,8 +144,8 @@ function buildCertificateCanvas(scale) {
 
   ctx.fillStyle = "#cbd5e1";
   ctx.font = "400 18px 'Inter', sans-serif";
-  ctx.fillText("pour avoir vaincu le SENSEI et prouvé sa maîtrise", W / 2, 524);
-  ctx.fillText("des commandes, des pipes et des permissions Linux.", W / 2, 550);
+  ctx.fillText(t("cert.line2"), W / 2, 524);
+  ctx.fillText(t("cert.line3"), W / 2, 550);
 
   // Stats
   const rank = (typeof getRank === "function") ? getRank((typeof GAME !== "undefined" ? GAME.xp : 0)) : { name: "Root", icon: "" };
@@ -154,10 +154,10 @@ function buildCertificateCanvas(scale) {
   const miss = (typeof GAME !== "undefined" && GAME.completed) ? GAME.completed.size : 0;
   const missTotal = (typeof ALL_MISSIONS !== "undefined") ? ALL_MISSIONS.length : 36;
   const stats = [
-    ["RANG", rank.name],
-    ["XP TOTAL", String(xp)],
-    ["BOSS VAINCUS", boss + " / 6"],
-    ["MISSIONS", miss + " / " + missTotal],
+    [t("cert.statRank"), rankName(rank)],
+    [t("cert.statXp"), String(xp)],
+    [t("cert.statBoss"), boss + " / 6"],
+    [t("cert.statMissions"), miss + " / " + missTotal],
   ];
   const colW = 250, startX = W / 2 - (colW * stats.length) / 2 + colW / 2;
   stats.forEach((s, i) => {
@@ -175,32 +175,32 @@ function buildCertificateCanvas(scale) {
   ctx.beginPath(); ctx.moveTo(160, 694); ctx.lineTo(W - 160, 694); ctx.stroke();
 
   // Date + signature
-  const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const date = new Date().toLocaleDateString(dateLocale(), { day: "numeric", month: "long", year: "numeric" });
   ctx.textAlign = "left";
   ctx.fillStyle = "#94a3b8"; ctx.font = "400 15px 'Inter', sans-serif";
-  ctx.fillText("Délivré le", 180, 736);
+  ctx.fillText(t("cert.issuedOn"), 180, 736);
   ctx.fillStyle = "#e2e8f0"; ctx.font = "600 17px 'Inter', sans-serif";
   ctx.fillText(date, 180, 760);
 
   ctx.textAlign = "right";
   ctx.fillStyle = "#c4b5fd"; ctx.font = "italic 700 26px 'Inter', sans-serif";
-  ctx.fillText("Le Sensei", W - 180, 748);
+  ctx.fillText(t("cert.sensei"), W - 180, 748);
   ctx.strokeStyle = "rgba(196,181,253,0.5)"; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(W - 320, 762); ctx.lineTo(W - 180, 762); ctx.stroke();
   ctx.fillStyle = "#64748b"; ctx.font = "400 12px 'JetBrains Mono', monospace";
-  ctx.fillText("Maître du Dojo", W - 180, 780);
+  ctx.fillText(t("cert.dojoMaster"), W - 180, 780);
 
   // Footer
   ctx.textAlign = "center";
   ctx.fillStyle = "#475569"; ctx.font = "400 13px 'JetBrains Mono', monospace";
-  ctx.fillText("tommarcorelli.github.io/LinuxDojo  ·  « Tout est fichier. »", W / 2, H - 46);
+  ctx.fillText(t("cert.footer"), W / 2, H - 46);
 
   return canvas;
 }
 
 function downloadCertificate() {
   if (!senseiDefeated()) {
-    if (typeof showToast === "function") showToast("🔒 Bats le Sensei (Salle des Boss) pour débloquer ton certificat.");
+    if (typeof showToast === "function") showToast(t("cert.lockedToast"));
     return;
   }
   if (!hasNinjaName()) { setNinjaName(); if (!hasNinjaName()) return; }
@@ -215,9 +215,7 @@ function downloadCertificate() {
 
 function _certificateShareText() {
   const rank = (typeof getRank === "function") ? getRank(GAME.xp) : { name: "Root", icon: "" };
-  return "🥋 " + ninjaName() + " vient de décrocher sa Ceinture Noire sur LinuxDojo !\n" +
-    "Rang " + rank.name + " " + rank.icon + " · " + GAME.xp + " XP\n" +
-    "https://tommarcorelli.github.io/LinuxDojo/";
+  return t("cert.shareText", { name: ninjaName(), rank: rankName(rank), icon: rank.icon, xp: GAME.xp });
 }
 
 async function shareCertificate() {
@@ -226,11 +224,11 @@ async function shareCertificate() {
   const text = _certificateShareText();
 
   const fallback = () => {
-    const done = () => { if (typeof showToast === "function") showToast("📋 Message copié — colle-le où tu veux !"); };
+    const done = () => { if (typeof showToast === "function") showToast(t("cert.msgCopied")); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done).catch(() => prompt("Copie ton message :", text));
+      navigator.clipboard.writeText(text).then(done).catch(() => prompt(t("cert.copyMsg"), text));
     } else {
-      prompt("Copie ton message :", text);
+      prompt(t("cert.copyMsg"), text);
     }
   };
 
@@ -280,16 +278,16 @@ function renderCertificate() {
   if (unlocked) {
     overlay.innerHTML =
       '<div class="cert-actions">' +
-        '<button class="btn-primary" id="cert-download">⬇️ Télécharger le certificat (PNG)</button>' +
-        '<button class="btn-ghost" id="cert-share">📤 Partager</button>' +
-        '<button class="btn-ghost" id="cert-name">✏️ ' + (hasNinjaName() ? "Changer mon nom" : "Définir mon nom") + '</button>' +
+        '<button class="btn-primary" id="cert-download">' + t("cert.download") + '</button>' +
+        '<button class="btn-ghost" id="cert-share">' + t("cert.share") + '</button>' +
+        '<button class="btn-ghost" id="cert-name">' + (hasNinjaName() ? t("cert.changeName") : t("cert.setName")) + '</button>' +
       '</div>';
   } else {
     overlay.innerHTML =
       '<div class="cert-lock">🔒</div>' +
-      '<div class="cert-lock-title">Certificat de Ceinture Noire</div>' +
-      '<div class="cert-lock-sub">Termine l\'examen du Sensei dans la <strong>Salle des Boss</strong> pour le débloquer et le partager.</div>' +
-      '<button class="btn-ghost" id="cert-goboss">⚔️ Aller défier le Sensei</button>';
+      '<div class="cert-lock-title">' + t("cert.lockTitle") + '</div>' +
+      '<div class="cert-lock-sub">' + t("cert.lockSub") + '</div>' +
+      '<button class="btn-ghost" id="cert-goboss">' + t("cert.goBoss") + '</button>';
   }
   card.appendChild(overlay);
   host.appendChild(card);
