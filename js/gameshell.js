@@ -228,10 +228,10 @@ class GameShell {
 
   init() {
     this._clearTerm();
-    this._print("🌌 Bienvenue dans le Monde Linux.", "t-story");
+    this._print(t("explore.welcome"), "t-story");
     this._print("", "t-out");
-    this._print("Commandes : ls · ls -la · cd · cat · map · inv · take · use · talk · help", "t-info");
-    if (this.inventory.size > 0) this._print("(progression chargée — tape 'inv' pour voir ton sac)", "t-out");
+    this._print(t("explore.commands"), "t-info");
+    if (this.inventory.size > 0) this._print(t("explore.loaded"), "t-out");
     this._updateWorld(true);
   }
 
@@ -269,7 +269,7 @@ class GameShell {
         const l = args.some(x => x.includes("l"));
         let items = [...(loc.dirs||[]).map(d => d+"/"), ...Object.keys(loc.files||{})];
         if (!a) items = items.filter(f => !f.startsWith("."));
-        if (!items.length) { this._print("(vide)", "t-out"); break; }
+        if (!items.length) { this._print(t("explore.empty"), "t-out"); break; }
         if (l) items.forEach(it => {
           const dir = it.endsWith("/"), hid = it.startsWith(".");
           this._print(`${dir?"drwxr-xr-x":(hid?"-rw-------":"-rw-r--r--")}  user user  ${dir?"4096":"  42"}  ${it}`, "t-out");
@@ -278,16 +278,16 @@ class GameShell {
         break;
       }
       case "cd": {
-        const t = args[0];
-        if (!t || t === "~") { this.cwd = "/"; this._updateWorld(); break; }
-        if (t === "..") {
+        const dest = args[0];
+        if (!dest || dest === "~") { this.cwd = "/"; this._updateWorld(); break; }
+        if (dest === "..") {
           const p = this.cwd.split("/").filter(Boolean); p.pop();
-          this.cwd = "/" + p.join("/"); if (this.cwd === "/") {} 
+          this.cwd = "/" + p.join("/"); if (this.cwd === "/") {}
           this._updateWorld(); break;
         }
-        const np = this.cwd === "/" ? "/"+t : this.cwd+"/"+t;
+        const np = this.cwd === "/" ? "/"+dest : this.cwd+"/"+dest;
         const target = WORLD[np];
-        if (!target && !(loc.dirs||[]).includes(t)) { this._print(`cd: ${t}: Aucun lieu de ce type`, "t-err"); break; }
+        if (!target && !(loc.dirs||[]).includes(dest)) { this._print(t("explore.cdUnknown", { t: dest }), "t-err"); break; }
         if (target && target.locked && !this.inventory.has(target.locked)) { this._print(target.lockedMsg, "t-warn"); break; }
         if (target && target.requiresAll && !target.requiresAll.every(i => this.inventory.has(i))) { this._print(target.requiresMsg, "t-warn"); break; }
         this.cwd = np; this._updateWorld();
@@ -295,9 +295,9 @@ class GameShell {
       }
       case "cat": case "less": {
         const f = args[0];
-        if (!f) { this._print(`${cmd}: manque le nom du fichier`, "t-err"); break; }
+        if (!f) { this._print(t("explore.catMissing", { cmd }), "t-err"); break; }
         const c = loc.files && loc.files[f];
-        if (c === undefined) { this._print(`${cmd}: ${f}: Fichier introuvable`, "t-err"); break; }
+        if (c === undefined) { this._print(t("explore.catNotFound", { cmd, f }), "t-err"); break; }
         c.split("\n").forEach(l => this._print(l, "t-out"));
         if (f.startsWith(".")) this._grantFromZone(loc);
         break;
@@ -313,22 +313,22 @@ class GameShell {
           (n.dirs||[]).forEach(d => walk(path === "/" ? "/"+d : path+"/"+d));
         };
         walk(this.cwd);
-        this._print(res.length ? res.join("\n") : "(aucun résultat)", "t-out");
+        this._print(res.length ? res.join("\n") : t("explore.findNone"), "t-out");
         break;
       }
       case "grep": {
         const nf = args.filter(x => !x.startsWith("-"));
         const pat = nf[0], f = nf[1];
-        if (!pat || !f) { this._print("grep: usage: grep MOTIF FICHIER", "t-err"); break; }
+        if (!pat || !f) { this._print(t("explore.grepUsage"), "t-err"); break; }
         const c = loc.files && loc.files[f];
-        if (c === undefined) { this._print(`grep: ${f}: introuvable`, "t-err"); break; }
+        if (c === undefined) { this._print(t("explore.grepNotFound", { f }), "t-err"); break; }
         const ls = c.split("\n").filter(l => l.toLowerCase().includes(pat.toLowerCase()));
-        this._print(ls.length ? ls.join("\n") : "(aucune correspondance)", "t-out");
+        this._print(ls.length ? ls.join("\n") : t("explore.grepNoMatch"), "t-out");
         break;
       }
       case "inv": case "inventory": {
-        if (!this.inventory.size) { this._print("🎒 Ton sac est vide.", "t-out"); break; }
-        this._print("🎒 INVENTAIRE :", "t-info");
+        if (!this.inventory.size) { this._print(t("explore.bagEmpty"), "t-out"); break; }
+        this._print(t("explore.inventory"), "t-info");
         this.inventory.forEach(id => {
           const it = this._itemById(id);
           this._print("   " + (it ? it.emoji + " " + it.name : id), "t-out");
@@ -338,40 +338,40 @@ class GameShell {
       case "take": {
         const id = args[0];
         if (loc.item && (loc.item.id === id || id === loc.item.name?.toLowerCase())) { this._grantItem(loc.item); }
-        else if (loc.item) { this._print(`Ici tu peux ramasser : ${loc.item.emoji} (take ${loc.item.id})`, "t-warn"); }
-        else this._print("Rien à ramasser ici.", "t-out");
+        else if (loc.item) { this._print(t("explore.canTake", { emoji: loc.item.emoji, id: loc.item.id }), "t-warn"); }
+        else this._print(t("explore.nothingTake"), "t-out");
         break;
       }
       case "use": {
         const id = args[0];
-        if (!this.inventory.has(id)) { this._print(`Tu n'as pas '${id}' dans ton sac.`, "t-warn"); break; }
+        if (!this.inventory.has(id)) { this._print(t("explore.dontHave", { id }), "t-warn"); break; }
         const it = this._itemById(id);
-        this._print(`Tu utilises ${it?it.emoji+" "+it.name:id}. ${this._useEffect(id)}`, "t-ok");
+        this._print(t("explore.useItem", { item: it ? it.emoji + " " + it.name : id, effect: this._useEffect(id) }), "t-ok");
         break;
       }
       case "map": this._printMap(); break;
       case "talk": {
-        if (!loc.npc) { this._print("Il n'y a personne à qui parler ici.", "t-out"); break; }
+        if (!loc.npc) { this._print(t("explore.noNpc"), "t-out"); break; }
         this._print("💬 " + loc.npc.emoji + " " + loc.npc.name + " :", "t-story");
-        loc.npc.lines.forEach(l => this._print("   « " + l + " »", "t-out"));
+        loc.npc.lines.forEach(l => this._print(t("explore.npcLine", { line: l }), "t-out"));
         break;
       }
       case "clear": this._clearTerm(); break;
       case "help":
-        [ "Commandes de l'explorateur :",
-          "  ls / ls -la   — regarder autour (cachés avec -la)",
-          "  cd <lieu>     — se déplacer   ·   cd ..  remonter",
-          "  cat <fichier> — lire un fichier",
-          "  map           — carte des lieux visités",
-          "  inv           — ton inventaire",
-          "  take <objet>  — ramasser un objet",
-          "  use <objet>   — utiliser un objet",
-          "  talk          — parler au personnage présent",
-          "  find / grep   — chercher",
+        [ t("explore.help.title"),
+          t("explore.help.ls"),
+          t("explore.help.cd"),
+          t("explore.help.cat"),
+          t("explore.help.map"),
+          t("explore.help.inv"),
+          t("explore.help.take"),
+          t("explore.help.use"),
+          t("explore.help.talk"),
+          t("explore.help.search"),
         ].forEach(l => this._print(l, l.startsWith("  ")?"t-out":"t-info"));
         break;
       default:
-        this._print(`${cmd}: commande inconnue. Tape 'help'.`, "t-err");
+        this._print(t("explore.unknownCmd", { cmd }), "t-err");
     }
   }
 
@@ -385,7 +385,7 @@ class GameShell {
       this._save();
       setTimeout(() => {
         this._print("", "t-out");
-        this._print("✨ Secret découvert ! +" + (loc.xp||0) + " XP", "t-ok");
+        this._print(t("explore.secretFound", { xp: loc.xp||0 }), "t-ok");
         if (typeof burstParticles === "function") burstParticles(window.innerWidth*0.7, window.innerHeight*0.5);
       }, 250);
     }
@@ -393,7 +393,7 @@ class GameShell {
     if (loc.finalWin && !this.wonFinal) {
       this.wonFinal = true; this._save();
       setTimeout(() => {
-        if (typeof showAchievement === "function") showAchievement("🏆", "MAÎTRE EXPLORATEUR", "Tu as réuni les 3 gemmes et vaincu le monde !");
+        if (typeof showAchievement === "function") showAchievement("🏆", t("explore.masterTitle"), t("explore.masterSub"));
         if (typeof SFX !== "undefined") SFX.levelup();
         if (typeof burstParticles === "function") { burstParticles(window.innerWidth/2, window.innerHeight/2); setTimeout(()=>burstParticles(window.innerWidth/3, window.innerHeight/2),200); setTimeout(()=>burstParticles(window.innerWidth*2/3, window.innerHeight/2),400); }
       }, 300);
@@ -401,17 +401,17 @@ class GameShell {
   }
 
   _grantItem(item) {
-    if (this.inventory.has(item.id)) { this._print(`Tu as déjà ${item.emoji} ${item.name}.`, "t-out"); return; }
+    if (this.inventory.has(item.id)) { this._print(t("explore.alreadyHave", { item: item.emoji + " " + item.name }), "t-out"); return; }
     this.inventory.add(item.id); this._save();
     setTimeout(() => {
       this._print("", "t-out");
-      this._print(`🎒 Objet obtenu : ${item.emoji} ${item.name}`, "t-ok");
+      this._print(t("explore.itemGot", { item: item.emoji + " " + item.name }), "t-ok");
       if (typeof SFX !== "undefined") SFX.badge();
       // Gemmes = spécial
       if (item.id.startsWith("gemme")) {
         const gems = ["gemme_verte","gemme_bleue","gemme_rouge"].filter(g => this.inventory.has(g)).length;
-        this._print(`💎 Gemmes réunies : ${gems}/3`, "t-info");
-        if (gems === 3) this._print("→ Retourne au Nexus et ouvre le Coffre Final ! (cd / puis cd coffre_final)", "t-warn");
+        this._print(t("explore.gems", { n: gems }), "t-info");
+        if (gems === 3) this._print(t("explore.gemsAll"), "t-warn");
       }
     }, 250);
   }
@@ -423,15 +423,15 @@ class GameShell {
 
   _useEffect(id) {
     const fx = {
-      lampe: "Une lumière chaude t'entoure.",
-      masque: "Tu respires sous l'eau sans peine.",
-      cle_argent: "Un cliquetis métallique résonne.",
-      herbe: "Un parfum apaisant s'en dégage.",
-      potion: "Une fraîcheur revigorante te parcourt.",
-      trident: "Tu te sens puissant.",
-      savoir: "La connaissance emplit ton esprit.",
+      lampe: t("explore.fx.lampe"),
+      masque: t("explore.fx.masque"),
+      cle_argent: t("explore.fx.cle_argent"),
+      herbe: t("explore.fx.herbe"),
+      potion: t("explore.fx.potion"),
+      trident: t("explore.fx.trident"),
+      savoir: t("explore.fx.savoir"),
     };
-    return fx[id] || "Rien de spécial ne se produit.";
+    return fx[id] || t("explore.fx.default");
   }
 
   _updateWorld(silent) {
@@ -444,7 +444,7 @@ class GameShell {
     // Sorties (boutons)
     this.exitsEl.innerHTML = "";
     if (this.cwd !== "/") {
-      const b = document.createElement("button"); b.className = "exit-btn"; b.textContent = "↑ Remonter (cd ..)";
+      const b = document.createElement("button"); b.className = "exit-btn"; b.textContent = t("explore.goUp");
       b.onclick = () => { this.inputEl.value = "cd .."; this._run(); this._switchToTerminalMobile(); };
       this.exitsEl.appendChild(b);
     }
@@ -459,13 +459,13 @@ class GameShell {
       this.exitsEl.appendChild(b);
     });
     // PNJ / objet visibles
-    if (loc.npc) { const b=document.createElement("button"); b.className="exit-btn"; b.textContent="💬 Parler à "+loc.npc.name; b.onclick=()=>{this.inputEl.value="talk";this._run();this._switchToTerminalMobile();}; this.exitsEl.appendChild(b); }
+    if (loc.npc) { const b=document.createElement("button"); b.className="exit-btn"; b.textContent=t("explore.talkTo", { name: loc.npc.name }); b.onclick=()=>{this.inputEl.value="talk";this._run();this._switchToTerminalMobile();}; this.exitsEl.appendChild(b); }
 
     if (!silent) { this._print("", "t-out"); this._print("📍 " + loc.name, "t-story"); this._print(loc.desc, "t-out"); }
   }
 
   _printMap() {
-    this._print("🗺️  CARTE DU MONDE", "t-info");
+    this._print(t("explore.mapTitle"), "t-info");
     const order = ["/","/foret","/foret/clairiere","/foret/marais","/foret/caverne",
       "/donjon","/donjon/salle_gardee","/donjon/cachot","/donjon/bibliotheque",
       "/ocean","/ocean/recifs","/ocean/epave","/ocean/abysses",
@@ -477,8 +477,8 @@ class GameShell {
       const seen = this.visited.has(p);
       const here = p === this.cwd;
       const mark = here ? "📍" : (seen ? n.emoji : "❓");
-      const label = seen ? n.name : "??? (non exploré)";
-      this._print(`${indent}${mark} ${label}${here?"  ← tu es ici":""}`, seen ? "t-out" : "t-sep");
+      const label = seen ? n.name : t("explore.mapUnknown");
+      this._print(`${indent}${mark} ${label}${here? t("explore.youHere") :""}`, seen ? "t-out" : "t-sep");
     });
   }
 

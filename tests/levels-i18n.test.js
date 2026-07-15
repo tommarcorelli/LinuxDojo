@@ -74,10 +74,12 @@ function load(navLang) {
     read("js/i18n/daily.en.js") + "\n" +
     read("js/boss.js") + "\n" +
     read("js/i18n/boss.en.js") + "\n" +
+    read("js/gameshell.js") + "\n" +
+    read("js/i18n/world.en.js") + "\n" +
     "var __EXPORTS__ = { CHAPTERS, LEVELS_EN, QUIZZES, QUIZZES_EN, GLOSSARY, GLOSSARY_EN, glossCat, " +
     "CHALLENGES, CHALLENGES_EN, BANDIT_LEVELS, BANDIT_LEVELS_EN, EXPERT_MISSIONS, EXPERT_MISSIONS_EN, " +
     "OBJECTIVES, OBJECTIVES_EN, SEASONAL_EVENTS, SEASONAL_EVENTS_EN, KATAS, KATAS_EN, DAILY_POOL, DAILY_POOL_EN, " +
-    "BOSS_FIGHTS, BOSS_FIGHTS_EN, LANG };\n";
+    "BOSS_FIGHTS, BOSS_FIGHTS_EN, WORLD, WORLD_EN, LANG };\n";
   vm.createContext(sandbox);
   vm.runInContext(src, sandbox, { filename: "levels-i18n-bundle.js" });
   return sandbox.__EXPORTS__;
@@ -357,6 +359,33 @@ test("LANG=en : boss traduits (name/story/taunts/winText + phases), FR intact", 
   assert(en.BOSS_FIGHTS.find(b => b.id === "sensei").phases[4].desc.includes("peur"), "épreuve 5 garde 'peur' (mot du fichier)");
   const fr = load("fr-FR");
   assertEqual(fr.BOSS_FIGHTS.find(b => b.id === "kraken").name, "Le Kraken des Logs", "boss reste FR");
+});
+
+test("LANG=en : monde Explorer traduit (zones, fichiers, PNJ, objets), FR intact ; clés fichiers conservées", () => {
+  const en = load("en-US");
+  const nexus = en.WORLD["/"];
+  assertEqual(nexus.name, "🌌 The Nexus", "zone / name EN");
+  assert("bienvenue.txt" in nexus.files, "clé de fichier conservée");
+  assert(/Welcome/.test(nexus.files["bienvenue.txt"]), "contenu de fichier traduit");
+  assertEqual(nexus.npc.name, "The Nexus Keeper", "PNJ traduit");
+  assertEqual(en.WORLD["/foret/caverne"].item.name, "Green Gem", "item.name traduit");
+  const fr = load("fr-FR");
+  assertEqual(fr.WORLD["/"].name, "🌌 Le Nexus", "zone reste FR");
+});
+
+test("complétude : chaque zone du monde a un overlay EN cohérent (name + clés de fichiers identiques)", () => {
+  const { WORLD, WORLD_EN } = load("fr-FR");
+  const problems = [];
+  for (const path in WORLD) {
+    const ov = WORLD_EN[path];
+    if (!ov) { problems.push("zone " + path); continue; }
+    if (!ov.name || !ov.desc) problems.push(path + " (name/desc)");
+    if (WORLD[path].files && ov.files) {
+      for (const fn in WORLD[path].files) if (!(fn in ov.files)) problems.push(path + " fichier « " + fn + " » non traduit");
+    }
+    if (WORLD[path].npc && (!ov.npc || !ov.npc.name || (ov.npc.lines || []).length !== WORLD[path].npc.lines.length)) problems.push(path + " (npc)");
+  }
+  assert(problems.length === 0, "overlays monde manquants : " + problems.join(" | "));
 });
 
 test("complétude : chaque boss + chaque phase a un overlay EN (name/story/winText/phases)", () => {

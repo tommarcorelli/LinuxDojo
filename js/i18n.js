@@ -114,6 +114,56 @@ const UI = {
     "explore.tab.term": "💻 Terminal",
     "explore.location": "🌍 Le Monde",
     "explore.placeholder": "ls, cd, cat, read...",
+    "explore.welcome": "🌌 Bienvenue dans le Monde Linux.",
+    "explore.commands": "Commandes : ls · ls -la · cd · cat · map · inv · take · use · talk · help",
+    "explore.loaded": "(progression chargée — tape 'inv' pour voir ton sac)",
+    "explore.empty": "(vide)",
+    "explore.cdUnknown": "cd: {t}: Aucun lieu de ce type",
+    "explore.catMissing": "{cmd}: manque le nom du fichier",
+    "explore.catNotFound": "{cmd}: {f}: Fichier introuvable",
+    "explore.findNone": "(aucun résultat)",
+    "explore.grepUsage": "grep: usage: grep MOTIF FICHIER",
+    "explore.grepNotFound": "grep: {f}: introuvable",
+    "explore.grepNoMatch": "(aucune correspondance)",
+    "explore.bagEmpty": "🎒 Ton sac est vide.",
+    "explore.inventory": "🎒 INVENTAIRE :",
+    "explore.canTake": "Ici tu peux ramasser : {emoji} (take {id})",
+    "explore.nothingTake": "Rien à ramasser ici.",
+    "explore.dontHave": "Tu n'as pas '{id}' dans ton sac.",
+    "explore.useItem": "Tu utilises {item}. {effect}",
+    "explore.noNpc": "Il n'y a personne à qui parler ici.",
+    "explore.npcLine": "   « {line} »",
+    "explore.unknownCmd": "{cmd}: commande inconnue. Tape 'help'.",
+    "explore.secretFound": "✨ Secret découvert ! +{xp} XP",
+    "explore.masterTitle": "MAÎTRE EXPLORATEUR",
+    "explore.masterSub": "Tu as réuni les 3 gemmes et vaincu le monde !",
+    "explore.alreadyHave": "Tu as déjà {item}.",
+    "explore.itemGot": "🎒 Objet obtenu : {item}",
+    "explore.gems": "💎 Gemmes réunies : {n}/3",
+    "explore.gemsAll": "→ Retourne au Nexus et ouvre le Coffre Final ! (cd / puis cd coffre_final)",
+    "explore.mapTitle": "🗺️  CARTE DU MONDE",
+    "explore.mapUnknown": "??? (non exploré)",
+    "explore.youHere": "  ← tu es ici",
+    "explore.goUp": "↑ Remonter (cd ..)",
+    "explore.talkTo": "💬 Parler à {name}",
+    "explore.help.title": "Commandes de l'explorateur :",
+    "explore.help.ls": "  ls / ls -la   — regarder autour (cachés avec -la)",
+    "explore.help.cd": "  cd <lieu>     — se déplacer   ·   cd ..  remonter",
+    "explore.help.cat": "  cat <fichier> — lire un fichier",
+    "explore.help.map": "  map           — carte des lieux visités",
+    "explore.help.inv": "  inv           — ton inventaire",
+    "explore.help.take": "  take <objet>  — ramasser un objet",
+    "explore.help.use": "  use <objet>   — utiliser un objet",
+    "explore.help.talk": "  talk          — parler au personnage présent",
+    "explore.help.search": "  find / grep   — chercher",
+    "explore.fx.lampe": "Une lumière chaude t'entoure.",
+    "explore.fx.masque": "Tu respires sous l'eau sans peine.",
+    "explore.fx.cle_argent": "Un cliquetis métallique résonne.",
+    "explore.fx.herbe": "Un parfum apaisant s'en dégage.",
+    "explore.fx.potion": "Une fraîcheur revigorante te parcourt.",
+    "explore.fx.trident": "Tu te sens puissant.",
+    "explore.fx.savoir": "La connaissance emplit ton esprit.",
+    "explore.fx.default": "Rien de spécial ne se produit.",
 
     // ── Défis ──
     "challenge.expected": "RÉSULTAT ATTENDU",
@@ -419,6 +469,56 @@ const UI = {
     "explore.tab.term": "💻 Terminal",
     "explore.location": "🌍 The World",
     "explore.placeholder": "ls, cd, cat, read...",
+    "explore.welcome": "🌌 Welcome to the Linux World.",
+    "explore.commands": "Commands: ls · ls -la · cd · cat · map · inv · take · use · talk · help",
+    "explore.loaded": "(progress loaded — type 'inv' to see your bag)",
+    "explore.empty": "(empty)",
+    "explore.cdUnknown": "cd: {t}: No such place",
+    "explore.catMissing": "{cmd}: missing file name",
+    "explore.catNotFound": "{cmd}: {f}: File not found",
+    "explore.findNone": "(no results)",
+    "explore.grepUsage": "grep: usage: grep PATTERN FILE",
+    "explore.grepNotFound": "grep: {f}: not found",
+    "explore.grepNoMatch": "(no match)",
+    "explore.bagEmpty": "🎒 Your bag is empty.",
+    "explore.inventory": "🎒 INVENTORY:",
+    "explore.canTake": "Here you can pick up: {emoji} (take {id})",
+    "explore.nothingTake": "Nothing to pick up here.",
+    "explore.dontHave": "You don't have '{id}' in your bag.",
+    "explore.useItem": "You use {item}. {effect}",
+    "explore.noNpc": "There's no one to talk to here.",
+    "explore.npcLine": "   \"{line}\"",
+    "explore.unknownCmd": "{cmd}: unknown command. Type 'help'.",
+    "explore.secretFound": "✨ Secret discovered! +{xp} XP",
+    "explore.masterTitle": "MASTER EXPLORER",
+    "explore.masterSub": "You gathered the 3 gems and conquered the world!",
+    "explore.alreadyHave": "You already have {item}.",
+    "explore.itemGot": "🎒 Item obtained: {item}",
+    "explore.gems": "💎 Gems gathered: {n}/3",
+    "explore.gemsAll": "→ Return to the Nexus and open the Final Chest! (cd / then cd coffre_final)",
+    "explore.mapTitle": "🗺️  WORLD MAP",
+    "explore.mapUnknown": "??? (unexplored)",
+    "explore.youHere": "  ← you are here",
+    "explore.goUp": "↑ Go up (cd ..)",
+    "explore.talkTo": "💬 Talk to {name}",
+    "explore.help.title": "Explorer commands:",
+    "explore.help.ls": "  ls / ls -la   — look around (hidden with -la)",
+    "explore.help.cd": "  cd <place>    — move   ·   cd ..  go up",
+    "explore.help.cat": "  cat <file>    — read a file",
+    "explore.help.map": "  map           — map of visited places",
+    "explore.help.inv": "  inv           — your inventory",
+    "explore.help.take": "  take <item>   — pick up an item",
+    "explore.help.use": "  use <item>    — use an item",
+    "explore.help.talk": "  talk          — talk to the character here",
+    "explore.help.search": "  find / grep   — search",
+    "explore.fx.lampe": "A warm light surrounds you.",
+    "explore.fx.masque": "You breathe underwater with ease.",
+    "explore.fx.cle_argent": "A metallic clink echoes.",
+    "explore.fx.herbe": "A soothing scent wafts from it.",
+    "explore.fx.potion": "An invigorating freshness runs through you.",
+    "explore.fx.trident": "You feel powerful.",
+    "explore.fx.savoir": "Knowledge fills your mind.",
+    "explore.fx.default": "Nothing special happens.",
 
     // ── Challenges ──
     "challenge.expected": "EXPECTED OUTPUT",
@@ -790,6 +890,28 @@ function overlayIndexed(arr, ovArr, fields) {
 
 // Locale de formatage des dates selon la langue courante (toLocaleDateString).
 function dateLocale() { return LANG === "en" ? "en-US" : "fr-FR"; }
+
+// Applique un overlay EN sur WORLD (gameshell.js / mode Explorer). `byPath`
+// indexé par chemin de zone : { name, desc, lockedMsg, requiresMsg,
+// files:{ nomFichier: contenu }, npc:{ name, lines:[...] }, item:{ name } }.
+// Les CLÉS de fichiers, les `dirs`, item.id et emoji restent inchangés (le
+// joueur les tape / ils sont neutres). overlayWorld agit si LANG === "en".
+function overlayWorld(byPath) {
+  if (LANG !== "en" || typeof WORLD === "undefined") return;
+  for (const path in byPath) {
+    const z = WORLD[path], ov = byPath[path];
+    if (!z || !ov) continue;
+    for (const f of ["name", "desc", "lockedMsg", "requiresMsg"]) _ov(z, f, ov[f]);
+    if (ov.files && z.files) for (const fn in ov.files) { if (z.files[fn] != null) z.files[fn] = ov.files[fn]; }
+    if (ov.npc && z.npc) {
+      _ov(z.npc, "name", ov.npc.name);
+      if (Array.isArray(ov.npc.lines) && Array.isArray(z.npc.lines)) {
+        ov.npc.lines.forEach((ln, i) => { if (ln != null && z.npc.lines[i] != null) z.npc.lines[i] = ln; });
+      }
+    }
+    if (ov.item && z.item) _ov(z.item, "name", ov.item.name);
+  }
+}
 
 // Applique un overlay EN sur BOSS_FIGHTS (boss.js). `byId` indexé par id de
 // boss : { name, tagline, story, winText, taunts:[...], phases:[{title,desc,hint}] }.
