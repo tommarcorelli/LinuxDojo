@@ -1859,7 +1859,8 @@ body::after {
 
 /* ── Sound toggle button ── */
 #shortcuts-toggle,
-#sound-toggle {
+#sound-toggle,
+#lang-toggle {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   color: var(--text-md);
@@ -1870,8 +1871,18 @@ body::after {
   transition: all .15s;
   flex-shrink: 0;
 }
+/* Sélecteur de langue : chip texte (FR/EN), largeur auto */
+#lang-toggle {
+  width: auto;
+  padding: 0 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
 #shortcuts-toggle:hover,
-#sound-toggle:hover { border-color: var(--purple-li); color: var(--purple-li); }
+#sound-toggle:hover,
+#lang-toggle:hover { border-color: var(--purple-li); color: var(--purple-li); }
 
 /* ── Page profil ── */
 #profile-content {

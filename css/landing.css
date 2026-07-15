@@ -78,6 +78,22 @@ a { color: inherit; }
 .l-nav-right { display: flex; align-items: center; gap: 18px; }
 .l-nav-ghost-link { font-size: 14px; color: var(--text-md); text-decoration: none; }
 .l-nav-ghost-link:hover { color: var(--text); }
+/* Sélecteur de langue (injecté par js/i18n.js) */
+#lang-toggle {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.14);
+  color: var(--text-md);
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  transition: all .15s;
+}
+#lang-toggle:hover { border-color: rgba(255,255,255,.35); color: var(--text); }
 
 /* ── Boutons ─────────────────────────────────────────────── */
 .l-btn {

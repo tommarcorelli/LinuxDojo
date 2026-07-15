@@ -1107,9 +1107,10 @@ function injectLangToggle() {
   btn.type = "button";
   btn.title = t("nav.lang");
   btn.setAttribute("aria-label", t("nav.lang"));
-  btn.textContent = LANG === "fr" ? "🇫🇷" : "🇬🇧";
-  // Style inline minimal : rendu propre sur les deux pages sans dépendre du CSS.
-  btn.style.cssText = "background:none;border:none;cursor:pointer;font-size:20px;padding:2px 6px;line-height:1;";
+  // Texte plutôt qu'un emoji drapeau : Windows ne rend pas 🇫🇷/🇬🇧 (lettres
+  // minuscules quasi invisibles). Le style vient du CSS (#lang-toggle) de
+  // chaque page (style.css / landing.css).
+  btn.textContent = LANG === "fr" ? "FR" : "EN";
   btn.addEventListener("click", () => setLang(LANG === "fr" ? "en" : "fr"));
   // Placé avant le bouton son (index) pour rester groupé avec les réglages ;
   // sinon (landing) simplement en tête de la barre.
