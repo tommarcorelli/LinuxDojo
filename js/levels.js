@@ -1507,7 +1507,7 @@ const CHAPTERS = [
           "config.yml":{ type: "file", content: "debug: false" },
         },
         hint: 'git init && git add . && git commit -m "mission finale" && git status',
-        check: (out, s) => s.gitCommit === "mission finale" && !!s.gitStatus && /propre/.test(out),
+        check: (out, s) => s.gitCommit === "mission finale" && !!s.gitStatus && /propre|clean/.test(out),
         explanation: "Tu maîtrises maintenant le cycle Git de base — celui que des millions de développeurs utilisent chaque jour, de la plus petite startup aux plus gros projets open source. Prochaine étape naturelle une fois sur le terrain : <code>git push</code> vers un dépôt distant comme GitHub, pour partager ton travail avec une équipe. 🌱"
       }
     ]
@@ -1815,7 +1815,7 @@ const CHAPTERS = [
           "server.js":  { type: "file", content: "console.log('Serveur démarré sur le port 3000');" },
         },
         hint: "docker build -t monapp . && docker run -d --name web monapp && docker logs web",
-        check: (out, s) => s.dockerLogs === "web" && /d.marr./.test(out),
+        check: (out, s) => s.dockerLogs === "web" && /d.marr.|started/.test(out),
         explanation: "Les logs confirment que le serveur a bien démarré sur le port 3000. Sans cette commande, un conteneur qui tourne en arrière-plan serait une boîte noire totale."
       },
 

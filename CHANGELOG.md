@@ -6,6 +6,25 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Internationalisation FR / EN — **Phases C & fin : tous les modes de jeu + le shell simulé**.
+  Traduits via overlays `js/i18n/*.en.js` (fusionnés au boot seulement si EN) : défis
+  (`challenges`), infiltration (`bandit`), mode Expert, objectifs, événements saisonniers, kata,
+  défi du jour, Salle des Boss (6 boss × phases), badges (`game.js`) et le monde Explorer
+  (`gameshell`, 18 zones). Le **certificat** de Ceinture Noire est routé par `t()`. Le shell
+  simulé **`terminal.js`** (~150 messages : erreurs, usage, aide, sorties git/docker, pages
+  `man`, easter eggs cowsay/fortune/sl, boot) est traduit via un helper inline `sh("fr","en")`
+  (plus lisible que des clés pour des chaînes uniques et interpolées). Seuls **2 `check()` de
+  mission** dépendaient d'une sortie générée par le terminal (git status « working tree clean »,
+  docker logs « started ») → rendus **bilingues** (`/propre|clean/`, `/d.marr.|started/`) sans
+  changer la validation FR. Le contenu des fichiers simulés (`fs` des missions, SYSTEM_FS) reste
+  en français, comme une donnée que le joueur lit. Helpers i18n ajoutés :
+  `overlayArray`/`overlayIndexed`/`overlayBosses`/`overlayWorld`/`glossCat`/`rankName`/`sh`/
+  `dateLocale`. Correctifs induits : `getRank().name` (devenu `{fr,en}`) routé par `rankName()`
+  dans certificat/profil ; case `cd` de l'Explorer renommé pour ne plus masquer `t()` ; stubs
+  `t`/`rankName`/`pick` (game.test) et `sh`/`LANG`/`dateLocale` (terminal.test) dans les harnais.
+  **Le jeu entier bascule désormais FR↔EN**, UI et contenu. 127 tests. SW bumpé jusqu'à v30.
+  Vérifié en Chrome headless dans les deux langues (interface, missions, boss, glossaire,
+  certificat, badges, Explorer, sorties du terminal, checks couplés).
 - Internationalisation FR / EN — **Phase 1 (coquille d'interface)** : nouveau module
   `js/i18n.js` chargé très tôt (après `errors.js`). Détection de langue
   (`localStorage` puis `navigator.language`), `t("clé")` avec repli FR puis sur la clé

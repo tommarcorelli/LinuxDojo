@@ -768,6 +768,12 @@ function pick(v) {
 // Nom de rang traduit (RANKS.name peut être une chaîne ou un { fr, en }).
 function rankName(rank) { return rank ? pick(rank.name) : ""; }
 
+// Bilingue inline pour les nombreuses sorties dynamiques du shell simulé
+// (terminal.js) : sh("texte FR", "EN text") → la variante de la langue courante.
+// Évite d'inventer ~150 clés pour des chaînes uniques et interpolées ; les deux
+// langues restent lisibles au point d'appel. Repli FR si l'EN est absent.
+function sh(fr, en) { return LANG === "en" ? (en != null ? en : fr) : fr; }
+
 // ── Overlays de contenu EN (Phase B) ────────────────────────────
 // Le contenu (missions, glossaire...) reste défini en français dans ses
 // fichiers d'origine. Les traductions anglaises vivent dans des fichiers

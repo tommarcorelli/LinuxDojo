@@ -17,6 +17,13 @@ if (typeof document === "undefined") {
   global.document = { createElement: () => ({}) };
 }
 
+// terminal.js s'appuie sur des helpers d'i18n.js (non chargé ici) : sh(fr,en)
+// pour les sorties bilingues, LANG et dateLocale(). En test, on force le
+// français — les assertions portent sur la sortie FR, inchangée par l'i18n.
+if (typeof global.sh === "undefined") global.sh = (fr) => fr;
+if (typeof global.LANG === "undefined") global.LANG = "fr";
+if (typeof global.dateLocale === "undefined") global.dateLocale = () => "fr-FR";
+
 const { Terminal } = require(path.join(__dirname, "..", "js", "terminal.js"));
 
 // ─────────────────────────────────────────────────────────────────────────

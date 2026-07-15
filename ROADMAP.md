@@ -252,10 +252,15 @@ que si vraiment décidé, car ils engagent sur la durée (maintenance double, ba
     EN additif. Littéraux (fichiers/chemins/hôtes/valeurs) gardés à l'identique pour ne pas casser
     les checks ; catégories du glossaire = clés FR (filtrage) + libellé traduit par `glossCat()`.
     16 tests (`tests/levels-i18n.test.js`).
-  - [ ] **Phase C — Modes annexes** : `boss.js`, `bandit.js`, `challenges.js`, `daily.js`,
-    `kata.js`, `gameshell.js` (Explorer), `certificate.js`, `objectives.js`, `expert.js`,
-    `seasonal.js`, `terminal.js` (messages du shell).
-  - [ ] **Phase D — Finitions** : `landing.html`, meta OG/Twitter par langue, doc, SW bump.
+  - [x] **Phase C — Modes annexes** : `challenges`, `bandit`, `expert`, `objectives`, `seasonal`,
+    `kata`, `daily`, `boss`, `certificate`, badges (`game.js`), `gameshell` (Explorer) via overlays
+    `js/i18n/*.en.js` ; **`terminal.js`** (le shell simulé, ~150 sorties) via un helper inline
+    `sh("fr","en")`. Seuls 2 checks de mission dépendaient d'une sortie du terminal (git status,
+    docker logs) → rendus bilingues (`/propre|clean/`, `/d.marr.|started/`). Tout le jeu est
+    désormais bilingue FR↔EN. Nouveaux helpers : `overlayBosses`/`overlayWorld`/`overlayArray`/
+    `overlayIndexed`/`sh`/`dateLocale`. Tests : 127 (dont `levels-i18n.test.js` = 27).
+  - [ ] **Phase D — Finitions** : `landing.html`, meta OG/Twitter par langue, `<html lang>` déjà
+    dynamique, doc.
   Anciennes pistes écartées : dossier `/en/` dupliqué (double la maintenance), UI-seule
   (incomplet).
 - **Compte utilisateur + sync cross-device** — actuellement tout est en `localStorage`, donc

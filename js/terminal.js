@@ -201,12 +201,12 @@ class Terminal {
   _cmdNotFound(cmd, args) {
     // Typos fréquentes
     const typos = {
-      "sl": "ls (tu as inversé les lettres — essaie : ls)",
+      "sl": sh("ls (tu as inversé les lettres — essaie : ls)", "ls (you swapped the letters — try: ls)"),
       "ks": "ls",
-      "cd..": "cd .. (il faut un espace : cd ..)",
-      "cd/": "cd / (il faut un espace : cd /)",
-      "lsa": "ls -a (il faut un tiret : ls -a)",
-      "lsl": "ls -l (il faut un tiret : ls -l)",
+      "cd..": sh("cd .. (il faut un espace : cd ..)", "cd .. (you need a space: cd ..)"),
+      "cd/": sh("cd / (il faut un espace : cd /)", "cd / (you need a space: cd /)"),
+      "lsa": sh("ls -a (il faut un tiret : ls -a)", "ls -a (you need a dash: ls -a)"),
+      "lsl": sh("ls -l (il faut un tiret : ls -l)", "ls -l (you need a dash: ls -l)"),
       "gerp": "grep",
       "grpe": "grep",
       "cta": "cat",
@@ -223,29 +223,29 @@ class Terminal {
     };
 
     if (typos[cmd]) {
-      return `${cmd}: commande introuvable\n💡 Voulais-tu dire : ${typos[cmd]} ?`;
+      return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${typos[cmd]} ?`, `${cmd}: command not found\n💡 Did you mean: ${typos[cmd]} ?`);
     }
 
     // Commandes connues proches
     const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
-      return `${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`;
+      return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`, `${cmd}: command not found\n💡 Did you mean: ${close} ?`);
     }
 
     // Option invalide détectée (ex: ls -x)
     if (args.length && args[0].startsWith("-")) {
       const cmdHelp = {
-        "ls":    "Options valides pour ls : -l (détails), -a (cachés), -la (les deux), -h (tailles lisibles)",
-        "grep":  "Options valides pour grep : -i (casse), -n (numéros), -r (récursif), -v (inverser), -c (compter)",
-        "find":  "Options valides pour find : -name 'motif', -type f, -type d, -mtime N, -size +NM",
-        "tar":   "Options valides pour tar : -czf (créer), -xzf (extraire), -tzf (lister)",
-        "chmod": "Exemples chmod : chmod +x script.sh | chmod 755 script.sh | chmod 600 secret.key",
+        "ls":    sh("Options valides pour ls : -l (détails), -a (cachés), -la (les deux), -h (tailles lisibles)", "Valid options for ls: -l (details), -a (hidden), -la (both), -h (readable sizes)"),
+        "grep":  sh("Options valides pour grep : -i (casse), -n (numéros), -r (récursif), -v (inverser), -c (compter)", "Valid options for grep: -i (case), -n (numbers), -r (recursive), -v (invert), -c (count)"),
+        "find":  sh("Options valides pour find : -name 'motif', -type f, -type d, -mtime N, -size +NM", "Valid options for find: -name 'pattern', -type f, -type d, -mtime N, -size +NM"),
+        "tar":   sh("Options valides pour tar : -czf (créer), -xzf (extraire), -tzf (lister)", "Valid options for tar: -czf (create), -xzf (extract), -tzf (list)"),
+        "chmod": sh("Exemples chmod : chmod +x script.sh | chmod 755 script.sh | chmod 600 secret.key", "chmod examples: chmod +x script.sh | chmod 755 script.sh | chmod 600 secret.key"),
       };
-      if (cmdHelp[cmd]) return `${cmd}: option invalide '${args[0]}'\n💡 ${cmdHelp[cmd]}`;
+      if (cmdHelp[cmd]) return sh(`${cmd}: option invalide '${args[0]}'\n💡 ${cmdHelp[cmd]}`, `${cmd}: invalid option '${args[0]}'\n💡 ${cmdHelp[cmd]}`);
     }
 
-    return `${cmd}: commande introuvable\nTape 'help' pour voir les commandes disponibles.`;
+    return sh(`${cmd}: commande introuvable\nTape 'help' pour voir les commandes disponibles.`, `${cmd}: command not found\nType 'help' to see the available commands.`);
   }
 
   // ── Autocomplétion Tab ─────────────────────────────────────
@@ -453,7 +453,7 @@ class Terminal {
   _execScript(text) {
     let nodes;
     try { nodes = this._parseBlocks(this._splitStatements(text)); }
-    catch (e) { this.printErr("bash: erreur de syntaxe : " + e.message); return { output: "", error: true }; }
+    catch (e) { this.printErr(sh("bash: erreur de syntaxe : ", "bash: syntax error: ") + e.message); return { output: "", error: true }; }
     const prev = this._scriptOut;
     this._scriptOut = [];
     try { this._evalNodes(nodes); }
@@ -473,7 +473,7 @@ class Terminal {
       const w = s.split(/\s+/)[0];
       if (w === "for") {
         const m = s.match(/^for\s+([A-Za-z_]\w*)\s+in\s+(.*)$/);
-        if (!m) throw new Error("for : syntaxe attendue « for x in … »");
+        if (!m) throw new Error(sh("for : syntaxe attendue « for x in … »", "for: expected syntax « for x in … »"));
         const node = { type: "for", name: m[1], itemsRaw: m[2], body: [] };
         body().push(node); stack.push({ node, body: node.body });
       } else if (w === "while") {
@@ -485,16 +485,16 @@ class Terminal {
       } else if (w === "do") { pushCmd(body(), s.slice(2).trim()); }
       else if (w === "then") { pushCmd(body(), s.slice(4).trim()); }
       else if (w === "elif") {
-        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error("elif sans if");
+        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error(sh("elif sans if", "elif without if"));
         const br = { cond: s.slice(4).trim(), body: [] }; fr.node.branches.push(br); fr.body = br.body;
       } else if (w === "else") {
-        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error("else sans if");
+        const fr = stack[stack.length - 1]; if (!fr || !fr.node.branches) throw new Error(sh("else sans if", "else without if"));
         fr.node.elseBody = []; fr.body = fr.node.elseBody; pushCmd(fr.body, s.slice(4).trim());
       } else if (s === "done" || s === "fi") {
-        if (!stack.length) throw new Error("« " + s + " » sans bloc ouvert"); stack.pop();
+        if (!stack.length) throw new Error(sh("« " + s + " » sans bloc ouvert", "« " + s + " » with no open block")); stack.pop();
       } else { pushCmd(body(), s); }
     }
-    if (stack.length) throw new Error("bloc non fermé (il manque done/fi)");
+    if (stack.length) throw new Error(sh("bloc non fermé (il manque done/fi)", "unclosed block (missing done/fi)"));
     return root;
   }
   _evalNodes(nodes) {
@@ -709,10 +709,10 @@ class Terminal {
       case "source":
       case ".": {
         const file = args.filter(a => !a.startsWith("-"))[0];
-        if (!file) { out = `${cmd}: indique un script à exécuter\nExemple : bash deploy.sh`; err = true; break; }
+        if (!file) { out = sh(`${cmd}: indique un script à exécuter\nExemple : bash deploy.sh`, `${cmd}: specify a script to run\nExample: bash deploy.sh`); err = true; break; }
         const f = this._file(file);
-        if (!f || !f.node) { out = `${cmd}: ${file}: fichier introuvable`; err = true; break; }
-        if (f.node.type === "dir") { out = `${cmd}: ${file}: est un dossier`; err = true; break; }
+        if (!f || !f.node) { out = sh(`${cmd}: ${file}: fichier introuvable`, `${cmd}: ${file}: file not found`); err = true; break; }
+        if (f.node.type === "dir") { out = sh(`${cmd}: ${file}: est un dossier`, `${cmd}: ${file}: is a directory`); err = true; break; }
         if (silent) return { output: "", error: false };
         return this._execScript(f.node.content || "");
       }
@@ -720,7 +720,7 @@ class Terminal {
       case "test":
       case "[": {
         let a = args.slice();
-        if (cmd === "[") { if (a[a.length - 1] === "]") a.pop(); else return { output: "[: manque le « ] » final", error: true }; }
+        if (cmd === "[") { if (a[a.length - 1] === "]") a.pop(); else return { output: sh("[: manque le « ] » final", "[: missing closing « ] »"), error: true }; }
         let truth = false;
         if (a.length === 3) {
           const [x, op, y] = a;
@@ -773,14 +773,14 @@ class Terminal {
 
         if (target && target.includes("*")) {
           const g = this._globList(target);
-          if (!g) { out = `ls: ${target}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!g) { out = sh(`ls: ${target}: Aucun fichier ou dossier de ce type`, `ls: ${target}: No such file or directory`); err = true; break; }
           files = g;
           nodeFor = n => this.fs[this._resolve(n)];
         } else if (target) {
           const p = this._resolve(target);
           const deniedAt = this._denied(p);
-          if (deniedAt) { out = `ls: impossible d'ouvrir '${target}': Permission non accordée 🔒`; err = true; break; }
-          if (!this._exists(p)) { out = `ls: ${target}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (deniedAt) { out = sh(`ls: impossible d'ouvrir '${target}': Permission non accordée 🔒`, `ls: cannot open '${target}': Permission denied 🔒`); err = true; break; }
+          if (!this._exists(p)) { out = sh(`ls: ${target}: Aucun fichier ou dossier de ce type`, `ls: ${target}: No such file or directory`); err = true; break; }
           if (!this._isDir(p)) { files = [target]; nodeFor = () => this.fs[p]; }
           else { dirPath = p; }
         }
@@ -811,18 +811,18 @@ class Terminal {
         const fnames = this._expandFileArgs(args.filter(a => !a.startsWith("-")));
         if (!fnames.length) {
           if (stdin) { out = stdin; break; }
-          out = "cat: manque le nom de fichier\nUsage : cat FICHIER\nExemple : cat readme.txt\n\nAstuce : tape 'ls' pour voir les fichiers disponibles."; err = true; break;
+          out = sh("cat: manque le nom de fichier\nUsage : cat FICHIER\nExemple : cat readme.txt\n\nAstuce : tape 'ls' pour voir les fichiers disponibles.", "cat: missing file name\nUsage: cat FILE\nExample: cat readme.txt\n\nTip: type 'ls' to see the available files."); err = true; break;
         }
         const chunks = [];
         for (const fname of fnames) {
           const f = this._file(fname);
-          if (f && f.denied) { out = `cat: ${fname}: Permission non accordée 🔒`; err = true; break; }
+          if (f && f.denied) { out = sh(`cat: ${fname}: Permission non accordée 🔒`, `cat: ${fname}: Permission denied 🔒`); err = true; break; }
           if (!f) {
             const sugg = this._suggestFile(fname);
-            out = `cat: ${fname}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : " + sugg + " ?" : "\n\nTape 'ls' pour voir les fichiers disponibles."}`;
+            out = sh(`cat: ${fname}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : " + sugg + " ?" : "\n\nTape 'ls' pour voir les fichiers disponibles."}`, `cat: ${fname}: No such file or directory${sugg ? "\nDid you mean: " + sugg + " ?" : "\n\nType 'ls' to see the available files."}`);
             err = true; break;
           }
-          if (f.node.type === "dir") { out = `cat: ${fname}: est un dossier\nPour lister son contenu : ls ${fname}`; err = true; break; }
+          if (f.node.type === "dir") { out = sh(`cat: ${fname}: est un dossier\nPour lister son contenu : ls ${fname}`, `cat: ${fname}: is a directory\nTo list its contents: ls ${fname}`); err = true; break; }
           chunks.push(f.node.content || "");
         }
         if (err) break;
@@ -833,9 +833,9 @@ class Terminal {
       case "less":
       case "more": {
         const fname = args[0];
-        if (!fname) { out = `${cmd}: manque le nom de fichier`; err = true; break; }
+        if (!fname) { out = sh(`${cmd}: manque le nom de fichier`, `${cmd}: missing file name`); err = true; break; }
         const f = this._file(fname);
-        if (!f || !f.node) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!f || !f.node) { out = sh(`${cmd}: ${fname}: Aucun fichier ou dossier de ce type`, `${cmd}: ${fname}: No such file or directory`); err = true; break; }
         out = f.node.content || "";
         break;
       }
@@ -855,13 +855,13 @@ class Terminal {
         }
         const p = this._resolve(target);
         const deniedAt = this._denied(p);
-        if (deniedAt) { out = `cd: ${target}: Permission non accordée 🔒\n(Il faudrait être root pour entrer dans ${deniedAt}.)`; err = true; break; }
+        if (deniedAt) { out = sh(`cd: ${target}: Permission non accordée 🔒\n(Il faudrait être root pour entrer dans ${deniedAt}.)`, `cd: ${target}: Permission denied 🔒\n(You'd need to be root to enter ${deniedAt}.)`); err = true; break; }
         if (!this._exists(p)) {
           const sugg = this._suggestFile(this._baseOf(p));
-          out = `cd: ${target}: Aucun fichier ou dossier de ce type${sugg && this._isDir(this._resolve(sugg)) ? "\nVoulais-tu dire : cd " + sugg + " ?" : "\n\nTape 'ls' pour voir les dossiers disponibles."}`;
+          out = sh(`cd: ${target}: Aucun fichier ou dossier de ce type${sugg && this._isDir(this._resolve(sugg)) ? "\nVoulais-tu dire : cd " + sugg + " ?" : "\n\nTape 'ls' pour voir les dossiers disponibles."}`, `cd: ${target}: No such file or directory${sugg && this._isDir(this._resolve(sugg)) ? "\nDid you mean: cd " + sugg + " ?" : "\n\nType 'ls' to see the available directories."}`);
           err = true; break;
         }
-        if (!this._isDir(p)) { out = `cd: ${target}: N'est pas un dossier`; err = true; break; }
+        if (!this._isDir(p)) { out = sh(`cd: ${target}: N'est pas un dossier`, `cd: ${target}: Not a directory`); err = true; break; }
         this.cwd = p;
         this.state.cwd = p === this.root ? "home" : this._baseOf(p);
         out = "";
@@ -871,12 +871,12 @@ class Terminal {
       case "mkdir": {
         const hasP = args.includes("-p");
         const p = args.filter(a => !a.startsWith("-"))[0];
-        if (!p) { out = "mkdir: manque un opérande\nUsage : mkdir NOM_DOSSIER\nExemple : mkdir projets"; err = true; break; }
+        if (!p) { out = sh("mkdir: manque un opérande\nUsage : mkdir NOM_DOSSIER\nExemple : mkdir projets", "mkdir: missing operand\nUsage: mkdir DIR_NAME\nExample: mkdir projets"); err = true; break; }
         const abs = this._resolve(p);
-        if (this._exists(abs)) { out = `mkdir: impossible de créer '${p}': Le fichier existe`; err = true; break; }
+        if (this._exists(abs)) { out = sh(`mkdir: impossible de créer '${p}': Le fichier existe`, `mkdir: cannot create '${p}': File exists`); err = true; break; }
         const parent = this._parentOf(abs);
         if (!this._isDir(parent) && !hasP) {
-          out = `mkdir: impossible de créer '${p}': le dossier parent n'existe pas\n💡 Utilise -p pour créer toute l'arborescence : mkdir -p ${p}`;
+          out = sh(`mkdir: impossible de créer '${p}': le dossier parent n'existe pas\n💡 Utilise -p pour créer toute l'arborescence : mkdir -p ${p}`, `mkdir: cannot create '${p}': parent directory doesn't exist\n💡 Use -p to create the whole tree: mkdir -p ${p}`);
           err = true; break;
         }
         this.fs[abs] = { type: "dir" };
@@ -888,9 +888,9 @@ class Terminal {
 
       case "touch": {
         const p = args[0];
-        if (!p) { out = "touch: manque le nom du fichier"; err = true; break; }
+        if (!p) { out = sh("touch: manque le nom du fichier", "touch: missing file name"); err = true; break; }
         const abs = this._resolve(p);
-        if (!this._isDir(this._parentOf(abs))) { out = `touch: '${p}': le dossier parent n'existe pas`; err = true; break; }
+        if (!this._isDir(this._parentOf(abs))) { out = sh(`touch: '${p}': le dossier parent n'existe pas`, `touch: '${p}': parent directory doesn't exist`); err = true; break; }
         if (!this.fs[abs]) this.fs[abs] = { type: "file", content: "" };
         this.state.touch = p;
         out = "";
@@ -900,15 +900,15 @@ class Terminal {
       case "cp": {
         const hasR = args.some(a => a.startsWith("-") && a.includes("r"));
         const noFlag = args.filter(a => !a.startsWith("-"));
-        if (noFlag.length < 2) { out = "cp: manque les arguments\nUsage : cp SOURCE DESTINATION\nExemple : cp config.json config.backup.json\n\nPour copier un dossier entier : cp -r dossier/ copie/"; err = true; break; }
+        if (noFlag.length < 2) { out = sh("cp: manque les arguments\nUsage : cp SOURCE DESTINATION\nExemple : cp config.json config.backup.json\n\nPour copier un dossier entier : cp -r dossier/ copie/", "cp: missing arguments\nUsage: cp SOURCE DESTINATION\nExample: cp config.json config.backup.json\n\nTo copy a whole directory: cp -r folder/ copy/"); err = true; break; }
         const [src, dst] = noFlag;
         const srcAbs = this._resolve(src);
         if (!this._exists(srcAbs)) {
           const sugg = this._suggestFile(src);
-          out = `cp: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : cp " + sugg + " " + (dst||"destination") + " ?" : ""}`;
+          out = sh(`cp: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : cp " + sugg + " " + (dst||"destination") + " ?" : ""}`, `cp: ${src}: No such file or directory${sugg ? "\nDid you mean: cp " + sugg + " " + (dst||"destination") + " ?" : ""}`);
           err = true; break;
         }
-        if (this._isDir(srcAbs) && !hasR) { out = `cp: -r non spécifié ; omission du dossier '${src}'\n💡 Pour copier un dossier : cp -r ${src} ${dst}`; err = true; break; }
+        if (this._isDir(srcAbs) && !hasR) { out = sh(`cp: -r non spécifié ; omission du dossier '${src}'\n💡 Pour copier un dossier : cp -r ${src} ${dst}`, `cp: -r not specified; omitting directory '${src}'\n💡 To copy a directory: cp -r ${src} ${dst}`); err = true; break; }
         let dstAbs = this._resolve(dst);
         if (this._isDir(dstAbs)) dstAbs = dstAbs + "/" + this._baseOf(srcAbs);   // cp fichier dossier/
         this.fs[dstAbs] = JSON.parse(JSON.stringify(this.fs[srcAbs]));
@@ -926,11 +926,11 @@ class Terminal {
 
       case "mv": {
         const [src, dst] = args.filter(a => !a.startsWith("-"));
-        if (!src || !dst) { out = "mv: manque les arguments\nUsage : mv SOURCE DESTINATION\nExemple (renommer) : mv ancien.txt nouveau.txt\nExemple (déplacer) : mv fichier.txt dossier/"; err = true; break; }
+        if (!src || !dst) { out = sh("mv: manque les arguments\nUsage : mv SOURCE DESTINATION\nExemple (renommer) : mv ancien.txt nouveau.txt\nExemple (déplacer) : mv fichier.txt dossier/", "mv: missing arguments\nUsage: mv SOURCE DESTINATION\nExample (rename): mv old.txt new.txt\nExample (move): mv file.txt folder/"); err = true; break; }
         const srcAbs = this._resolve(src);
         if (!this._exists(srcAbs)) {
           const sugg = this._suggestFile(src);
-          out = `mv: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : mv " + sugg + " " + dst + " ?" : ""}`;
+          out = sh(`mv: ${src}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : mv " + sugg + " " + dst + " ?" : ""}`, `mv: ${src}: No such file or directory${sugg ? "\nDid you mean: mv " + sugg + " " + dst + " ?" : ""}`);
           err = true; break;
         }
         let dstAbs = this._resolve(dst);
@@ -951,19 +951,19 @@ class Terminal {
         const flags = args.filter(a => a.startsWith("-")).join("");
         const targets = this._expandFileArgs(args.filter(a => !a.startsWith("-")));
         if ((flags.includes("r") && flags.includes("f")) && (targets[0] === "/" || targets[0] === "/*")) {
-          out = "💀 rm -rf / — SÉRIEUSEMENT ?!\n\nSur un vrai système, tu viendrais d'effacer TOUT :\nle système, tes fichiers, tes regrets... tout.\n\nLe dojo te pardonne. Un vrai serveur, non.\n(GNU rm moderne refuse d'ailleurs avec --no-preserve-root)";
+          out = sh("💀 rm -rf / — SÉRIEUSEMENT ?!\n\nSur un vrai système, tu viendrais d'effacer TOUT :\nle système, tes fichiers, tes regrets... tout.\n\nLe dojo te pardonne. Un vrai serveur, non.\n(GNU rm moderne refuse d'ailleurs avec --no-preserve-root)", "💀 rm -rf / — SERIOUSLY?!\n\nOn a real system, you'd have just erased EVERYTHING:\nthe system, your files, your regrets... everything.\n\nThe dojo forgives you. A real server won't.\n(modern GNU rm actually refuses with --no-preserve-root)");
           err = true; break;
         }
         const p = targets[0];
-        if (!p) { out = "rm: manque le nom du fichier\nUsage : rm FICHIER\nExemple : rm temp.log\n\n⚠️  Attention : pas de corbeille sous Linux, la suppression est définitive !"; err = true; break; }
+        if (!p) { out = sh("rm: manque le nom du fichier\nUsage : rm FICHIER\nExemple : rm temp.log\n\n⚠️  Attention : pas de corbeille sous Linux, la suppression est définitive !", "rm: missing file name\nUsage: rm FILE\nExample: rm temp.log\n\n⚠️  Warning: no trash on Linux, deletion is permanent!"); err = true; break; }
         const firstAbs = this._resolve(p);
         if (!this._exists(firstAbs)) {
           const sugg = this._suggestFile(p);
-          out = `rm: impossible de supprimer '${p}': Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : rm " + sugg + " ?" : ""}`;
+          out = sh(`rm: impossible de supprimer '${p}': Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : rm " + sugg + " ?" : ""}`, `rm: cannot remove '${p}': No such file or directory${sugg ? "\nDid you mean: rm " + sugg + " ?" : ""}`);
           err = true; break;
         }
         const hasR = flags.includes("r");
-        if (this._isDir(firstAbs) && !hasR) { out = `rm: impossible de supprimer '${p}': est un dossier\n💡 Pour supprimer un dossier et son contenu : rm -r ${p}`; err = true; break; }
+        if (this._isDir(firstAbs) && !hasR) { out = sh(`rm: impossible de supprimer '${p}': est un dossier\n💡 Pour supprimer un dossier et son contenu : rm -r ${p}`, `rm: cannot remove '${p}': is a directory\n💡 To remove a directory and its contents: rm -r ${p}`); err = true; break; }
         targets.forEach(t => {
           const abs = this._resolve(t);
           if (!this.fs[abs]) return;
@@ -977,7 +977,7 @@ class Terminal {
 
       case "chmod": {
         const target = args[args.length - 1];
-        if (!target || args.length < 2) { out = "chmod: manque les arguments\nUsage : chmod DROITS FICHIER\nExemples : chmod +x script.sh · chmod 600 secret.key"; err = true; break; }
+        if (!target || args.length < 2) { out = sh("chmod: manque les arguments\nUsage : chmod DROITS FICHIER\nExemples : chmod +x script.sh · chmod 600 secret.key", "chmod: missing arguments\nUsage: chmod PERMS FILE\nExamples: chmod +x script.sh · chmod 600 secret.key"); err = true; break; }
         const abs = this._resolve(target);
         if (this.fs[abs]) {
           const mode = args[0];
@@ -989,10 +989,10 @@ class Terminal {
       }
 
       case "chown": {
-        if (!args[1]) { out = "chown: manque les arguments\nUsage : chown UTILISATEUR[:GROUPE] FICHIER\nExemple : chown sensei:sensei secret.key"; err = true; break; }
+        if (!args[1]) { out = sh("chown: manque les arguments\nUsage : chown UTILISATEUR[:GROUPE] FICHIER\nExemple : chown sensei:sensei secret.key", "chown: missing arguments\nUsage: chown USER[:GROUP] FILE\nExample: chown sensei:sensei secret.key"); err = true; break; }
         const target = args[args.length - 1];
         const abs = this._resolve(target);
-        if (!this.fs[abs]) { out = `chown: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!this.fs[abs]) { out = sh(`chown: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`, `chown: cannot access '${target}': No such file or directory`); err = true; break; }
         const [owner, group] = args[0].split(":");
         if (owner) this.fs[abs].owner = owner;
         if (group) this.fs[abs].group = group;
@@ -1002,10 +1002,10 @@ class Terminal {
       }
 
       case "chgrp": {
-        if (!args[1]) { out = "chgrp: manque les arguments\nUsage : chgrp GROUPE FICHIER\nExemple : chgrp sensei secret.key"; err = true; break; }
+        if (!args[1]) { out = sh("chgrp: manque les arguments\nUsage : chgrp GROUPE FICHIER\nExemple : chgrp sensei secret.key", "chgrp: missing arguments\nUsage: chgrp GROUP FILE\nExample: chgrp sensei secret.key"); err = true; break; }
         const target = args[args.length - 1];
         const abs = this._resolve(target);
-        if (!this.fs[abs]) { out = `chgrp: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!this.fs[abs]) { out = sh(`chgrp: impossible d'accéder à '${target}': Aucun fichier ou dossier de ce type`, `chgrp: cannot access '${target}': No such file or directory`); err = true; break; }
         this.fs[abs].group = args[0];
         this.state.chgrp = target;
         out = "";
@@ -1015,11 +1015,11 @@ class Terminal {
       case "git": {
         const sub = args[0];
         if (!sub) {
-          out = "usage: git <commande> [<args>]\n\nCommandes courantes :\n   init       Crée un dépôt Git vide\n   status     Affiche l'état du dépôt\n   add        Ajoute des fichiers à l'index (staging)\n   commit     Enregistre les modifications\n   log        Affiche l'historique des commits\n   branch     Liste ou crée des branches\n   checkout   Change de branche";
+          out = sh("usage: git <commande> [<args>]\n\nCommandes courantes :\n   init       Crée un dépôt Git vide\n   status     Affiche l'état du dépôt\n   add        Ajoute des fichiers à l'index (staging)\n   commit     Enregistre les modifications\n   log        Affiche l'historique des commits\n   branch     Liste ou crée des branches\n   checkout   Change de branche", "usage: git <command> [<args>]\n\nCommon commands:\n   init       Create an empty Git repository\n   status     Show the repository state\n   add        Add files to the index (staging)\n   commit     Record changes\n   log        Show the commit history\n   branch     List or create branches\n   checkout   Switch branch");
           err = true; break;
         }
         if (sub !== "init" && !this._git) {
-          out = "fatal: pas un dépôt git (ni aucun des dossiers parents) : .git\n💡 Lance d'abord : git init";
+          out = sh("fatal: pas un dépôt git (ni aucun des dossiers parents) : .git\n💡 Lance d'abord : git init", "fatal: not a git repository (or any of the parent directories): .git\n💡 Run first: git init");
           err = true; break;
         }
 
@@ -1029,7 +1029,7 @@ class Terminal {
           this.fs[abs] = { type: "dir" };
           this._ensureParents(abs);
           this.state.gitInit = true;
-          out = `Dépôt Git vide initialisé dans ${this.cwd}/.git/`;
+          out = sh(`Dépôt Git vide initialisé dans ${this.cwd}/.git/`, `Initialized empty Git repository in ${this.cwd}/.git/`);
           break;
         }
 
@@ -1039,11 +1039,11 @@ class Terminal {
             .map(k => k.slice(this.cwd.length + 1));
           const staged = [...this._git.staged];
           const untracked = allFiles.filter(f => !this._git.committed.has(f) && !this._git.staged.has(f));
-          const L = [`Sur la branche ${this._git.branch}`];
-          if (!this._git.log.length) L.push("", "Aucun commit pour l'instant");
-          if (staged.length) L.push("", "Modifications qui seront validées :", ...staged.map(f => `\tnouveau fichier :   ${f}`));
-          if (untracked.length) L.push("", "Fichiers non suivis :", "  (utilisez « git add <fichier> » pour les inclure)", ...untracked.map(f => `\t${f}`));
-          if (!staged.length && !untracked.length) L.push("", "rien à valider, la copie de travail est propre");
+          const L = [sh(`Sur la branche ${this._git.branch}`, `On branch ${this._git.branch}`)];
+          if (!this._git.log.length) L.push("", sh("Aucun commit pour l'instant", "No commits yet"));
+          if (staged.length) L.push("", sh("Modifications qui seront validées :", "Changes to be committed:"), ...staged.map(f => sh(`\tnouveau fichier :   ${f}`, `\tnew file:   ${f}`)));
+          if (untracked.length) L.push("", sh("Fichiers non suivis :", "Untracked files:"), sh("  (utilisez « git add <fichier> » pour les inclure)", "  (use \"git add <file>\" to include them)"), ...untracked.map(f => `\t${f}`));
+          if (!staged.length && !untracked.length) L.push("", sh("rien à valider, la copie de travail est propre", "nothing to commit, working tree clean"));
           this.state.gitStatus = true;
           out = L.join("\n");
           break;
@@ -1051,7 +1051,7 @@ class Terminal {
 
         if (sub === "add") {
           const targets = args.slice(1);
-          if (!targets.length) { out = "Rien de spécifié, rien ajouté.\nUsage : git add <fichier>   ou   git add ."; err = true; break; }
+          if (!targets.length) { out = sh("Rien de spécifié, rien ajouté.\nUsage : git add <fichier>   ou   git add .", "Nothing specified, nothing added.\nUsage: git add <file>   or   git add ."); err = true; break; }
           if (targets.includes(".")) {
             Object.keys(this.fs)
               .filter(k => k.startsWith(this.cwd + "/") && !this._isDir(k) && !k.includes("/.git"))
@@ -1059,7 +1059,7 @@ class Terminal {
           } else {
             for (const t of targets) {
               const abs = this._resolve(t);
-              if (!this._exists(abs)) { out = `fatal: le chemin '${t}' ne correspond à aucun fichier connu de git`; err = true; break; }
+              if (!this._exists(abs)) { out = sh(`fatal: le chemin '${t}' ne correspond à aucun fichier connu de git`, `fatal: pathspec '${t}' did not match any files`); err = true; break; }
               this._git.staged.add(abs.slice(this.cwd.length + 1));
             }
           }
@@ -1071,22 +1071,22 @@ class Terminal {
         if (sub === "commit") {
           const mIdx = args.indexOf("-m");
           const msg = mIdx >= 0 ? this._stripQuotes(args.slice(mIdx + 1).join(" ")) : null;
-          if (!msg) { out = "git commit: il faut un message\nUsage : git commit -m \"message du commit\""; err = true; break; }
-          if (!this._git.staged.size) { out = 'rien à valider (utilisez "git add" pour suivre des fichiers)'; err = true; break; }
+          if (!msg) { out = sh("git commit: il faut un message\nUsage : git commit -m \"message du commit\"", "git commit: a message is required\nUsage: git commit -m \"commit message\""); err = true; break; }
+          if (!this._git.staged.size) { out = sh('rien à valider (utilisez "git add" pour suivre des fichiers)', 'nothing to commit (use "git add" to track files)'); err = true; break; }
           const hash = Math.random().toString(16).slice(2, 9);
           const files = [...this._git.staged];
           files.forEach(f => this._git.committed.add(f));
           this._git.log.unshift({ hash, msg, files, branch: this._git.branch });
           this._git.staged.clear();
-          out = `[${this._git.branch} ${hash}] ${msg}\n ${files.length} fichier(s) modifié(s)`;
+          out = `[${this._git.branch} ${hash}] ${msg}\n ` + sh(`${files.length} fichier(s) modifié(s)`, `${files.length} file(s) changed`);
           this.state.gitCommit = msg;
           this.state.gitCommitCount = this._git.log.length;
           break;
         }
 
         if (sub === "log") {
-          if (!this._git.log.length) { out = `fatal: votre branche actuelle '${this._git.branch}' ne contient encore aucun commit`; err = true; break; }
-          out = this._git.log.map(c => `commit ${c.hash}${"0".repeat(33)}\nAuteur : user <user@dojo>\n\n    ${c.msg}\n`).join("\n");
+          if (!this._git.log.length) { out = sh(`fatal: votre branche actuelle '${this._git.branch}' ne contient encore aucun commit`, `fatal: your current branch '${this._git.branch}' does not have any commits yet`); err = true; break; }
+          out = this._git.log.map(c => `commit ${c.hash}${"0".repeat(33)}\n` + sh("Auteur", "Author") + ` : user <user@dojo>\n\n    ${c.msg}\n`).join("\n");
           this.state.gitLog = true;
           break;
         }
@@ -1094,7 +1094,7 @@ class Terminal {
         if (sub === "branch") {
           const name = args[1];
           if (!name) { out = this._git.branches.map(b => (b === this._git.branch ? "* " : "  ") + b).join("\n"); break; }
-          if (this._git.branches.includes(name)) { out = `fatal: une branche nommée '${name}' existe déjà`; err = true; break; }
+          if (this._git.branches.includes(name)) { out = sh(`fatal: une branche nommée '${name}' existe déjà`, `fatal: a branch named '${name}' already exists`); err = true; break; }
           this._git.branches.push(name);
           this.state.gitBranch = name;
           out = "";
@@ -1104,20 +1104,20 @@ class Terminal {
         if (sub === "checkout") {
           const create = args[1] === "-b";
           const name = create ? args[2] : args[1];
-          if (!name) { out = "usage: git checkout <branche>\n       git checkout -b <nouvelle-branche>"; err = true; break; }
+          if (!name) { out = sh("usage: git checkout <branche>\n       git checkout -b <nouvelle-branche>", "usage: git checkout <branch>\n       git checkout -b <new-branch>"); err = true; break; }
           if (create) {
-            if (this._git.branches.includes(name)) { out = `fatal: une branche nommée '${name}' existe déjà`; err = true; break; }
+            if (this._git.branches.includes(name)) { out = sh(`fatal: une branche nommée '${name}' existe déjà`, `fatal: a branch named '${name}' already exists`); err = true; break; }
             this._git.branches.push(name);
           } else if (!this._git.branches.includes(name)) {
-            out = `error: pathspec '${name}' ne correspond à aucun fichier connu de git`; err = true; break;
+            out = sh(`error: pathspec '${name}' ne correspond à aucun fichier connu de git`, `error: pathspec '${name}' did not match any file(s) known to git`); err = true; break;
           }
           this._git.branch = name;
           this.state.gitCheckout = name;
-          out = create ? `Basculement sur la nouvelle branche '${name}'` : `Basculement sur la branche '${name}'`;
+          out = create ? sh(`Basculement sur la nouvelle branche '${name}'`, `Switched to a new branch '${name}'`) : sh(`Basculement sur la branche '${name}'`, `Switched to branch '${name}'`);
           break;
         }
 
-        out = `git: '${sub}' n'est pas une commande git. Voir 'git --help'.`;
+        out = sh(`git: '${sub}' n'est pas une commande git. Voir 'git --help'.`, `git: '${sub}' is not a git command. See 'git --help'.`);
         err = true;
         break;
       }
@@ -1126,21 +1126,21 @@ class Terminal {
         if (!this._docker) this._docker = { images: [], containers: [] };
         const sub = args[0];
         if (!sub) {
-          out = "Usage :  docker COMMANDE\n\nCommandes courantes :\n  build    Construit une image à partir d'un Dockerfile\n  images   Liste les images locales\n  run      Démarre un conteneur\n  ps       Liste les conteneurs\n  logs     Affiche les logs d'un conteneur\n  stop     Arrête un conteneur\n  rm       Supprime un conteneur arrêté";
+          out = sh("Usage :  docker COMMANDE\n\nCommandes courantes :\n  build    Construit une image à partir d'un Dockerfile\n  images   Liste les images locales\n  run      Démarre un conteneur\n  ps       Liste les conteneurs\n  logs     Affiche les logs d'un conteneur\n  stop     Arrête un conteneur\n  rm       Supprime un conteneur arrêté", "Usage:  docker COMMAND\n\nCommon commands:\n  build    Build an image from a Dockerfile\n  images   List local images\n  run      Start a container\n  ps       List containers\n  logs     Show a container's logs\n  stop     Stop a container\n  rm       Remove a stopped container");
           err = true; break;
         }
 
         if (sub === "build") {
           const tIdx = args.indexOf("-t");
           const name = tIdx >= 0 ? args[tIdx + 1] : null;
-          if (!name) { out = "docker build: il faut nommer l'image avec -t\nUsage : docker build -t nom ."; err = true; break; }
+          if (!name) { out = sh("docker build: il faut nommer l'image avec -t\nUsage : docker build -t nom .", "docker build: the image must be named with -t\nUsage: docker build -t name ."); err = true; break; }
           const dfPath = this._resolve("Dockerfile");
-          if (!this.fs[dfPath]) { out = "unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat Dockerfile: no such file or directory\n💡 Un Dockerfile est requis dans le dossier courant."; err = true; break; }
+          if (!this.fs[dfPath]) { out = sh("unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat Dockerfile: no such file or directory\n💡 Un Dockerfile est requis dans le dossier courant.", "unable to prepare context: unable to evaluate symlinks in Dockerfile path: lstat Dockerfile: no such file or directory\n💡 A Dockerfile is required in the current directory."); err = true; break; }
           const id = Math.random().toString(16).slice(2, 14);
           this._docker.images = this._docker.images.filter(i => i.name !== name);
           this._docker.images.push({ name, id });
           this.state.dockerBuild = name;
-          out = `Envoi du contexte de build au démon Docker\nÉtape 1/3 : FROM node:18\nÉtape 2/3 : COPY . /app\nÉtape 3/3 : CMD ["node", "server.js"]\nImage construite avec succès : ${id}\nTaguée : ${name}:latest`;
+          out = sh(`Envoi du contexte de build au démon Docker\nÉtape 1/3 : FROM node:18\nÉtape 2/3 : COPY . /app\nÉtape 3/3 : CMD ["node", "server.js"]\nImage construite avec succès : ${id}\nTaguée : ${name}:latest`, `Sending build context to Docker daemon\nStep 1/3: FROM node:18\nStep 2/3: COPY . /app\nStep 3/3: CMD ["node", "server.js"]\nSuccessfully built ${id}\nSuccessfully tagged ${name}:latest`);
           break;
         }
 
@@ -1158,14 +1158,14 @@ class Terminal {
           const nameIdx = args.indexOf("--name");
           const cname = nameIdx >= 0 ? args[nameIdx + 1] : "conteneur" + (this._docker.containers.length + 1);
           const image = args[args.length - 1];
-          if (!image || image.startsWith("-")) { out = "docker: manque le nom de l'image\nUsage : docker run -d --name nom image"; err = true; break; }
+          if (!image || image.startsWith("-")) { out = sh("docker: manque le nom de l'image\nUsage : docker run -d --name nom image", "docker: missing image name\nUsage: docker run -d --name name image"); err = true; break; }
           const found = this._docker.images.find(i => i.name === image || i.name === image.split(":")[0]);
-          if (!found) { out = `Unable to find image '${image}:latest' locally\ndocker: Error response from daemon: pull access denied for ${image}\n💡 Construis d'abord l'image avec docker build -t ${image} .`; err = true; break; }
+          if (!found) { out = sh(`Unable to find image '${image}:latest' locally\ndocker: Error response from daemon: pull access denied for ${image}\n💡 Construis d'abord l'image avec docker build -t ${image} .`, `Unable to find image '${image}:latest' locally\ndocker: Error response from daemon: pull access denied for ${image}\n💡 Build the image first with docker build -t ${image} .`); err = true; break; }
           if (this._docker.containers.find(c => c.name === cname && c.status === "running")) { out = `docker: Error response from daemon: Conflict. The container name "/${cname}" is already in use.`; err = true; break; }
           const id = Math.random().toString(16).slice(2, 14);
           this._docker.containers.push({ id, name: cname, image, status: "running" });
           this.state.dockerRun = cname;
-          out = detached ? id : "Serveur démarré sur le port 3000\n(Ctrl+C pour arrêter — ou lance avec -d pour le mode détaché)";
+          out = detached ? id : sh("Serveur démarré sur le port 3000\n(Ctrl+C pour arrêter — ou lance avec -d pour le mode détaché)", "Server started on port 3000\n(Ctrl+C to stop — or run with -d for detached mode)");
           break;
         }
 
@@ -1184,7 +1184,7 @@ class Terminal {
           const cname = args[1];
           const c = this._docker.containers.find(c => c.name === cname);
           if (!c) { out = `Error: No such container: ${cname}`; err = true; break; }
-          out = "npm start\n> monapp@1.0.0 start\n> node server.js\n\nServeur démarré sur le port 3000\nEn attente de connexions...";
+          out = sh("npm start\n> monapp@1.0.0 start\n> node server.js\n\nServeur démarré sur le port 3000\nEn attente de connexions...", "npm start\n> monapp@1.0.0 start\n> node server.js\n\nServer started on port 3000\nWaiting for connections...");
           this.state.dockerLogs = cname;
           break;
         }
@@ -1210,7 +1210,7 @@ class Terminal {
           break;
         }
 
-        out = `docker: '${sub}' n'est pas une commande docker.\nVoir 'docker --help'.`;
+        out = sh(`docker: '${sub}' n'est pas une commande docker.\nVoir 'docker --help'.`, `docker: '${sub}' is not a docker command.\nSee 'docker --help'.`);
         err = true;
         break;
       }
@@ -1223,7 +1223,7 @@ class Terminal {
         }
         const joined = args.join(" ");
         const m = joined.match(/^([A-Za-z_][\w.-]*)=(.*)$/);
-        if (!m) { out = "alias: usage : alias nom='commande'\nExemple : alias ll='ls -la'"; err = true; break; }
+        if (!m) { out = sh("alias: usage : alias nom='commande'\nExemple : alias ll='ls -la'", "alias: usage: alias name='command'\nExample: alias ll='ls -la'"); err = true; break; }
         this._aliases[m[1]] = this._stripQuotes(m[2]);
         this.state.alias = m[1];
         out = "";
@@ -1232,8 +1232,8 @@ class Terminal {
 
       case "unalias": {
         const name = args[0];
-        if (!name) { out = "unalias: manque le nom de l'alias\nUsage : unalias NOM"; err = true; break; }
-        if (!this._aliases[name]) { out = `unalias: ${name}: alias introuvable`; err = true; break; }
+        if (!name) { out = sh("unalias: manque le nom de l'alias\nUsage : unalias NOM", "unalias: missing alias name\nUsage: unalias NAME"); err = true; break; }
+        if (!this._aliases[name]) { out = sh(`unalias: ${name}: alias introuvable`, `unalias: ${name}: alias not found`); err = true; break; }
         delete this._aliases[name];
         out = "";
         break;
@@ -1241,15 +1241,15 @@ class Terminal {
 
       case "jobs": {
         if (!this._jobs.length) { out = ""; break; }
-        out = this._jobs.map(j => `[${j.id}]+  ${j.done ? "Terminé" : "En cours"}              ${j.cmd} &`).join("\n");
+        out = this._jobs.map(j => `[${j.id}]+  ${j.done ? sh("Terminé", "Done") : sh("En cours", "Running")}              ${j.cmd} &`).join("\n");
         break;
       }
 
       case "fg": {
-        if (!this._jobs.length) { out = "fg: aucun job en arrière-plan\n💡 Lance une commande avec « & » pour créer un job (ex: sleep 5 &)"; err = true; break; }
+        if (!this._jobs.length) { out = sh("fg: aucun job en arrière-plan\n💡 Lance une commande avec « & » pour créer un job (ex: sleep 5 &)", "fg: no background jobs\n💡 Run a command with \"&\" to create a job (e.g. sleep 5 &)"); err = true; break; }
         const spec = args[0] ? args[0].replace("%", "") : null;
         const target = spec ? this._jobs.find(j => String(j.id) === spec) : this._jobs[this._jobs.length - 1];
-        if (!target) { out = `fg: %${spec}: job introuvable`; err = true; break; }
+        if (!target) { out = sh(`fg: %${spec}: job introuvable`, `fg: %${spec}: no such job`); err = true; break; }
         out = (target.output ? target.output + "\n" : "") + `${target.cmd}`;
         this._jobs = this._jobs.filter(j => j !== target);
         break;
@@ -1277,11 +1277,11 @@ class Terminal {
 
       case "diff": {
         const files = args.filter(a => !a.startsWith("-"));
-        if (files.length < 2) { out = "diff: il faut deux fichiers\nUsage : diff FICHIER1 FICHIER2"; err = true; break; }
+        if (files.length < 2) { out = sh("diff: il faut deux fichiers\nUsage : diff FICHIER1 FICHIER2", "diff: two files are required\nUsage: diff FILE1 FILE2"); err = true; break; }
         const f1 = this._file(files[0]);
         const f2 = this._file(files[1]);
-        if (!f1 || !f1.node) { out = `diff: ${files[0]}: Aucun fichier ou dossier de ce type`; err = true; break; }
-        if (!f2 || !f2.node) { out = `diff: ${files[1]}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!f1 || !f1.node) { out = sh(`diff: ${files[0]}: Aucun fichier ou dossier de ce type`, `diff: ${files[0]}: No such file or directory`); err = true; break; }
+        if (!f2 || !f2.node) { out = sh(`diff: ${files[1]}: Aucun fichier ou dossier de ce type`, `diff: ${files[1]}: No such file or directory`); err = true; break; }
         const l1 = (f1.node.content || "").split("\n");
         const l2 = (f2.node.content || "").split("\n");
         const max = Math.max(l1.length, l2.length);
@@ -1306,7 +1306,7 @@ class Terminal {
         const cntFlag  = flags.includes("c");
         const pattern  = noFlag[0];
         let   fname    = noFlag[1];
-        if (!pattern) { out = "grep: manque le motif de recherche\nUsage : grep MOTIF FICHIER\nExemple : grep ERROR app.log\n\nOptions utiles :\n  -i  ignorer la casse\n  -n  afficher les numéros de ligne\n  -v  inverser (lignes SANS le motif)\n  -c  compter les résultats"; err = true; break; }
+        if (!pattern) { out = sh("grep: manque le motif de recherche\nUsage : grep MOTIF FICHIER\nExemple : grep ERROR app.log\n\nOptions utiles :\n  -i  ignorer la casse\n  -n  afficher les numéros de ligne\n  -v  inverser (lignes SANS le motif)\n  -c  compter les résultats", "grep: missing search pattern\nUsage: grep PATTERN FILE\nExample: grep ERROR app.log\n\nUseful options:\n  -i  ignore case\n  -n  show line numbers\n  -v  invert (lines WITHOUT the pattern)\n  -c  count the results"); err = true; break; }
 
         if (fname && fname.includes("*")) {
           const g = this._globList(fname);
@@ -1315,7 +1315,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `grep: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`grep: ${fname}: Aucun fichier ou dossier de ce type`, `grep: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
 
@@ -1340,7 +1340,7 @@ class Terminal {
         // point de départ : premier argument non-option (par défaut ".")
         const startArg = args.find((a, i) => !a.startsWith("-") && args[i-1] !== "-name" && args[i-1] !== "-type") || ".";
         const startAbs = startArg === "." ? this.cwd : this._resolve(startArg);
-        if (!this._isDir(startAbs)) { out = `find: '${startArg}': Aucun dossier de ce type`; err = true; break; }
+        if (!this._isDir(startAbs)) { out = sh(`find: '${startArg}': Aucun dossier de ce type`, `find: '${startArg}': No such directory`); err = true; break; }
         const rx = pat ? new RegExp("^" + pat.split("*").map(s => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$") : null;
         const results = [];
         const prefix = startAbs === "/" ? "" : startAbs;
@@ -1377,7 +1377,7 @@ class Terminal {
         const rows = [];
         for (const fname of fnames) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `wc: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`wc: ${fname}: Aucun fichier ou dossier de ce type`, `wc: ${fname}: No such file or directory`); err = true; break; }
           rows.push(count(f.node.content || "", fname));
         }
         if (err) break;
@@ -1394,7 +1394,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `sort: impossible de lire: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`sort: impossible de lire: ${fname}: Aucun fichier ou dossier de ce type`, `sort: cannot read: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
         let lines = content.split("\n").filter(Boolean);
@@ -1416,7 +1416,7 @@ class Terminal {
       case "env":
       case "printenv": {
         const base = {
-          HOME: "/home/user", USER: "user", SHELL: "/bin/bash", PWD: this.cwd, LANG: "fr_FR.UTF-8",
+          HOME: "/home/user", USER: "user", SHELL: "/bin/bash", PWD: this.cwd, LANG: sh("fr_FR.UTF-8", "en_US.UTF-8"),
           PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", TERM: "xterm-256color",
           ...(this._envVars || {})
         };
@@ -1426,7 +1426,7 @@ class Terminal {
 
       case "export": {
         const kv = args.join(" ").match(/^(\w+)=(.*)$/);
-        if (!kv) { out = "export: usage: export NOM=valeur"; err = true; break; }
+        if (!kv) { out = sh("export: usage: export NOM=valeur", "export: usage: export NAME=value"); err = true; break; }
         this._envVars[kv[1]] = kv[2].replace(/^["']|["']$/g, "");
         this.state.export = kv[1];
         out = "";
@@ -1447,14 +1447,14 @@ class Terminal {
 
       case "kill": {
         const pid = args.filter(a => !a.startsWith("-"))[0];
-        if (!pid) { out = "kill: manque le PID\nUsage : kill PID\nExemple : kill 1234\n\nPour forcer l'arrêt : kill -9 PID\nPour trouver les PIDs : ps aux"; err = true; break; }
+        if (!pid) { out = sh("kill: manque le PID\nUsage : kill PID\nExemple : kill 1234\n\nPour forcer l'arrêt : kill -9 PID\nPour trouver les PIDs : ps aux", "kill: missing PID\nUsage: kill PID\nExample: kill 1234\n\nTo force the stop: kill -9 PID\nTo find the PIDs: ps aux"); err = true; break; }
         this.state.kill = pid;
-        out = `[Processus ${pid} terminé]`;
+        out = sh(`[Processus ${pid} terminé]`, `[Process ${pid} terminated]`);
         break;
       }
 
       case "whoami": { out = "user"; break; }
-      case "id":     { out = "uid=1000(user) gid=1000(user) groupes=1000(user),27(sudo)"; break; }
+      case "id":     { out = sh("uid=1000(user) gid=1000(user) groupes=1000(user),27(sudo)", "uid=1000(user) gid=1000(user) groups=1000(user),27(sudo)"); break; }
 
       case "df": {
         out = [
@@ -1474,7 +1474,7 @@ class Terminal {
           this.state.symlink = dst2;
           out = "";
         } else {
-          out = "ln: arguments invalides"; err = true;
+          out = sh("ln: arguments invalides", "ln: invalid arguments"); err = true;
         }
         break;
       }
@@ -1486,7 +1486,7 @@ class Terminal {
           this.state.tar = fname2;
           out = "";
         } else {
-          out = "tar: manque le nom d'archive\nUsage : tar -czf ARCHIVE.tar.gz DOSSIER/\nExemple : tar -czf backup.tar.gz www/\n\nPour extraire : tar -xzf archive.tar.gz\nPour lister : tar -tzf archive.tar.gz";
+          out = sh("tar: manque le nom d'archive\nUsage : tar -czf ARCHIVE.tar.gz DOSSIER/\nExemple : tar -czf backup.tar.gz www/\n\nPour extraire : tar -xzf archive.tar.gz\nPour lister : tar -tzf archive.tar.gz", "tar: missing archive name\nUsage: tar -czf ARCHIVE.tar.gz FOLDER/\nExample: tar -czf backup.tar.gz www/\n\nTo extract: tar -xzf archive.tar.gz\nTo list: tar -tzf archive.tar.gz");
           err = true;
         }
         break;
@@ -1494,7 +1494,7 @@ class Terminal {
 
       case "curl": {
         const url = args.find(a => a.startsWith("http"));
-        if (!url) { out = "curl: manque l'URL"; err = true; break; }
+        if (!url) { out = sh("curl: manque l'URL", "curl: missing URL"); err = true; break; }
         out = `HTTP/1.1 200 OK\n<!DOCTYPE html>\n<html><head><title>Example Domain</title></head>\n<body><h1>Example Domain</h1></body></html>`;
         break;
       }
@@ -1517,7 +1517,7 @@ class Terminal {
               out = content2.split("\n").map(l => l.replace(from, to)).join("\n");
             }
           } else {
-            out = "sed: expression invalide"; err = true;
+            out = sh("sed: expression invalide", "sed: invalid expression"); err = true;
           }
         } else {
           out = content2;
@@ -1557,14 +1557,14 @@ class Terminal {
         let src = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `base64: ${fname}: Fichier introuvable`; err = true; break; }
+          if (!f || !f.node) { out = sh(`base64: ${fname}: Fichier introuvable`, `base64: ${fname}: File not found`); err = true; break; }
           src = f.node.content || "";
         }
         src = (src || "").trim();
         try {
           if (dec) out = this._b64decode(src);
           else out = this._b64encode(src);
-        } catch(e) { out = "base64: entrée invalide"; err = true; }
+        } catch(e) { out = sh("base64: entrée invalide", "base64: invalid input"); err = true; }
         break;
       }
 
@@ -1597,7 +1597,7 @@ class Terminal {
           const hex = src.replace(/\s+/g, "");
           try {
             out = (hex.match(/.{1,2}/g) || []).map(h => String.fromCharCode(parseInt(h, 16))).join("");
-          } catch(e) { out = "xxd: hex invalide"; err = true; }
+          } catch(e) { out = sh("xxd: hex invalide", "xxd: invalid hex"); err = true; }
         } else if (plain) {
           // texte → hex compact
           out = src.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
@@ -1622,7 +1622,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `${cmd}: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`${cmd}: ${fname}: Aucun fichier ou dossier de ce type`, `${cmd}: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
         const lines = content.split("\n");
@@ -1636,7 +1636,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `uniq: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`uniq: ${fname}: Aucun fichier ou dossier de ce type`, `uniq: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
         const lines = content.split("\n");
@@ -1659,13 +1659,13 @@ class Terminal {
           if (a.startsWith("-d")) sep = a.length > 2 ? a.slice(2).replace(/^["']|["']$/g, "") : (args[i+1] || "\t");
           if (a.startsWith("-f")) fields = a.length > 2 ? a.slice(2) : (args[i+1] || "");
         });
-        if (!fields) { out = "cut: il faut préciser les champs\nUsage : cut -d',' -f1 fichier.csv\n  -d  séparateur (ex: -d',')\n  -f  numéro(s) de colonne (ex: -f1 ou -f1,3)"; err = true; break; }
+        if (!fields) { out = sh("cut: il faut préciser les champs\nUsage : cut -d',' -f1 fichier.csv\n  -d  séparateur (ex: -d',')\n  -f  numéro(s) de colonne (ex: -f1 ou -f1,3)", "cut: you must specify the fields\nUsage: cut -d',' -f1 file.csv\n  -d  separator (e.g. -d',')\n  -f  column number(s) (e.g. -f1 or -f1,3)"); err = true; break; }
         const wanted = fields.split(",").map(x => parseInt(x)).filter(x => !isNaN(x));
         const fname = this._expandFileArgs(args.filter((a, i) => !a.startsWith("-") && args[i-1] !== "-d" && args[i-1] !== "-f"))[0];
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
-          if (!f || !f.node) { out = `cut: ${fname}: Aucun fichier ou dossier de ce type`; err = true; break; }
+          if (!f || !f.node) { out = sh(`cut: ${fname}: Aucun fichier ou dossier de ce type`, `cut: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
         out = content.split("\n").map(l => {
@@ -1691,13 +1691,13 @@ class Terminal {
           return res;
         };
         const from = expand(sets[0] || "");
-        if (!from) { out = "tr: usage: tr 'a-z' 'A-Z'  (ou tr -d 'x' pour supprimer)"; err = true; break; }
+        if (!from) { out = sh("tr: usage: tr 'a-z' 'A-Z'  (ou tr -d 'x' pour supprimer)", "tr: usage: tr 'a-z' 'A-Z'  (or tr -d 'x' to delete)"); err = true; break; }
         let src = stdin || "";
         if (del) {
           out = src.split("").filter(c => !from.includes(c)).join("");
         } else {
           const to = expand(sets[1] || "");
-          if (!to) { out = "tr: il manque le second ensemble\nExemple : tr 'a-z' 'A-Z'"; err = true; break; }
+          if (!to) { out = sh("tr: il manque le second ensemble\nExemple : tr 'a-z' 'A-Z'", "tr: the second set is missing\nExample: tr 'a-z' 'A-Z'"); err = true; break; }
           out = src.split("").map(c => {
             const i = from.indexOf(c);
             return i >= 0 ? (to[Math.min(i, to.length-1)]) : c;
@@ -1709,7 +1709,7 @@ class Terminal {
       case "tree": {
         const startArg = args.find(a => !a.startsWith("-"));
         const startAbs = startArg ? this._resolve(startArg) : this.cwd;
-        if (!this._isDir(startAbs)) { out = `tree: ${startArg}: N'est pas un dossier`; err = true; break; }
+        if (!this._isDir(startAbs)) { out = sh(`tree: ${startArg}: N'est pas un dossier`, `tree: ${startArg}: Not a directory`); err = true; break; }
         let nd = 0, nf = 0;
         const res = [startArg || "."];
         const walk = (dir, indent) => {
@@ -1726,7 +1726,7 @@ class Terminal {
         };
         walk(startAbs, "");
         res.push("");
-        res.push(`${nd} répertoire${nd>1?"s":""}, ${nf} fichier${nf>1?"s":""}`);
+        res.push(sh(`${nd} répertoire${nd>1?"s":""}, ${nf} fichier${nf>1?"s":""}`, `${nd} director${nd>1?"ies":"y"}, ${nf} file${nf>1?"s":""}`));
         out = res.join("\n");
         break;
       }
@@ -1744,7 +1744,7 @@ class Terminal {
       }
 
       case "date": {
-        out = new Date().toLocaleString("fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
+        out = new Date().toLocaleString(dateLocale(), { weekday:"long", day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit" });
         break;
       }
 
@@ -1759,35 +1759,39 @@ class Terminal {
 
       case "uptime": {
         const mins = Math.floor(performance.now() / 60000);
-        out = ` ${new Date().toLocaleTimeString("fr-FR")} up ${mins} min,  1 user,  load average: 0.42, 0.13, 0.07`;
+        out = ` ${new Date().toLocaleTimeString(dateLocale())} up ${mins} min,  1 user,  load average: 0.42, 0.13, 0.07`;
         break;
       }
 
       case "free": {
-        out = [
+        out = sh([
           "               total       utilisé      libre",
           "Mem:        16384 Mo      4242 Mo    12142 Mo",
           "Swap:        2048 Mo         0 Mo     2048 Mo"
-        ].join("\n");
+        ].join("\n"), [
+          "               total        used        free",
+          "Mem:        16384 MB      4242 MB    12142 MB",
+          "Swap:        2048 MB         0 MB     2048 MB"
+        ].join("\n"));
         break;
       }
 
       case "history": {
-        out = this.cmdLog.map((c, i) => `  ${String(i+1).padStart(3)}  ${c}`).join("\n") || "(historique vide)";
+        out = this.cmdLog.map((c, i) => `  ${String(i+1).padStart(3)}  ${c}`).join("\n") || sh("(historique vide)", "(history empty)");
         break;
       }
 
       case "man": {
         const topic = args[0];
-        if (!topic) { out = "Quelle page de manuel voulez-vous ?\nUsage : man COMMANDE   (ex: man grep)"; err = true; break; }
-        if (typeof GLOSSARY === "undefined") { out = `man: pas de manuel pour ${topic}`; err = true; break; }
+        if (!topic) { out = sh("Quelle page de manuel voulez-vous ?\nUsage : man COMMANDE   (ex: man grep)", "What manual page do you want?\nUsage: man COMMAND   (e.g. man grep)"); err = true; break; }
+        if (typeof GLOSSARY === "undefined") { out = sh(`man: pas de manuel pour ${topic}`, `man: no manual entry for ${topic}`); err = true; break; }
         const entry = GLOSSARY.find(g => g.cmd === topic || g.cmd.split(" ")[0] === topic || g.cmd.split(" / ").includes(topic));
-        if (!entry) { out = `man: aucune entrée de manuel pour ${topic}\n💡 Consulte l'onglet Glossaire pour la liste complète.`; err = true; break; }
+        if (!entry) { out = sh(`man: aucune entrée de manuel pour ${topic}\n💡 Consulte l'onglet Glossaire pour la liste complète.`, `man: no manual entry for ${topic}\n💡 Check the Glossary tab for the full list.`); err = true; break; }
         this.state.man = topic;
         const L = [];
-        L.push(`${topic.toUpperCase()}(1)                    Manuel LinuxDojo                    ${topic.toUpperCase()}(1)`);
+        L.push(`${topic.toUpperCase()}(1)                    ${sh("Manuel LinuxDojo", "LinuxDojo Manual")}                    ${topic.toUpperCase()}(1)`);
         L.push("");
-        L.push("NOM");
+        L.push(sh("NOM", "NAME"));
         L.push(`       ${entry.cmd} — ${entry.desc}`);
         L.push("");
         L.push("SYNOPSIS");
@@ -1799,7 +1803,7 @@ class Terminal {
         }
         if (entry.examples && entry.examples.length) {
           L.push("");
-          L.push("EXEMPLES");
+          L.push(sh("EXEMPLES", "EXAMPLES"));
           entry.examples.forEach(e => L.push(`       $ ${e[0].padEnd(28)} # ${e[1]}`));
         }
         out = L.join("\n");
@@ -1808,9 +1812,9 @@ class Terminal {
 
       case "whatis": {
         const topic = args[0];
-        if (!topic || typeof GLOSSARY === "undefined") { out = `whatis: usage: whatis COMMANDE`; err = true; break; }
+        if (!topic || typeof GLOSSARY === "undefined") { out = sh(`whatis: usage: whatis COMMANDE`, `whatis: usage: whatis COMMAND`); err = true; break; }
         const entry = GLOSSARY.find(g => g.cmd === topic || g.cmd.split(" ")[0] === topic);
-        out = entry ? `${topic} (1) — ${entry.desc}` : `${topic} : rien d'approprié.`;
+        out = entry ? `${topic} (1) — ${entry.desc}` : sh(`${topic} : rien d'approprié.`, `${topic}: nothing appropriate.`);
         if (!entry) err = true;
         break;
       }
@@ -1818,7 +1822,7 @@ class Terminal {
       case "ping": {
         const host = args.find(a => !a.startsWith("-")) || "localhost";
         this.state.ping = host;
-        out = [
+        out = sh([
           `PING ${host} (127.0.0.1) 56(84) octets de données.`,
           `64 octets de ${host}: icmp_seq=1 ttl=64 temps=0.042 ms`,
           `64 octets de ${host}: icmp_seq=2 ttl=64 temps=0.038 ms`,
@@ -1826,31 +1830,39 @@ class Terminal {
           "",
           `--- statistiques ping ${host} ---`,
           "3 paquets transmis, 3 reçus, 0% perte de paquets"
-        ].join("\n");
+        ].join("\n"), [
+          `PING ${host} (127.0.0.1) 56(84) bytes of data.`,
+          `64 bytes from ${host}: icmp_seq=1 ttl=64 time=0.042 ms`,
+          `64 bytes from ${host}: icmp_seq=2 ttl=64 time=0.038 ms`,
+          `64 bytes from ${host}: icmp_seq=3 ttl=64 time=0.040 ms`,
+          "",
+          `--- ${host} ping statistics ---`,
+          "3 packets transmitted, 3 received, 0% packet loss"
+        ].join("\n"));
         break;
       }
 
       case "ssh": {
         const target = args.find(a => !a.startsWith("-"));
-        if (!target) { out = "usage: ssh utilisateur@hôte"; err = true; break; }
+        if (!target) { out = sh("usage: ssh utilisateur@hôte", "usage: ssh user@host"); err = true; break; }
         const m = target.match(/^([\w.-]+)@([\w.-]+)$/);
-        if (!m) { out = `ssh: format invalide, attendu utilisateur@hôte (reçu '${target}')`; err = true; break; }
+        if (!m) { out = sh(`ssh: format invalide, attendu utilisateur@hôte (reçu '${target}')`, `ssh: invalid format, expected user@host (got '${target}')`); err = true; break; }
         const [, sshUser, sshHost] = m;
         this._sshStack.push(this.ps1User);
         this.ps1User = `${sshUser}@${sshHost}`;
         this.state.sshHost = sshHost;
         this.state.sshUser = sshUser;
-        out = `Bienvenue sur ${sshHost} !\nDernière connexion : aujourd'hui depuis 10.0.0.1\nConnecté — tape 'exit' pour te déconnecter.`;
+        out = sh(`Bienvenue sur ${sshHost} !\nDernière connexion : aujourd'hui depuis 10.0.0.1\nConnecté — tape 'exit' pour te déconnecter.`, `Welcome to ${sshHost}!\nLast login: today from 10.0.0.1\nConnected — type 'exit' to disconnect.`);
         break;
       }
 
       case "scp": {
         const src = args.find(a => !a.includes("@") && !a.startsWith("-"));
         const dest = args.find(a => a.includes("@"));
-        if (!src || !dest) { out = "usage: scp fichier utilisateur@hôte:/chemin"; err = true; break; }
-        if (!this._exists(this._resolve(src))) { out = `scp: ${src}: Aucun fichier ou dossier de ce type`; err = true; break; }
+        if (!src || !dest) { out = sh("usage: scp fichier utilisateur@hôte:/chemin", "usage: scp file user@host:/path"); err = true; break; }
+        if (!this._exists(this._resolve(src))) { out = sh(`scp: ${src}: Aucun fichier ou dossier de ce type`, `scp: ${src}: No such file or directory`); err = true; break; }
         const dm = dest.match(/^([\w.-]+)@([\w.-]+):(.*)$/);
-        if (!dm) { out = `scp: destination invalide, attendu utilisateur@hôte:/chemin (reçu '${dest}')`; err = true; break; }
+        if (!dm) { out = sh(`scp: destination invalide, attendu utilisateur@hôte:/chemin (reçu '${dest}')`, `scp: invalid destination, expected user@host:/path (got '${dest}')`); err = true; break; }
         this.state.scp = { file: src, host: dm[2], path: dm[3] || "~" };
         out = `${src}                                    100%   1KB   1.0MB/s   00:00`;
         break;
@@ -1860,7 +1872,7 @@ class Terminal {
       case "ss": {
         this.state.netstat = true;
         out = [
-          "Proto  Local Address       État        Programme",
+          sh("Proto  Local Address       État        Programme", "Proto  Local Address       State       Program"),
           "tcp    0.0.0.0:22          LISTEN      sshd",
           "tcp    0.0.0.0:80          LISTEN      nginx",
           "tcp    127.0.0.1:3306      LISTEN      mysqld",
@@ -1871,7 +1883,7 @@ class Terminal {
 
       /* ── Easter eggs & culture Linux ─────────────────────── */
       case "cowsay": {
-        const msg = (stdin || args.join(" ") || "Meuh ?").trim();
+        const msg = (stdin || args.join(" ") || sh("Meuh ?", "Moo?")).trim();
         const line = "─".repeat(Math.min(msg.length + 2, 42));
         out = [
           ` ┌${line}┐`,
@@ -1887,7 +1899,18 @@ class Terminal {
       }
 
       case "fortune": {
-        const F = [
+        const F = LANG === "en" ? [
+          "\"Everything is a file.\" — UNIX philosophy",
+          "\"Speak little, pipe a lot.\" — Shell wisdom",
+          "There is no cloud, just someone else's computer.",
+          "chmod 777 is rarely the answer. Almost never. No.",
+          "A good admin is a lazy admin: they automate everything.",
+          "\"rm -rf\" doesn't forgive. Think before Enter.",
+          "The most dangerous command: the one you copy-paste without reading.",
+          "Debugging is being a detective in a crime where you're also the culprit.",
+          "Ctrl+C, Ctrl+V: the two pillars of modern software engineering.",
+          "If it doesn't work: man. If it works: commit."
+        ] : [
           "« Tout est fichier. » — Philosophie UNIX",
           "« Parle peu, pipe beaucoup. » — Sagesse du shell",
           "Il n'y a pas de nuage, juste l'ordinateur de quelqu'un d'autre.",
@@ -1905,7 +1928,7 @@ class Terminal {
 
       case "sl": {
         out = [
-          "🚂 Tchou tchou ! Tu as encore tapé 'sl' au lieu de 'ls'...",
+          sh("🚂 Tchou tchou ! Tu as encore tapé 'sl' au lieu de 'ls'...", "🚂 Choo choo! You typed 'sl' instead of 'ls' again..."),
           "",
           "      ====        ________                ___________",
           "  _D _|  |_______/        \\__I_I_____===__|_________|",
@@ -1915,7 +1938,7 @@ class Terminal {
           "  | ________|___H__/__|_____/[][]~\\_______|       |  ",
           "  |/ |   |-----------I_____I [][] []  D   |=======|__",
           "",
-          "(le vrai 'sl' sous Linux affiche une locomotive qui traverse ton terminal)"
+          sh("(le vrai 'sl' sous Linux affiche une locomotive qui traverse ton terminal)", "(the real 'sl' on Linux shows a locomotive crossing your terminal)")
         ].join("\n");
         break;
       }
@@ -1929,11 +1952,11 @@ class Terminal {
             "        ( \\___/ )",
             "     ___ooo_ooo___",
             "",
-            "Tu as réveillé le fantôme du dojo. Un cadeau spectral t'attend...",
+            sh("Tu as réveillé le fantôme du dojo. Un cadeau spectral t'attend...", "You woke the dojo's ghost. A spectral gift awaits you..."),
           ].join("\n");
           if (typeof markSeasonalSecret === "function") markSeasonalSecret("halloween");
         } else {
-          out = "🎃 ...rien ne se passe. (Cette commande semble liée à une certaine fête d'automne — reviens fin octobre.)";
+          out = sh("🎃 ...rien ne se passe. (Cette commande semble liée à une certaine fête d'automne — reviens fin octobre.)", "🎃 ...nothing happens. (This command seems tied to a certain autumn holiday — come back in late October.)");
         }
         break;
       }
@@ -1950,36 +1973,36 @@ class Terminal {
             "       /★★★★★★★★★\\",
             "            ‖‖",
             "",
-            "🎄 Joyeux Noël, ninja du terminal ! Un cadeau t'attend...",
+            sh("🎄 Joyeux Noël, ninja du terminal ! Un cadeau t'attend...", "🎄 Merry Christmas, terminal ninja! A gift awaits you..."),
           ].join("\n");
           if (typeof markSeasonalSecret === "function") markSeasonalSecret("noel");
         } else {
-          out = "🎄 ...rien ne se passe. (Cette commande semble liée à une certaine fête de fin d'année — reviens en décembre.)";
+          out = sh("🎄 ...rien ne se passe. (Cette commande semble liée à une certaine fête de fin d'année — reviens en décembre.)", "🎄 ...nothing happens. (This command seems tied to a certain end-of-year holiday — come back in December.)");
         }
         break;
       }
 
       case "sudo": {
-        if (args.join(" ").includes("sandwich")) { out = "D'accord. 🥪"; break; }  // xkcd 149
-        out = "user n'apparaît pas dans le fichier sudoers.\nCet incident sera signalé. 👮\n\n(Ici, pas besoin de sudo — tu es déjà maître du dojo.)";
+        if (args.join(" ").includes("sandwich")) { out = sh("D'accord. 🥪", "Okay. 🥪"); break; }  // xkcd 149
+        out = sh("user n'apparaît pas dans le fichier sudoers.\nCet incident sera signalé. 👮\n\n(Ici, pas besoin de sudo — tu es déjà maître du dojo.)", "user is not in the sudoers file.\nThis incident will be reported. 👮\n\n(No need for sudo here — you're already master of the dojo.)");
         err = true;
         break;
       }
 
       case "vim":
       case "vi": {
-        out = "Tu es entré dans Vim.\n\n⚠️  Statistiquement, tu vas y rester coincé 2 heures.\nPour sortir : Échap puis :q!  (ici, tape juste :q!)";
+        out = sh("Tu es entré dans Vim.\n\n⚠️  Statistiquement, tu vas y rester coincé 2 heures.\nPour sortir : Échap puis :q!  (ici, tape juste :q!)", "You entered Vim.\n\n⚠️  Statistically, you'll be stuck here for 2 hours.\nTo exit: Esc then :q!  (here, just type :q!)");
         this.state.vim = true;
         break;
       }
       case ":q!":
       case ":wq": {
-        out = this.state.vim ? "Ouf. Tu es sorti de Vim. Peu y parviennent du premier coup. 🏆" : "E492: Commande inconnue (tu n'es même pas dans Vim)";
+        out = this.state.vim ? sh("Ouf. Tu es sorti de Vim. Peu y parviennent du premier coup. 🏆", "Phew. You escaped Vim. Few manage it on the first try. 🏆") : sh("E492: Commande inconnue (tu n'es même pas dans Vim)", "E492: Not an editor command (you're not even in Vim)");
         this.state.vim = false;
         break;
       }
-      case "nano": { out = "GNU nano — l'éditeur de ceux qui veulent juste que ça marche. (simulé)\nCtrl+X pour quitter. Ici, rien à éditer."; break; }
-      case "emacs": { out = "Emacs : un excellent système d'exploitation.\nIl ne lui manque qu'un bon éditeur de texte. 😈"; break; }
+      case "nano": { out = sh("GNU nano — l'éditeur de ceux qui veulent juste que ça marche. (simulé)\nCtrl+X pour quitter. Ici, rien à éditer.", "GNU nano — the editor for those who just want it to work. (simulated)\nCtrl+X to quit. Nothing to edit here."); break; }
+      case "emacs": { out = sh("Emacs : un excellent système d'exploitation.\nIl ne lui manque qu'un bon éditeur de texte. 😈", "Emacs: a great operating system.\nIt just lacks a good text editor. 😈"); break; }
 
       case "exit":
       case "logout": {
@@ -1988,10 +2011,10 @@ class Terminal {
           const leftHost = this.state.sshHost;
           this.ps1User = prevUser;
           this.state.sshExit = leftHost;
-          out = `Connexion à ${leftHost} fermée.`;
+          out = sh(`Connexion à ${leftHost} fermée.`, `Connection to ${leftHost} closed.`);
           break;
         }
-        out = "On ne quitte pas le dojo aussi facilement. 🥋\n(Ferme l'onglet si tu veux vraiment partir... lâcheur.)";
+        out = sh("On ne quitte pas le dojo aussi facilement. 🥋\n(Ferme l'onglet si tu veux vraiment partir... lâcheur.)", "You don't leave the dojo that easily. 🥋\n(Close the tab if you really want to go... quitter.)");
         break;
       }
 
@@ -2000,7 +2023,7 @@ class Terminal {
         return { output: "", error: false };
 
       case "help":
-        out = [
+        out = sh([
           "═══ COMMANDES DU DOJO ═══",
           "Navigation   : ls [-la], cd, pwd, tree, find",
           "Fichiers     : cat, less, head, tail, touch, mkdir, cp, mv, rm, ln -s, chmod",
@@ -2026,7 +2049,33 @@ class Terminal {
           "",
           "🥚 Il paraît que le dojo cache des secrets... (cowsay ? sl ? fortune ? vim ?)",
           "🎃 ...et parfois, à certaines périodes de l'année, il en cache encore d'autres."
-        ].join("\n");
+        ].join("\n"), [
+          "═══ DOJO COMMANDS ═══",
+          "Navigation   : ls [-la], cd, pwd, tree, find",
+          "Files        : cat, less, head, tail, touch, mkdir, cp, mv, rm, ln -s, chmod",
+          "Text         : grep [-invc], sort, uniq [-c], wc [-lwc], cut -d -f, tr, sed, awk",
+          "System       : ps aux, kill, whoami, id, df -h, du, free, uptime, uname -a, date",
+          "Ownership    : chown user:group file, chgrp group file",
+          "Environment  : echo $VAR, env, export VAR=x, history, hostname, alias name='cmd', unalias",
+          "Network      : curl, ping, ssh user@host, scp file user@host:/path, netstat",
+          "Decoding     : base64 [-d], rot13, xxd -r -p",
+          "Comparison   : diff file1 file2",
+          "Chaining     : cmd | xargs [-n N] other_cmd",
+          "Background   : cmd &, jobs, fg [%N]",
+          "Help         : man CMD, whatis CMD, help",
+          "",
+          "Pipes & redirections:  cmd1 | cmd2   ·   cmd > file   ·   cmd >> file (append)",
+          "Wildcards:  cat *.txt  ·  rm *.log  ·  ls logs/*.log",
+          "REAL paths: cd logs/2024 · cd .. · cd / · cd ~ · cat /etc/hostname · find /var -name '*.log'",
+          "Scripting:  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
+          "Git:  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b name",
+          "Docker:  docker build -t name . · docker images · docker run -d --name name image · docker ps [-a] · docker logs name · docker stop name",
+          "Tips: Tab autocompletes (even paths) · ↑/↓ history · Ctrl+R search in history · man grep for the manual",
+          "Key ? (outside input): opens the keyboard shortcuts screen",
+          "",
+          "🥚 They say the dojo hides secrets... (cowsay? sl? fortune? vim?)",
+          "🎃 ...and sometimes, at certain times of year, it hides even more."
+        ].join("\n"));
         break;
 
       default:
