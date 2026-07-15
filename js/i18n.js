@@ -319,6 +319,9 @@ const UI = {
     "multitab.reload": "Recharger",
     "multitab.ignore": "Ignorer",
 
+    // ── Badges (générés en JS) ──
+    "badge.unlocked": "Badge débloqué !",
+    "badge.unlockedToast": "🏅 Badge débloqué : {label}",
     // ── Objectifs (générés en JS) ──
     "obj.achieved": "Objectif : {title}",
     "obj.toast": "{icon} Objectif accompli : {title} (+{xp} XP)",
@@ -621,6 +624,9 @@ const UI = {
     "multitab.reload": "Reload",
     "multitab.ignore": "Ignore",
 
+    // ── Badges (JS-generated) ──
+    "badge.unlocked": "Badge unlocked!",
+    "badge.unlockedToast": "🏅 Badge unlocked: {label}",
     // ── Objectives (JS-generated) ──
     "obj.achieved": "Objective: {title}",
     "obj.toast": "{icon} Objective complete: {title} (+{xp} XP)",

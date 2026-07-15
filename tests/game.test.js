@@ -131,7 +131,13 @@ function buildSandbox() {
     Terminal: FakeTerminal,
     // Rang constant : neutralise la branche "changement de rang" d'addXP()
     // (animation/son hors-sujet pour ces tests de logique pure)
-    getRank() { return { name: "Rang-Test", icon: "🏅" }; },
+    getRank() { return { min: 0, name: "Rang-Test", icon: "🏅" }; },
+    // Stubs i18n : game.js appelle t()/rankName() (définis dans i18n.js, non
+    // chargé ici). t() renvoie la clé (avec interpolation) — suffisant pour ces
+    // tests de logique, qui n'asservissent aucun texte affiché.
+    t(key, vars) { let s = String(key); if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]); return s; },
+    rankName(r) { return (r && r.name) || ""; },
+    pick(v) { return v; },
     setTimeout,
     clearTimeout,
     console,

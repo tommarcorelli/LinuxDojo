@@ -149,9 +149,9 @@ function checkBadges() {
     if (!GAME.badges.includes(b.id) && b.cond(GAME)) {
       GAME.badges.push(b.id);
       if (typeof showAchievement === "function") {
-        showAchievement(b.label.split(" ")[0], b.label.split(" ").slice(1).join(" "), "Badge débloqué !");
+        showAchievement(b.label.split(" ")[0], b.label.split(" ").slice(1).join(" "), t("badge.unlocked"));
       } else {
-        showToast("🏅 Badge débloqué : " + b.label);
+        showToast(t("badge.unlockedToast", { label: b.label }));
       }
     }
   });
