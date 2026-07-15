@@ -6,6 +6,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- Internationalisation FR / EN — **Phase D (finitions) : la page d'atterrissage + les meta**.
+  `landing.html` (page marketing autonome) devient bilingue en réutilisant le même moteur
+  `js/i18n.js` : tout le contenu est annoté `data-i18n` / `data-i18n-html`, un sélecteur 🇫🇷/🇬🇧
+  est injecté dans la barre de nav de la landing (`.l-nav-right`), et le mini-terminal animé du
+  hero (`js/landing.js`) devient bilingue (séquence FR/EN selon `LANG`, et rendu de l'état final
+  traduit si `prefers-reduced-motion`). Meta Open Graph : `og:locale:alternate en_US` déclaré sur
+  `index.html` et `landing.html` (locale primaire FR conservée pour les crawlers). `<html lang>`
+  déjà dynamique. Le test de couverture des clés `data-i18n*` couvre désormais **les deux pages**
+  (`tests/i18n.test.js`). **L'internationalisation FR↔EN est 100 % terminée** — application,
+  contenu, shell simulé et page marketing. 128 tests. SW v30 → v31. Vérifié en Chrome headless
+  (hero, cartes de modes, section man, footer, sélecteur, `<html lang>` — FR et EN, sans erreur).
 - Internationalisation FR / EN — **Phases C & fin : tous les modes de jeu + le shell simulé**.
   Traduits via overlays `js/i18n/*.en.js` (fusionnés au boot seulement si EN) : défis
   (`challenges`), infiltration (`bandit`), mode Expert, objectifs, événements saisonniers, kata,

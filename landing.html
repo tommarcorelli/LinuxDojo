@@ -15,6 +15,7 @@
   <meta property="og:url" content="https://tommarcorelli.github.io/LinuxDojo/landing.html">
   <meta property="og:site_name" content="LinuxDojo">
   <meta property="og:locale" content="fr_FR">
+  <meta property="og:locale:alternate" content="en_US">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="LinuxDojo — Apprends Linux en jouant, pour de vrai">
   <meta name="twitter:description" content="Un vrai terminal Linux simulé, 60 missions scénarisées, 6 combats de boss et une Ceinture Noire à décrocher. Gratuit, sans compte.">
@@ -31,8 +32,8 @@
   <nav class="l-nav">
     <a class="l-logo" href="landing.html"><span class="l-logo-icon">$_</span><span>Linux<em>Dojo</em></span></a>
     <div class="l-nav-right">
-      <a class="l-nav-ghost-link" href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener">Code source ↗</a>
-      <a class="l-btn l-btn-primary l-btn-sm" href="index.html">▶ Jouer</a>
+      <a class="l-nav-ghost-link" href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener" data-i18n="l.nav.source">Code source ↗</a>
+      <a class="l-btn l-btn-primary l-btn-sm" href="index.html" data-i18n="l.nav.play">▶ Jouer</a>
     </div>
   </nav>
 
@@ -41,20 +42,20 @@
     <div class="l-hero-glow" aria-hidden="true"></div>
     <div class="l-hero-grid">
       <div>
-        <span class="l-eyebrow">visiteur@linuxdojo<span class="l-eyebrow-caret">:~$</span> apprendre --gratuit</span>
-        <h1 class="l-h1">Apprends Linux.<br>Pour de <span class="grad">vrai</span>.</h1>
-        <p class="l-sub">Pas un PDF, pas une liste de commandes à réciter. Un vrai mini-shell simulé — pipes, variables, scripts — avec 60 missions scénarisées, des combats de boss, et une Ceinture Noire à décrocher.</p>
+        <span class="l-eyebrow" data-i18n-html="l.hero.eyebrow">visiteur@linuxdojo<span class="l-eyebrow-caret">:~$</span> apprendre --gratuit</span>
+        <h1 class="l-h1" data-i18n-html="l.hero.h1">Apprends Linux.<br>Pour de <span class="grad">vrai</span>.</h1>
+        <p class="l-sub" data-i18n="l.hero.sub">Pas un PDF, pas une liste de commandes à réciter. Un vrai mini-shell simulé — pipes, variables, scripts — avec 60 missions scénarisées, des combats de boss, et une Ceinture Noire à décrocher.</p>
         <div class="l-hero-btns">
-          <a class="l-btn l-btn-primary" href="index.html">▶ Commencer gratuitement</a>
-          <a class="l-btn l-btn-ghost" href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener">Voir le code source</a>
+          <a class="l-btn l-btn-primary" href="index.html" data-i18n="l.hero.start">▶ Commencer gratuitement</a>
+          <a class="l-btn l-btn-ghost" href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener" data-i18n="l.hero.source">Voir le code source</a>
         </div>
-        <p class="l-hero-note"><strong>Aucune inscription. Aucune carte bancaire.</strong> Juste toi et un terminal.</p>
+        <p class="l-hero-note" data-i18n-html="l.hero.note"><strong>Aucune inscription. Aucune carte bancaire.</strong> Juste toi et un terminal.</p>
       </div>
 
       <div class="l-term" aria-hidden="true">
         <div class="l-term-bar">
           <span class="l-term-dot l-term-dot-r"></span><span class="l-term-dot l-term-dot-y"></span><span class="l-term-dot l-term-dot-g"></span>
-          <span class="l-term-bar-title">visiteur@linuxdojo — bash</span>
+          <span class="l-term-bar-title" data-i18n="l.hero.termTitle">visiteur@linuxdojo — bash</span>
         </div>
         <div class="l-term-body" id="hero-term">
 <span class="p">visiteur@linuxdojo:~$</span> whoami
@@ -76,14 +77,14 @@ Prêt. Clique sur ▶ Commencer pour entrer.</span>
   <!-- ══ STATS (chiffres réels du contenu, pas de faux compteurs) ══ -->
   <div class="l-stats">
     <div class="l-stats-row">
-      <span class="l-stat-chip"><b>60</b> missions</span>
-      <span class="l-stat-chip"><b>6</b> combats de boss</span>
-      <span class="l-stat-chip"><b>15</b> niveaux d'infiltration</span>
-      <span class="l-stat-chip"><b>20</b> défis chrono</span>
-      <span class="l-stat-chip"><b>7</b> katas de vitesse</span>
-      <span class="l-stat-chip"><b>0</b> compte requis</span>
-      <span class="l-stat-chip"><b>0 €</b> — gratuit</span>
-      <span class="l-stat-chip">Fonctionne <b>hors-ligne</b> (PWA)</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.missions"><b>60</b> missions</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.boss"><b>6</b> combats de boss</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.infil"><b>15</b> niveaux d'infiltration</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.challenges"><b>20</b> défis chrono</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.katas"><b>7</b> katas de vitesse</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.noAccount"><b>0</b> compte requis</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.free"><b>0 €</b> — gratuit</span>
+      <span class="l-stat-chip" data-i18n-html="l.stats.offline">Fonctionne <b>hors-ligne</b> (PWA)</span>
     </div>
   </div>
 
@@ -91,56 +92,56 @@ Prêt. Clique sur ▶ Commencer pour entrer.</span>
   <section class="l-section" id="modes">
     <div class="l-wrap">
       <div class="l-section-eyebrow">$ ls modes/</div>
-      <h2 class="l-section-title">Neuf façons d'apprendre le même shell</h2>
-      <p class="l-section-sub">Une leçon qui ennuie, tu l'oublies. Un boss qui te met la pression, tu t'en souviens. LinuxDojo enchaîne les formats pour que la commande finisse par rentrer toute seule.</p>
+      <h2 class="l-section-title" data-i18n="l.modes.title">Neuf façons d'apprendre le même shell</h2>
+      <p class="l-section-sub" data-i18n="l.modes.sub">Une leçon qui ennuie, tu l'oublies. Un boss qui te met la pression, tu t'en souviens. LinuxDojo enchaîne les formats pour que la commande finisse par rentrer toute seule.</p>
       <div class="l-modes-grid">
         <div class="l-mode-card">
           <div class="l-mode-icon">📖</div>
-          <h3>Apprendre</h3>
-          <p>10 scénarios réalistes, 60 missions : leçon → exercice → explication. Indices à 3 paliers pour ne jamais rester bloqué.</p>
-          <div class="l-mode-tag">10 scénarios · 60 missions</div>
+          <h3 data-i18n="l.mode.learn.t">Apprendre</h3>
+          <p data-i18n="l.mode.learn.d">10 scénarios réalistes, 60 missions : leçon → exercice → explication. Indices à 3 paliers pour ne jamais rester bloqué.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.learn.tag">10 scénarios · 60 missions</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">🗺</div>
-          <h3>Explorer</h3>
-          <p>Un monde ouvert navigable en commandes : inventaire, PNJ, portes verrouillées, 3 gemmes à réunir.</p>
-          <div class="l-mode-tag">18 zones · Aventure</div>
+          <h3 data-i18n="l.mode.explore.t">Explorer</h3>
+          <p data-i18n="l.mode.explore.d">Un monde ouvert navigable en commandes : inventaire, PNJ, portes verrouillées, 3 gemmes à réunir.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.explore.tag">18 zones · Aventure</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">⚡</div>
-          <h3>Défis</h3>
-          <p>Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à ×5.</p>
-          <div class="l-mode-tag">20 défis · Combo & record</div>
+          <h3 data-i18n="l.mode.challenge.t">Défis</h3>
+          <p data-i18n="l.mode.challenge.d">Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à ×5.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.challenge.tag">20 défis · Combo & record</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">🔐</div>
-          <h3>Infiltration</h3>
-          <p>Trouve le mot de passe caché. Fouille, filtre, décode (base64, ROT13, hex, double encodage).</p>
-          <div class="l-mode-tag">Style Bandit · 15 niveaux</div>
+          <h3 data-i18n="l.mode.bandit.t">Infiltration</h3>
+          <p data-i18n="l.mode.bandit.d">Trouve le mot de passe caché. Fouille, filtre, décode (base64, ROT13, hex, double encodage).</p>
+          <div class="l-mode-tag" data-i18n="l.mode.bandit.tag">Style Bandit · 15 niveaux</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">⚔️</div>
-          <h3>Salle des Boss</h3>
-          <p>6 combats épiques en plusieurs phases, jusqu'à l'examen du Sensei. Bats-le pour débloquer ton certificat.</p>
-          <div class="l-mode-tag">6 boss · Ceinture Noire</div>
+          <h3 data-i18n="l.mode.boss.t">Salle des Boss</h3>
+          <p data-i18n="l.mode.boss.d">6 combats épiques en plusieurs phases, jusqu'à l'examen du Sensei. Bats-le pour débloquer ton certificat.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.boss.tag">6 boss · Ceinture Noire</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">🥋</div>
-          <h3>Kata</h3>
-          <p>La mémoire musculaire du shell : des enchaînements de vraies commandes à taper au chrono. WPM & précision.</p>
-          <div class="l-mode-tag">7 katas · Vitesse & record</div>
+          <h3 data-i18n="l.mode.kata.t">Kata</h3>
+          <p data-i18n="l.mode.kata.d">La mémoire musculaire du shell : des enchaînements de vraies commandes à taper au chrono. WPM & précision.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.kata.tag">7 katas · Vitesse & record</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">🧪</div>
-          <h3>Bac à sable</h3>
-          <p>Terminal libre, sans objectif, avec ~50 commandes simulées et un système de fichiers explorable.</p>
-          <div class="l-mode-tag">Libre · Toutes commandes</div>
+          <h3 data-i18n="l.mode.sandbox.t">Bac à sable</h3>
+          <p data-i18n="l.mode.sandbox.d">Terminal libre, sans objectif, avec ~50 commandes simulées et un système de fichiers explorable.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.sandbox.tag">Libre · Toutes commandes</div>
         </div>
         <div class="l-mode-card">
           <div class="l-mode-icon">👤</div>
-          <h3>Profil</h3>
-          <p>Rangs, badges, objectifs, heatmap d'activité, thèmes déblocables — et un certificat téléchargeable.</p>
-          <div class="l-mode-tag">Rangs · Badges · Stats</div>
+          <h3 data-i18n="l.mode.profile.t">Profil</h3>
+          <p data-i18n="l.mode.profile.d">Rangs, badges, objectifs, heatmap d'activité, thèmes déblocables — et un certificat téléchargeable.</p>
+          <div class="l-mode-tag" data-i18n="l.mode.profile.tag">Rangs · Badges · Stats</div>
         </div>
       </div>
     </div>
@@ -150,21 +151,21 @@ Prêt. Clique sur ▶ Commencer pour entrer.</span>
   <section class="l-section-tight" id="why">
     <div class="l-wrap">
       <div class="l-section-eyebrow">$ man linuxdojo</div>
-      <h2 class="l-section-title">Ce qui rend le shell simulé crédible</h2>
-      <p class="l-section-sub">Pas une commande sur cinq qui plante si tu changes l'ordre des arguments. Le moteur du jeu, c'est un vrai petit shell.</p>
+      <h2 class="l-section-title" data-i18n="l.why.title">Ce qui rend le shell simulé crédible</h2>
+      <p class="l-section-sub" data-i18n="l.why.sub">Pas une commande sur cinq qui plante si tu changes l'ordre des arguments. Le moteur du jeu, c'est un vrai petit shell.</p>
       <div class="l-man">
-        <div class="l-man-rule"><span>LINUXDOJO(1)</span><span>Manuel de l'utilisateur</span><span>LINUXDOJO(1)</span></div>
+        <div class="l-man-rule"><span>LINUXDOJO(1)</span><span data-i18n="l.why.manTitle">Manuel de l'utilisateur</span><span>LINUXDOJO(1)</span></div>
         <h4>NAME</h4>
-        <p>linuxdojo — apprendre Linux en jouant, pour de vrai</p>
+        <p data-i18n="l.why.name">linuxdojo — apprendre Linux en jouant, pour de vrai</p>
         <h4>SYNOPSIS</h4>
-        <p>Ouvre un navigateur. <code>Aucune inscription requise.</code></p>
+        <p data-i18n-html="l.why.synopsis">Ouvre un navigateur. <code>Aucune inscription requise.</code></p>
         <h4>DESCRIPTION</h4>
-        <p>Un vrai mini-shell : <code>pipes</code>, <code>redirections</code>, variables, substitution de commande, boucles <code>for</code>/<code>while</code>, conditions <code>if</code>/<code>test</code>, et exécution de scripts — pas une liste figée à mémoriser.</p>
-        <p>Chaque mission suit le même rituel : une leçon courte, un exercice dans le terminal, une explication. Trois paliers d'indices existent pour ne jamais rester bloqué longtemps.</p>
-        <p>Le parcours se termine (ou recommence) dans la Salle des Boss : six combats en plusieurs phases, jusqu'à l'examen du Sensei et la Ceinture Noire.</p>
-        <p>Installable en PWA, jouable hors-ligne, sauvegarde locale — sans compte, sans serveur, sans pub.</p>
+        <p data-i18n-html="l.why.desc1">Un vrai mini-shell : <code>pipes</code>, <code>redirections</code>, variables, substitution de commande, boucles <code>for</code>/<code>while</code>, conditions <code>if</code>/<code>test</code>, et exécution de scripts — pas une liste figée à mémoriser.</p>
+        <p data-i18n="l.why.desc2">Chaque mission suit le même rituel : une leçon courte, un exercice dans le terminal, une explication. Trois paliers d'indices existent pour ne jamais rester bloqué longtemps.</p>
+        <p data-i18n="l.why.desc3">Le parcours se termine (ou recommence) dans la Salle des Boss : six combats en plusieurs phases, jusqu'à l'examen du Sensei et la Ceinture Noire.</p>
+        <p data-i18n="l.why.desc4">Installable en PWA, jouable hors-ligne, sauvegarde locale — sans compte, sans serveur, sans pub.</p>
         <h4>SEE ALSO</h4>
-        <p class="l-man-seealso"><a href="index.html">Explorer(1)</a>, <a href="index.html">Défis(1)</a>, <a href="index.html">Infiltration(1)</a>, <a href="index.html">Kata(1)</a>, <a href="index.html">Glossaire(1)</a></p>
+        <p class="l-man-seealso" data-i18n-html="l.why.seealso"><a href="index.html">Explorer(1)</a>, <a href="index.html">Défis(1)</a>, <a href="index.html">Infiltration(1)</a>, <a href="index.html">Kata(1)</a>, <a href="index.html">Glossaire(1)</a></p>
         <div class="l-man-rule"><span></span><span>LinuxDojo 1.0</span><span></span></div>
       </div>
     </div>
@@ -172,26 +173,27 @@ Prêt. Clique sur ▶ Commencer pour entrer.</span>
 
   <!-- ══ CTA FINAL ══════════════════════════════════════════ -->
   <section class="l-cta">
-    <h2>Le prochain <span class="grad">whoami</span> qui compte, c'est le tien.</h2>
-    <p>Gratuit, open-source, sans compte. Trois minutes suffisent pour taper ta première commande.</p>
+    <h2 data-i18n-html="l.cta.title">Le prochain <span class="grad">whoami</span> qui compte, c'est le tien.</h2>
+    <p data-i18n="l.cta.sub">Gratuit, open-source, sans compte. Trois minutes suffisent pour taper ta première commande.</p>
     <div class="l-hero-btns">
-      <a class="l-btn l-btn-primary" href="index.html">▶ Commencer gratuitement</a>
+      <a class="l-btn l-btn-primary" href="index.html" data-i18n="l.cta.start">▶ Commencer gratuitement</a>
     </div>
   </section>
 
   <footer class="l-footer">
     <div class="l-footer-row">
-      <span>© <span id="l-year">2026</span> LinuxDojo · Sous licence MIT</span>
+      <span>© <span id="l-year">2026</span> <span data-i18n="l.footer.lic">LinuxDojo · Sous licence MIT</span></span>
       <div class="l-footer-links">
-        <a href="index.html">Jouer</a>
-        <a href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener">Code source</a>
-        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contribuer</a>
-        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/ROADMAP.md" target="_blank" rel="noopener">Roadmap</a>
-        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/LICENSE" target="_blank" rel="noopener">Licence</a>
+        <a href="index.html" data-i18n="l.footer.play">Jouer</a>
+        <a href="https://github.com/tommarcorelli/LinuxDojo" target="_blank" rel="noopener" data-i18n="l.footer.source">Code source</a>
+        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" data-i18n="l.footer.contribute">Contribuer</a>
+        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/ROADMAP.md" target="_blank" rel="noopener" data-i18n="l.footer.roadmap">Roadmap</a>
+        <a href="https://github.com/tommarcorelli/LinuxDojo/blob/main/LICENSE" target="_blank" rel="noopener" data-i18n="l.footer.license">Licence</a>
       </div>
     </div>
   </footer>
 
+  <script src="js/i18n.js" defer></script>
   <script src="js/landing.js" defer></script>
 </body>
 </html>

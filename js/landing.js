@@ -14,10 +14,15 @@
 (() => {
   const el = document.getElementById("hero-term");
   if (!el) return;
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  const PROMPT = "visiteur@linuxdojo:~$ ";
-  const SEQUENCE = [
+  // Bilingue : `LANG` est défini par js/i18n.js, chargé avant ce script.
+  const isEN = (typeof LANG !== "undefined" && LANG === "en");
+  const PROMPT = isEN ? "visitor@linuxdojo:~$ " : "visiteur@linuxdojo:~$ ";
+  const SEQUENCE = isEN ? [
+    { cmd: "whoami", out: "visitor" },
+    { cmd: "cat programme.txt", out: "60 missions · 6 boss fights · 15 infiltration levels\n20 timed challenges · 1 Black Belt certificate" },
+    { cmd: "./linuxdojo --start", out: 'Loading the dojo... <span class="dim">[██████████] 100%</span>\nReady. Click ▶ Start to enter.' },
+  ] : [
     { cmd: "whoami", out: "visiteur" },
     { cmd: "cat programme.txt", out: "60 missions · 6 combats de boss · 15 niveaux d'infiltration\n20 défis chrono · 1 certificat de Ceinture Noire" },
     { cmd: "./linuxdojo --demarrer", out: 'Chargement du dojo... <span class="dim">[██████████] 100%</span>\nPrêt. Clique sur ▶ Commencer pour entrer.' },
@@ -25,6 +30,19 @@
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const promptSpan = cmd => '<span class="p">' + PROMPT + '</span>' + cmd;
+
+  // État final "tout tapé" — rendu tel quel si l'utilisateur préfère moins
+  // d'animations (garantit un hero traduit sans dépendre de l'animation).
+  const finalHTML = () => {
+    let done = "";
+    for (const step of SEQUENCE) done += promptSpan(step.cmd) + "\n" + '<span class="out">' + step.out + "</span>\n\n";
+    return done + promptSpan("") + '<span class="l-term-cursor"></span>';
+  };
+
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.innerHTML = finalHTML();
+    return;
+  }
 
   async function run() {
     let done = "";

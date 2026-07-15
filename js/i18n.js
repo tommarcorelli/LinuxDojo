@@ -285,6 +285,70 @@ const UI = {
     "cert.lockTitle": "Certificat de Ceinture Noire",
     "cert.lockSub": "Termine l'examen du Sensei dans la <strong>Salle des Boss</strong> pour le débloquer et le partager.",
     "cert.goBoss": "⚔️ Aller défier le Sensei",
+
+    // ── Page d'atterrissage (landing.html) ──
+    "l.nav.source": "Code source ↗",
+    "l.nav.play": "▶ Jouer",
+    "l.hero.eyebrow": "visiteur@linuxdojo<span class=\"l-eyebrow-caret\">:~$</span> apprendre --gratuit",
+    "l.hero.h1": "Apprends Linux.<br>Pour de <span class=\"grad\">vrai</span>.",
+    "l.hero.sub": "Pas un PDF, pas une liste de commandes à réciter. Un vrai mini-shell simulé — pipes, variables, scripts — avec 60 missions scénarisées, des combats de boss, et une Ceinture Noire à décrocher.",
+    "l.hero.start": "▶ Commencer gratuitement",
+    "l.hero.source": "Voir le code source",
+    "l.hero.note": "<strong>Aucune inscription. Aucune carte bancaire.</strong> Juste toi et un terminal.",
+    "l.hero.termTitle": "visiteur@linuxdojo — bash",
+    "l.stats.missions": "<b>60</b> missions",
+    "l.stats.boss": "<b>6</b> combats de boss",
+    "l.stats.infil": "<b>15</b> niveaux d'infiltration",
+    "l.stats.challenges": "<b>20</b> défis chrono",
+    "l.stats.katas": "<b>7</b> katas de vitesse",
+    "l.stats.noAccount": "<b>0</b> compte requis",
+    "l.stats.free": "<b>0 €</b> — gratuit",
+    "l.stats.offline": "Fonctionne <b>hors-ligne</b> (PWA)",
+    "l.modes.title": "Neuf façons d'apprendre le même shell",
+    "l.modes.sub": "Une leçon qui ennuie, tu l'oublies. Un boss qui te met la pression, tu t'en souviens. LinuxDojo enchaîne les formats pour que la commande finisse par rentrer toute seule.",
+    "l.mode.learn.t": "Apprendre",
+    "l.mode.learn.d": "10 scénarios réalistes, 60 missions : leçon → exercice → explication. Indices à 3 paliers pour ne jamais rester bloqué.",
+    "l.mode.learn.tag": "10 scénarios · 60 missions",
+    "l.mode.explore.t": "Explorer",
+    "l.mode.explore.d": "Un monde ouvert navigable en commandes : inventaire, PNJ, portes verrouillées, 3 gemmes à réunir.",
+    "l.mode.explore.tag": "18 zones · Aventure",
+    "l.mode.challenge.t": "Défis",
+    "l.mode.challenge.d": "Un problème, une commande, un chrono. Enchaîne pour un combo jusqu'à ×5.",
+    "l.mode.challenge.tag": "20 défis · Combo & record",
+    "l.mode.bandit.t": "Infiltration",
+    "l.mode.bandit.d": "Trouve le mot de passe caché. Fouille, filtre, décode (base64, ROT13, hex, double encodage).",
+    "l.mode.bandit.tag": "Style Bandit · 15 niveaux",
+    "l.mode.boss.t": "Salle des Boss",
+    "l.mode.boss.d": "6 combats épiques en plusieurs phases, jusqu'à l'examen du Sensei. Bats-le pour débloquer ton certificat.",
+    "l.mode.boss.tag": "6 boss · Ceinture Noire",
+    "l.mode.kata.t": "Kata",
+    "l.mode.kata.d": "La mémoire musculaire du shell : des enchaînements de vraies commandes à taper au chrono. WPM & précision.",
+    "l.mode.kata.tag": "7 katas · Vitesse & record",
+    "l.mode.sandbox.t": "Bac à sable",
+    "l.mode.sandbox.d": "Terminal libre, sans objectif, avec ~50 commandes simulées et un système de fichiers explorable.",
+    "l.mode.sandbox.tag": "Libre · Toutes commandes",
+    "l.mode.profile.t": "Profil",
+    "l.mode.profile.d": "Rangs, badges, objectifs, heatmap d'activité, thèmes déblocables — et un certificat téléchargeable.",
+    "l.mode.profile.tag": "Rangs · Badges · Stats",
+    "l.why.title": "Ce qui rend le shell simulé crédible",
+    "l.why.sub": "Pas une commande sur cinq qui plante si tu changes l'ordre des arguments. Le moteur du jeu, c'est un vrai petit shell.",
+    "l.why.manTitle": "Manuel de l'utilisateur",
+    "l.why.name": "linuxdojo — apprendre Linux en jouant, pour de vrai",
+    "l.why.synopsis": "Ouvre un navigateur. <code>Aucune inscription requise.</code>",
+    "l.why.desc1": "Un vrai mini-shell : <code>pipes</code>, <code>redirections</code>, variables, substitution de commande, boucles <code>for</code>/<code>while</code>, conditions <code>if</code>/<code>test</code>, et exécution de scripts — pas une liste figée à mémoriser.",
+    "l.why.desc2": "Chaque mission suit le même rituel : une leçon courte, un exercice dans le terminal, une explication. Trois paliers d'indices existent pour ne jamais rester bloqué longtemps.",
+    "l.why.desc3": "Le parcours se termine (ou recommence) dans la Salle des Boss : six combats en plusieurs phases, jusqu'à l'examen du Sensei et la Ceinture Noire.",
+    "l.why.desc4": "Installable en PWA, jouable hors-ligne, sauvegarde locale — sans compte, sans serveur, sans pub.",
+    "l.why.seealso": "<a href=\"index.html\">Explorer(1)</a>, <a href=\"index.html\">Défis(1)</a>, <a href=\"index.html\">Infiltration(1)</a>, <a href=\"index.html\">Kata(1)</a>, <a href=\"index.html\">Glossaire(1)</a>",
+    "l.cta.title": "Le prochain <span class=\"grad\">whoami</span> qui compte, c'est le tien.",
+    "l.cta.sub": "Gratuit, open-source, sans compte. Trois minutes suffisent pour taper ta première commande.",
+    "l.cta.start": "▶ Commencer gratuitement",
+    "l.footer.lic": "LinuxDojo · Sous licence MIT",
+    "l.footer.play": "Jouer",
+    "l.footer.source": "Code source",
+    "l.footer.contribute": "Contribuer",
+    "l.footer.roadmap": "Roadmap",
+    "l.footer.license": "Licence",
     "boss.retry": "⚔️ Réessayer le combat",
     "boss.hintReveal": "💡 {hint}",
     "boss.lockedTag": "Bats {n} boss pour débloquer l'examen",
@@ -640,6 +704,70 @@ const UI = {
     "cert.lockTitle": "Black Belt Certificate",
     "cert.lockSub": "Complete the Sensei's exam in the <strong>Boss Room</strong> to unlock and share it.",
     "cert.goBoss": "⚔️ Go challenge the Sensei",
+
+    // ── Landing page (landing.html) ──
+    "l.nav.source": "Source code ↗",
+    "l.nav.play": "▶ Play",
+    "l.hero.eyebrow": "visitor@linuxdojo<span class=\"l-eyebrow-caret\">:~$</span> learn --free",
+    "l.hero.h1": "Learn Linux.<br>For <span class=\"grad\">real</span>.",
+    "l.hero.sub": "Not a PDF, not a list of commands to recite. A real simulated mini-shell — pipes, variables, scripts — with 60 scripted missions, boss fights, and a Black Belt to earn.",
+    "l.hero.start": "▶ Start for free",
+    "l.hero.source": "View the source code",
+    "l.hero.note": "<strong>No sign-up. No credit card.</strong> Just you and a terminal.",
+    "l.hero.termTitle": "visitor@linuxdojo — bash",
+    "l.stats.missions": "<b>60</b> missions",
+    "l.stats.boss": "<b>6</b> boss fights",
+    "l.stats.infil": "<b>15</b> infiltration levels",
+    "l.stats.challenges": "<b>20</b> timed challenges",
+    "l.stats.katas": "<b>7</b> speed katas",
+    "l.stats.noAccount": "<b>0</b> account required",
+    "l.stats.free": "<b>$0</b> — free",
+    "l.stats.offline": "Works <b>offline</b> (PWA)",
+    "l.modes.title": "Nine ways to learn the same shell",
+    "l.modes.sub": "A boring lesson, you forget it. A boss that piles on the pressure, you remember it. LinuxDojo chains formats so the command finally sticks on its own.",
+    "l.mode.learn.t": "Learn",
+    "l.mode.learn.d": "10 realistic scenarios, 60 missions: lesson → exercise → explanation. 3-tier hints so you're never stuck.",
+    "l.mode.learn.tag": "10 scenarios · 60 missions",
+    "l.mode.explore.t": "Explore",
+    "l.mode.explore.d": "An open world navigated by commands: inventory, NPCs, locked doors, 3 gems to collect.",
+    "l.mode.explore.tag": "18 zones · Adventure",
+    "l.mode.challenge.t": "Challenges",
+    "l.mode.challenge.d": "One problem, one command, one timer. Chain them for a combo up to ×5.",
+    "l.mode.challenge.tag": "20 challenges · Combo & record",
+    "l.mode.bandit.t": "Infiltration",
+    "l.mode.bandit.d": "Find the hidden password. Search, filter, decode (base64, ROT13, hex, double encoding).",
+    "l.mode.bandit.tag": "Bandit-style · 15 levels",
+    "l.mode.boss.t": "Boss Room",
+    "l.mode.boss.d": "6 epic multi-phase fights, up to the Sensei's exam. Beat him to unlock your certificate.",
+    "l.mode.boss.tag": "6 bosses · Black Belt",
+    "l.mode.kata.t": "Kata",
+    "l.mode.kata.d": "Shell muscle memory: sequences of real commands to type against the clock. WPM & accuracy.",
+    "l.mode.kata.tag": "7 katas · Speed & record",
+    "l.mode.sandbox.t": "Sandbox",
+    "l.mode.sandbox.d": "A free terminal, no objective, with ~50 simulated commands and an explorable filesystem.",
+    "l.mode.sandbox.tag": "Free · All commands",
+    "l.mode.profile.t": "Profile",
+    "l.mode.profile.d": "Ranks, badges, objectives, activity heatmap, unlockable themes — and a downloadable certificate.",
+    "l.mode.profile.tag": "Ranks · Badges · Stats",
+    "l.why.title": "What makes the simulated shell believable",
+    "l.why.sub": "Not one command in five that breaks if you change the argument order. The game engine is a real little shell.",
+    "l.why.manTitle": "User manual",
+    "l.why.name": "linuxdojo — learn Linux by playing, for real",
+    "l.why.synopsis": "Open a browser. <code>No sign-up required.</code>",
+    "l.why.desc1": "A real mini-shell: <code>pipes</code>, <code>redirections</code>, variables, command substitution, <code>for</code>/<code>while</code> loops, <code>if</code>/<code>test</code> conditions, and script execution — not a frozen list to memorize.",
+    "l.why.desc2": "Every mission follows the same ritual: a short lesson, an exercise in the terminal, an explanation. Three hint tiers exist so you're never stuck for long.",
+    "l.why.desc3": "The journey ends (or restarts) in the Boss Room: six multi-phase fights, up to the Sensei's exam and the Black Belt.",
+    "l.why.desc4": "Installable as a PWA, playable offline, local save — no account, no server, no ads.",
+    "l.why.seealso": "<a href=\"index.html\">Explore(1)</a>, <a href=\"index.html\">Challenges(1)</a>, <a href=\"index.html\">Infiltration(1)</a>, <a href=\"index.html\">Kata(1)</a>, <a href=\"index.html\">Glossary(1)</a>",
+    "l.cta.title": "The next <span class=\"grad\">whoami</span> that matters is yours.",
+    "l.cta.sub": "Free, open-source, no account. Three minutes is enough to type your first command.",
+    "l.cta.start": "▶ Start for free",
+    "l.footer.lic": "LinuxDojo · MIT licensed",
+    "l.footer.play": "Play",
+    "l.footer.source": "Source code",
+    "l.footer.contribute": "Contribute",
+    "l.footer.roadmap": "Roadmap",
+    "l.footer.license": "License",
     "boss.retry": "⚔️ Retry the fight",
     "boss.hintReveal": "💡 {hint}",
     "boss.lockedTag": "Beat {n} bosses to unlock the exam",
@@ -971,7 +1099,8 @@ function applyStaticI18n(root) {
 
 // ── Sélecteur de langue dans la barre de navigation ─────────────
 function injectLangToggle() {
-  const host = document.querySelector(".nav-right");
+  // Barre de nav de l'app (index) ou de la page d'atterrissage (landing).
+  const host = document.querySelector(".nav-right") || document.querySelector(".l-nav-right");
   if (!host || document.getElementById("lang-toggle")) return;
   const btn = document.createElement("button");
   btn.id = "lang-toggle";
@@ -979,10 +1108,14 @@ function injectLangToggle() {
   btn.title = t("nav.lang");
   btn.setAttribute("aria-label", t("nav.lang"));
   btn.textContent = LANG === "fr" ? "🇫🇷" : "🇬🇧";
+  // Style inline minimal : rendu propre sur les deux pages sans dépendre du CSS.
+  btn.style.cssText = "background:none;border:none;cursor:pointer;font-size:20px;padding:2px 6px;line-height:1;";
   btn.addEventListener("click", () => setLang(LANG === "fr" ? "en" : "fr"));
-  // Placé avant le bouton son pour rester groupé avec les réglages.
+  // Placé avant le bouton son (index) pour rester groupé avec les réglages ;
+  // sinon (landing) simplement en tête de la barre.
   const sound = document.getElementById("sound-toggle");
-  if (sound) host.insertBefore(btn, sound); else host.appendChild(btn);
+  if (sound) host.insertBefore(btn, sound);
+  else host.insertBefore(btn, host.firstChild);
 }
 
 function initI18n() {

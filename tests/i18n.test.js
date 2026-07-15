@@ -116,13 +116,11 @@ test("aucune clé présente en FR n'est absente en EN (et inversement)", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// Cohérence index.html ↔ table de chaînes
+// Cohérence HTML ↔ table de chaînes (index.html ET landing.html)
 // ═══════════════════════════════════════════════════════════════
-test("toutes les clés data-i18n* d'index.html existent dans la table", () => {
-  const { UI } = loadI18n("fr-FR");
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+function keysInHtml(file) {
+  const html = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
   const keys = new Set();
-
   // data-i18n="k" et data-i18n-html="k"
   for (const m of html.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)) keys.add(m[1]);
   // data-i18n-attr="attr:k;attr2:k2"
@@ -132,11 +130,18 @@ test("toutes les clés data-i18n* d'index.html existent dans la table", () => {
       if (key) keys.add(key.trim());
     });
   }
+  return keys;
+}
 
-  assert(keys.size > 0, "aucune clé data-i18n trouvée dans index.html (annotation cassée ?)");
-  const missing = [...keys].filter(k => !(k in UI.fr) || !(k in UI.en));
-  assert(missing.length === 0, "clés utilisées dans le HTML mais absentes de la table : " + missing.join(", "));
-});
+for (const file of ["index.html", "landing.html"]) {
+  test(`toutes les clés data-i18n* de ${file} existent dans la table`, () => {
+    const { UI } = loadI18n("fr-FR");
+    const keys = keysInHtml(file);
+    assert(keys.size > 0, `aucune clé data-i18n trouvée dans ${file} (annotation cassée ?)`);
+    const missing = [...keys].filter(k => !(k in UI.fr) || !(k in UI.en));
+    assert(missing.length === 0, `clés utilisées dans ${file} mais absentes de la table : ` + missing.join(", "));
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 console.log(`\n${pass} test(s) réussi(s), ${fail} échec(s) sur ${pass + fail} au total.\n`);

@@ -259,8 +259,10 @@ que si vraiment décidé, car ils engagent sur la durée (maintenance double, ba
     docker logs) → rendus bilingues (`/propre|clean/`, `/d.marr.|started/`). Tout le jeu est
     désormais bilingue FR↔EN. Nouveaux helpers : `overlayBosses`/`overlayWorld`/`overlayArray`/
     `overlayIndexed`/`sh`/`dateLocale`. Tests : 127 (dont `levels-i18n.test.js` = 27).
-  - [ ] **Phase D — Finitions** : `landing.html`, meta OG/Twitter par langue, `<html lang>` déjà
-    dynamique, doc.
+  - [x] **Phase D — Finitions** : `landing.html` (page marketing) bilingue via le même moteur
+    `i18n.js` (annotée `data-i18n`, sélecteur 🇫🇷/🇬🇧 dans `.l-nav-right`, terminal animé du hero
+    bilingue dans `landing.js`), `og:locale:alternate en_US` déclaré (index + landing), `<html lang>`
+    dynamique. Test de couverture des clés étendu à `landing.html`. **i18n FR↔EN 100 % terminé.**
   Anciennes pistes écartées : dossier `/en/` dupliqué (double la maintenance), UI-seule
   (incomplet).
 - **Compte utilisateur + sync cross-device** — actuellement tout est en `localStorage`, donc
