@@ -52,8 +52,10 @@ XP, 8 rangs (Bleu → Légende), 15 badges, 17 objectifs transversaux, défi du 
 - Build de minification optionnel avant déploiement (`npm run build` → `dist/`,
   ~28 % de poids JS/CSS en moins) — voir [`CONTRIBUTING.md`](CONTRIBUTING.md#build-minification-avant-déploiement)
 - Analytics respectueux de la vie privée (GoatCounter, `js/analytics.js`) : **sans cookie**,
-  sans donnée perso, respecte Do Not Track / GPC, ne compte pas en local. **Désactivé par
-  défaut** — aucun tracking tant que `GC_CODE` n'est pas renseigné (voir l'en-tête du fichier)
+  sans donnée perso, respecte Do Not Track / GPC, ne compte pas en local. Le module est
+  config-gated (`GC_CODE`) ; l'instance officielle compte les visites et quelques évènements
+  anonymes (mission réussie, indice utilisé, boss vaincu) pour repérer les missions qui
+  bloquent et améliorer le contenu
 
 ## Tests
 

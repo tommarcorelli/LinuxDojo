@@ -196,10 +196,12 @@ Petites choses avec un bon rapport effort/valeur, à faire en premier.
       `GC_CODE` est vide, le module ne charge rien et ne track rien (no-op total). Expose
       `window.trackEvent(nom)` pour les évènements personnalisés à venir (mission échouée,
       certificat obtenu…), déjà sûr à appeler partout (no-op si l'analytics est inactive).
-      **Activation restante (hors code) :** créer le compte gratuit sur goatcounter.com et
-      renseigner `GC_CODE`. SW bumpé v18 → v19 (précache du nouveau module).
-      *Prochaine étape :* câbler les évènements par mission pour répondre pleinement au
-      « quelles missions bloquent » (nécessite l'analytics activée pour être vérifiable).
+      **ACTIVÉ le 2026-07-16** : compte créé, `GC_CODE = "marcorelli"` → dashboard sur
+      https://marcorelli.goatcounter.com. Évènements par mission câblés dans la foulée :
+      `mission-ok-{id}` (réussite), `mission-hint1/2/3-{id}` (paliers d'indices — le vrai
+      signal « cette mission bloque »), `boss-ok-{id}`, `daily-ok`, `certificat-telecharge`.
+      Tous les appels sont gardés par `typeof trackEvent === "function"` (harnais de test
+      vm sans analytics.js) et restent no-op si DNT/GPC est actif ou hors production.
 - [x] **Partage social des succès** — bouton "partager" sur le certificat et les badges
       (génère une image ou un lien préformaté pour Twitter/LinkedIn)
       → **Certificat** (`js/certificate.js`) : bouton « 📤 Partager » à côté du téléchargement.

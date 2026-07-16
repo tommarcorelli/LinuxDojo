@@ -209,6 +209,7 @@ function downloadCertificate() {
   link.download = "linuxdojo-ceinture-noire-" + ninjaName().replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".png";
   link.href = canvas.toDataURL("image/png");
   link.click();
+  if (typeof trackEvent === "function") trackEvent("certificat-telecharge");
   if (typeof SFX !== "undefined") SFX.levelup();
   if (typeof burstParticles === "function") burstParticles(window.innerWidth / 2, window.innerHeight / 2);
 }

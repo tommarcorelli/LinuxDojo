@@ -15,7 +15,7 @@
 // │  RIEN (no-op total). Aucun tracking n'est actif tant que tu n'as pas  │
 // │  fait ce choix explicite.                                             │
 // └───────────────────────────────────────────────────────────────────────┘
-const GC_CODE = ""; // ex: "linuxdojo" → https://linuxdojo.goatcounter.com
+const GC_CODE = "marcorelli"; // → https://marcorelli.goatcounter.com
 
 // ── Garde-fous confidentialité / propreté ──────────────────────────────────
 // On ne charge l'analytics que si : elle est configurée, le visiteur n'a pas

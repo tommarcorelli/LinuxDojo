@@ -479,6 +479,7 @@ function onReviewSuccess() {
 
 function onMissionSuccess(m) {
   GAME.completed.add(m.id);
+  if (typeof trackEvent === "function") trackEvent("mission-ok-" + m.id);
   if (exerciseStartedAt && Date.now() - exerciseStartedAt < 10000) {
     if (typeof markSecret === "function") markSecret("speedrun");
   }
@@ -558,6 +559,8 @@ $("btn-hint").addEventListener("click", () => {
   ht.style.display = "inline";
   if (tier.cost > 0) { GAME.xp = Math.max(0, GAME.xp - tier.cost); persist(); updateXPBar(); }
   hintLevel++;
+  // Palier 1/2/3 par mission → repère les missions où les joueurs bloquent
+  if (typeof trackEvent === "function") trackEvent("mission-hint" + hintLevel + "-" + currentMission.id);
   renderHintButton();
 });
 

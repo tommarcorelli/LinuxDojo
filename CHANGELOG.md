@@ -6,6 +6,13 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Analytics GoatCounter activée** — `GC_CODE = "marcorelli"` renseigné (dashboard :
+  https://marcorelli.goatcounter.com), et évènements personnalisés câblés :
+  `mission-ok-{id}` à chaque mission réussie, `mission-hint1/2/3-{id}` à chaque palier
+  d'indice consommé (signal principal pour repérer les missions qui bloquent),
+  `boss-ok-{id}`, `daily-ok` et `certificat-telecharge`. Appels gardés par
+  `typeof trackEvent === "function"` (no-op dans les harnais de test et si l'analytics
+  est inactive) ; les garde-fous existants (DNT/GPC, localhost) s'appliquent. SW v33 → v34.
 - **Serveur Discord communautaire** — invitation permanente (https://discord.gg/42NN5ZtzKp)
   intégrée sur la landing page (bouton ghost dans le CTA final + lien footer), dans la page
   Profil du jeu (bouton dans les Options) et dans le README. Textes bilingues via les clés

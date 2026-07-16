@@ -616,6 +616,7 @@ class BossMode {
     const first = !this.defeated.has(b.id);
     this.defeated.add(b.id);
     this._save();
+    if (typeof trackEvent === "function") trackEvent("boss-ok-" + b.id);
 
     this.avatarEl.style.filter = "grayscale(1) brightness(0.5)";
     if (typeof glitchElement === "function") glitchElement(this.avatarEl, 1200);

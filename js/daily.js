@@ -258,6 +258,7 @@ function _dailyRun() {
     _saveDaily({ date: today, done: true, idx, streak, best, attempts, gain, dayNumber: _dayNumber() });
 
     if (typeof addXP === "function") addXP(gain);
+    if (typeof trackEvent === "function") trackEvent("daily-ok");
     if (typeof SFX !== "undefined") SFX.success();
     if (typeof burstParticles === "function") burstParticles(window.innerWidth/2, window.innerHeight*0.35);
     _dailyTerm.printOk(t("daily.success", { gain }) + (streakBonus ? t("daily.successStreakBonus", { streak, bonus: streakBonus }) : t("daily.successBonus")));
