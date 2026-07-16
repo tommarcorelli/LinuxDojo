@@ -2023,6 +2023,189 @@ const CHAPTERS = [
       }
 
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 12,
+    title: "👥 Scénario 12 — Une nouvelle recrue (utilisateurs & groupes)",
+    scenario: "Sarah rejoint l'équipe d'administration lundi. À toi de préparer son arrivée : comprendre comment Linux stocke les comptes, créer le sien, lui donner un mot de passe et les bons droits — sans casser ceux des autres.",
+    missions: [
+
+      {
+        id: 67,
+        name: "Étape 1 — La carte des comptes",
+        cmd: "cat /etc/passwd",
+        xp: 35,
+        lesson: {
+          title: "<code>/etc/passwd</code> — Le registre des comptes",
+          intro: "Sur Linux, la liste des comptes est un simple fichier texte : <code>/etc/passwd</code>. Une ligne par compte, 7 champs séparés par <code>:</code> — nom, mot de passe (un <code>x</code> : le vrai hash est ailleurs, dans <code>/etc/shadow</code>), UID, GID, description, dossier personnel, shell.",
+          syntax: "nom:x:UID:GID:description:/home/nom:/bin/bash",
+          options: [
+            { flag: "UID",        desc: "L'identifiant numérique du compte — 0 = root, ≥1000 = humains" },
+            { flag: "x",          desc: "Le mot de passe n'est PAS ici : il est hashé dans /etc/shadow, illisible sans root" },
+            { flag: "/bin/bash",  desc: "Le shell lancé à la connexion (nologin = compte de service, connexion interdite)" },
+          ],
+          examples: [
+            { cmd: "cat /etc/passwd",           comment: "# tous les comptes de la machine" },
+            { cmd: "grep user /etc/passwd",     comment: "# la ligne d'un compte précis" },
+          ],
+          tip: "Les comptes avec /usr/sbin/nologin (www-data, daemon…) ne sont pas des humains : ce sont des comptes de service, qui font tourner des programmes sans droit de se connecter. Un serveur en est rempli, c'est normal."
+        },
+        desc: "Avant de créer le compte de Sarah, regarde comment sont faits les comptes existants : affiche <code>/etc/passwd</code>.",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "Arrivée lundi : Sarah (équipe admin).\nPrévoir : compte « sarah », mot de passe, droits sudo." },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "cat /etc/passwd",
+        check: (out, s) => /root:x:0:0/.test(out),
+        explanation: "Quatre comptes : root (UID 0, le super-utilisateur), deux comptes de service verrouillés (daemon, www-data — leur shell est nologin), et toi (user, UID 1000). Sarah recevra le prochain UID libre. Ce fichier est la référence : chaque outil de gestion de comptes ne fait que l'éditer proprement."
+      },
+
+      {
+        id: 68,
+        name: "Étape 2 — Créer le compte",
+        cmd: "useradd -m",
+        xp: 40,
+        lesson: {
+          title: "<code>useradd</code> — Créer un utilisateur",
+          intro: "<code>useradd</code> crée un compte : il ajoute la ligne dans <code>/etc/passwd</code>, attribue un UID, et — SEULEMENT si tu passes <code>-m</code> — crée le dossier personnel <code>/home/nom</code>. Sans <code>-m</code>, le compte existe mais n'a nulle part où poser ses fichiers : le piège classique du débutant.",
+          syntax: "useradd -m nom",
+          options: [
+            { flag: "-m", desc: "Crée le dossier personnel /home/nom (à ne JAMAIS oublier pour un humain)" },
+          ],
+          examples: [
+            { cmd: "useradd -m sarah",          comment: "# crée le compte ET son /home/sarah" },
+            { cmd: "grep sarah /etc/passwd",    comment: "# vérifie la nouvelle ligne" },
+          ],
+          tip: "useradd réussit en silence (pas de message = pas d'erreur). Vérifie ton travail avec grep sarah /etc/passwd ou ls /home — la confiance n'exclut pas le contrôle."
+        },
+        desc: "Crée le compte de Sarah — nom d'utilisateur <code>sarah</code> — avec son dossier personnel.",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "Compte à créer : sarah — AVEC dossier personnel (/home/sarah)." },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "useradd -m sarah",
+        check: (out, s) => s.useradd === "sarah" && s.useraddHome === true,
+        explanation: "Le compte existe : une nouvelle ligne dans /etc/passwd (UID 1001, regarde avec grep sarah /etc/passwd) et un /home/sarah tout neuf grâce à -m. Mais Sarah ne peut pas encore se connecter : son compte n'a pas de mot de passe."
+      },
+
+      {
+        id: 69,
+        name: "Étape 3 — Un vrai mot de passe",
+        cmd: "passwd",
+        xp: 40,
+        lesson: {
+          title: "<code>passwd</code> — Définir le mot de passe",
+          intro: "Un compte fraîchement créé par <code>useradd</code> est <strong>verrouillé</strong> : aucun mot de passe, donc aucune connexion possible. <code>passwd nom</code> le définit (la saisie est masquée : rien ne s'affiche quand on tape, c'est normal — pas même des étoiles sur un vrai système).",
+          syntax: "passwd [nom]",
+          options: [
+            { flag: "passwd",       desc: "Sans argument : change TON mot de passe" },
+            { flag: "passwd sarah", desc: "Change celui de sarah (réservé à root/sudo en vrai)" },
+          ],
+          examples: [
+            { cmd: "passwd sarah", comment: "# définit le mot de passe du compte sarah" },
+          ],
+          tip: "Le hash du mot de passe atterrit dans /etc/shadow, lisible uniquement par root — c'est pour ça que /etc/passwd n'affiche qu'un « x ». Séparer les deux fichiers a corrigé une vraie faille historique d'Unix."
+        },
+        desc: "Le compte de Sarah existe (recrée-le si besoin) mais il est verrouillé. Définis son mot de passe.",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "Compte sarah créé. Reste : mot de passe (passwd), puis droits sudo." },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "useradd -m sarah && passwd sarah",
+        check: (out, s) => s.passwd === "sarah",
+        explanation: "« password updated successfully » — Sarah peut maintenant se connecter. Il ne lui manque plus que les droits : par défaut, un nouveau compte ne peut administrer rien du tout, et c'est très bien comme ça (principe du moindre privilège)."
+      },
+
+      {
+        id: 70,
+        name: "Étape 4 — Les clés du sudo",
+        cmd: "usermod -aG",
+        xp: 45,
+        lesson: {
+          title: "<code>usermod -aG</code> — Ajouter à un groupe",
+          intro: "Les droits, sur Linux, passent par les <strong>groupes</strong> : appartenir au groupe <code>sudo</code> permet d'exécuter des commandes en administrateur. <code>usermod -aG groupe nom</code> ajoute un utilisateur à un groupe. Le <code>-a</code> (append) est VITAL : <code>-G</code> seul REMPLACE la liste des groupes au lieu d'ajouter — l'utilisateur perd tous ses autres groupes d'un coup.",
+          syntax: "usermod -aG groupe nom",
+          options: [
+            { flag: "-aG groupe", desc: "AJOUTE au groupe (les groupes existants sont conservés)" },
+            { flag: "-G groupe",  desc: "⚠️ REMPLACE tous les groupes secondaires par celui-là — presque jamais ce que tu veux" },
+          ],
+          examples: [
+            { cmd: "usermod -aG sudo sarah", comment: "# sarah rejoint le groupe sudo" },
+            { cmd: "groups sarah",           comment: "# vérifie ses groupes" },
+          ],
+          tip: "Le -G sans -a est un piège célèbre : des admins ont perdu leur propre accès sudo en voulant s'ajouter à un groupe docker. Réflexe à graver : usermod, c'est TOUJOURS -aG."
+        },
+        desc: "Sarah rejoint l'équipe d'administration : ajoute-la au groupe <code>sudo</code> (recrée son compte d'abord si besoin — et n'oublie pas le <code>-a</code>).",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "sarah : compte + mot de passe OK.\nReste : l'ajouter au groupe sudo (équipe admin).\n⚠️ usermod : toujours -aG, jamais -G seul." },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "useradd -m sarah && usermod -aG sudo sarah",
+        check: (out, s) => s.usermodAG === "sarah:sudo",
+        explanation: "Sarah est dans le groupe sudo — elle peut désormais administrer la machine. Grâce au -a, son groupe principal « sarah » est intact. Retiens la logique : on ne donne pas des droits à une personne, on l'ajoute à un groupe qui les possède."
+      },
+
+      {
+        id: 71,
+        name: "Étape 5 — Vérifier les accès",
+        cmd: "groups",
+        xp: 40,
+        lesson: {
+          title: "<code>groups</code> & <code>id</code> — Auditer un compte",
+          intro: "Ne jamais croire une modification sur parole : <code>groups nom</code> liste les groupes d'un utilisateur, et <code>id nom</code> donne la version détaillée (UID, GID, groupes avec leurs numéros). C'est aussi ta boîte à outils d'audit : « pourquoi ce collègue n'a-t-il pas accès ? » commence toujours par un <code>id</code>.",
+          syntax: "groups [nom]  ·  id [nom]",
+          options: [
+            { flag: "groups",     desc: "Liste simple des groupes (les tiens sans argument)" },
+            { flag: "id",         desc: "UID + GID + groupes avec identifiants numériques" },
+          ],
+          examples: [
+            { cmd: "groups sarah", comment: "# sarah : sarah sudo" },
+            { cmd: "id sarah",     comment: "# uid=1001(sarah) gid=1001(sarah) groupes=…" },
+          ],
+          tip: "Sur un vrai système, un utilisateur ajouté à un groupe doit se déconnecter/reconnecter pour que ses nouvelles sessions en héritent — si « ça ne marche pas », c'est souvent juste ça."
+        },
+        desc: "Refais l'installation complète du compte (création + groupe sudo), puis vérifie avec <code>groups</code> que Sarah est bien dans <code>sudo</code>.",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "Avant de clore le ticket : vérifier les groupes de sarah.\nAttendu : sarah sudo" },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "useradd -m sarah && usermod -aG sudo sarah && groups sarah",
+        check: (out, s) => s.groups === "sarah" && /\bsudo\b/.test(out),
+        explanation: "« sarah : sarah sudo » — les droits sont en place et VÉRIFIÉS. Comme au scénario précédent : une modification non vérifiée n'existe pas. Dernière étape : se mettre dans la peau de Sarah pour tester son compte de l'intérieur."
+      },
+
+      {
+        id: 72,
+        name: "Étape 6 — Dans la peau de Sarah",
+        cmd: "su",
+        xp: 50,
+        lesson: {
+          title: "<code>su</code> — Changer d'identité",
+          intro: "<code>su nom</code> (switch user) ouvre une session au nom d'un autre utilisateur, dans ton terminal : le prompt change, et <code>whoami</code> le confirme. C'est LE moyen de tester un compte fraîchement créé — si toi tu n'arrives pas à l'utiliser, l'utilisateur n'y arrivera pas non plus. <code>exit</code> te rend ton identité.",
+          syntax: "su nom  ·  exit",
+          options: [
+            { flag: "su nom", desc: "Devient cet utilisateur (mot de passe requis — le compte doit en avoir un !)" },
+            { flag: "exit",   desc: "Quitte la session et redevient l'utilisateur précédent" },
+          ],
+          examples: [
+            { cmd: "su sarah", comment: "# devient sarah (il faut son mot de passe)" },
+            { cmd: "whoami",   comment: "# → sarah : la preuve" },
+          ],
+          tip: "su sur un compte SANS mot de passe échoue (Authentication failure) — c'est pour ça que su root échoue sur Ubuntu : le compte root y est volontairement verrouillé, on passe par sudo à la place."
+        },
+        desc: "Test final : recrée le compte complet (avec mot de passe !), deviens <code>sarah</code> avec <code>su</code>, et prouve-le avec <code>whoami</code>.",
+        fs: {
+          "notes-rh.txt": { type: "file", content: "Recette finale : useradd -m, passwd, puis su sarah + whoami.\nRappel : su échoue sur un compte sans mot de passe." },
+          "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nuser:x:1000:1000:user:/home/user:/bin/bash" },
+        },
+        hint: "useradd -m sarah && passwd sarah && su sarah && whoami",
+        check: (out, s) => s.su === "sarah" && /\bsarah\b/.test(out),
+        explanation: "Le prompt affiche sarah@dojo et whoami répond « sarah » : le compte fonctionne de bout en bout. Création, mot de passe, groupes, vérification, test réel — tu viens de dérouler l'onboarding complet d'un utilisateur, le geste que tout admin répète à chaque arrivée dans l'équipe. Tape exit pour redevenir toi. 👥"
+      }
+
+    ]
   }
 ];
 

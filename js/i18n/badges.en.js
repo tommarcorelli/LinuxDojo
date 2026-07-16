@@ -16,6 +16,7 @@ const BADGES_EN = {
   chapter9:    { label: "🌐 Cyber-nomad" },
   chapter10:   { label: "🐳 Container Captain" },
   chapter11:   { label: "🚨 On-Call Firefighter" },
+  chapter12:   { label: "👥 Account Keeper" },
   master:      { label: "⚡ Linux Master" },
   xp100:       { label: "💯 Centurion" },
   xp500:       { label: "🔥 Inferno" },

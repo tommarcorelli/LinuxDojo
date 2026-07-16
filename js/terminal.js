@@ -36,6 +36,9 @@ class Terminal {
     this._git = null;   // dépôt git simulé (null tant que 'git init' n'a pas été fait)
     this._docker = null; // daemon docker simulé (images/conteneurs) — créé au premier usage
     this._services = null; // services systemd simulés — créés au premier systemctl/journalctl
+    this._users = null;  // comptes simulés (useradd/passwd/usermod/groups/su) — lazy
+    this._curUser = "user"; // utilisateur courant (changé par su, lu par whoami/id)
+    this._suStack = [];  // pile des utilisateurs précédents avant chaque 'su' (pour 'exit')
     this._sshStack = []; // pile des prompts précédents avant chaque 'ssh' (pour 'exit')
   }
 
@@ -68,7 +71,22 @@ class Terminal {
     this._git = null;
     this._docker = null;
     this._services = null;
+    this._users = null;
+    this._curUser = "user";
+    this._suStack = [];
     this._sshStack = [];
+  }
+
+  // ── Comptes utilisateurs simulés ──────────────────────────────
+  // user (le joueur) a déjà un mot de passe ; root est verrouillé (pas de
+  // mot de passe, comme sur Ubuntu) — su root échoue donc, c'est voulu.
+  _initUsers() {
+    if (this._users) return;
+    this._users = {
+      root: { uid: 0,    groups: ["root"],         hasPassword: false },
+      user: { uid: 1000, groups: ["user", "sudo"], hasPassword: true },
+    };
+    this._nextUid = 1001;
   }
 
   // ── Services systemd simulés ──────────────────────────────────
@@ -269,7 +287,7 @@ class Terminal {
     }
 
     // Commandes connues proches
-    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl"];
+    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
       return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`, `${cmd}: command not found\n💡 Did you mean: ${close} ?`);
@@ -299,7 +317,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -1353,6 +1371,88 @@ class Terminal {
         break;
       }
 
+      case "useradd": {
+        this._initUsers();
+        const mkHome = args.includes("-m");
+        const name = args.find(a => !a.startsWith("-"));
+        if (!name) { out = sh("useradd : il manque le nom du compte\nUsage : useradd -m NOM", "useradd: missing account name\nUsage: useradd -m NAME"); err = true; break; }
+        if (this._users[name]) { out = sh(`useradd : l'utilisateur « ${name} » existe déjà`, `useradd: user '${name}' already exists`); err = true; break; }
+        const uid = this._nextUid++;
+        this._users[name] = { uid, groups: [name], hasPassword: false };
+        if (mkHome) {
+          this.fs["/home/" + name] = { type: "dir" };
+          this._ensureParents("/home/" + name);
+          this.state.useraddHome = true;
+        }
+        // /etc/passwd gagne sa ligne, comme sur un vrai système
+        const pw = this.fs["/etc/passwd"];
+        if (pw && pw.type === "file") pw.content = (pw.content || "").replace(/\n?$/, "") + `\n${name}:x:${uid}:${uid}::/home/${name}:/bin/bash`;
+        this.state.useradd = name;
+        out = ""; // comme le vrai useradd : silencieux quand tout va bien
+        break;
+      }
+
+      case "passwd": {
+        this._initUsers();
+        const name = args.find(a => !a.startsWith("-")) || this._curUser;
+        const u = this._users[name];
+        if (!u) { out = sh(`passwd : l'utilisateur « ${name} » n'existe pas`, `passwd: user '${name}' does not exist`); err = true; break; }
+        u.hasPassword = true;
+        this.state.passwd = name;
+        out = sh("Nouveau mot de passe : ********\nRetapez le nouveau mot de passe : ********\npasswd : mot de passe mis à jour avec succès", "New password: ********\nRetype new password: ********\npasswd: password updated successfully");
+        break;
+      }
+
+      case "usermod": {
+        this._initUsers();
+        const flagStr = args.filter(a => a.startsWith("-")).join("");
+        const rest = args.filter(a => !a.startsWith("-"));
+        const hasA = flagStr.includes("a"), hasG = flagStr.includes("G");
+        if (!hasG || rest.length < 2) { out = sh("usermod : usage : usermod -aG GROUPE UTILISATEUR\n(-a = ajouter au groupe, sans écraser les groupes existants)", "usermod: usage: usermod -aG GROUP USER\n(-a = append to the group, without wiping the existing ones)"); err = true; break; }
+        const [group, name] = rest;
+        const u = this._users[name];
+        if (!u) { out = sh(`usermod : l'utilisateur « ${name} » n'existe pas`, `usermod: user '${name}' does not exist`); err = true; break; }
+        if (hasA) {
+          if (!u.groups.includes(group)) u.groups.push(group);
+          this.state.usermodAG = `${name}:${group}`;
+        } else {
+          // -G sans -a : REMPLACE les groupes secondaires — le piège classique,
+          // fidèlement simulé (la leçon du scénario 12 le désamorce)
+          u.groups = [name, group].filter((g, i, a) => a.indexOf(g) === i);
+          this.state.usermodG = `${name}:${group}`;
+        }
+        out = "";
+        break;
+      }
+
+      case "groups": {
+        this._initUsers();
+        const name = args.find(a => !a.startsWith("-")) || this._curUser;
+        const u = this._users[name];
+        if (!u) { out = sh(`groups : « ${name} » : utilisateur inexistant`, `groups: '${name}': no such user`); err = true; break; }
+        this.state.groups = name;
+        out = `${name} : ${u.groups.join(" ")}`;
+        break;
+      }
+
+      case "su": {
+        this._initUsers();
+        const name = args.find(a => a !== "-" && !a.startsWith("-")) || "root";
+        const u = this._users[name];
+        if (!u) { out = sh(`su : l'utilisateur ${name} n'existe pas`, `su: user ${name} does not exist`); err = true; break; }
+        if (name === this._curUser) { out = sh(`Tu es déjà ${name}.`, `You already are ${name}.`); break; }
+        if (!u.hasPassword) {
+          out = sh(`Mot de passe :\nsu : Échec de l'authentification\n💡 Ce compte n'a pas de mot de passe — définis-le d'abord : passwd ${name}`, `Password:\nsu: Authentication failure\n💡 This account has no password — set one first: passwd ${name}`);
+          err = true; break;
+        }
+        this._suStack.push({ ps1: this.ps1User, user: this._curUser });
+        this._curUser = name;
+        this.ps1User = this.ps1User.replace(/^[^@]+/, name);
+        this.state.su = name;
+        out = "";
+        break;
+      }
+
       case "alias": {
         if (!args.length) {
           const entries = Object.entries(this._aliases);
@@ -1591,8 +1691,16 @@ class Terminal {
         break;
       }
 
-      case "whoami": { out = "user"; break; }
-      case "id":     { out = sh("uid=1000(user) gid=1000(user) groupes=1000(user),27(sudo)", "uid=1000(user) gid=1000(user) groups=1000(user),27(sudo)"); break; }
+      case "whoami": { out = this._curUser; break; }
+      case "id": {
+        this._initUsers();
+        const who = args.find(a => !a.startsWith("-")) || this._curUser;
+        const u = this._users[who];
+        if (!u) { out = `id: '${who}': ` + sh("utilisateur inexistant", "no such user"); err = true; break; }
+        const gidOf = g => g === "root" ? 0 : g === "sudo" ? 27 : g === who ? u.uid : 1000;
+        out = `uid=${u.uid}(${who}) gid=${gidOf(who)}(${who}) ` + sh("groupes", "groups") + `=${u.groups.map(g => `${gidOf(g)}(${g})`).join(",")}`;
+        break;
+      }
 
       case "df": {
         out = [
@@ -2144,6 +2252,15 @@ class Terminal {
 
       case "exit":
       case "logout": {
+        if (this._suStack.length) {
+          const prev = this._suStack.pop();
+          const left = this._curUser;
+          this._curUser = prev.user;
+          this.ps1User = prev.ps1;
+          this.state.suExit = left;
+          out = sh(`déconnexion — retour à ${prev.user}`, `logout — back to ${prev.user}`);
+          break;
+        }
         if (this._sshStack.length) {
           const prevUser = this._sshStack.pop();
           const leftHost = this.state.sshHost;
@@ -2183,6 +2300,7 @@ class Terminal {
           "Git :  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b nom",
           "Docker :  docker build -t nom . · docker images · docker run -d --name nom image · docker ps [-a] · docker logs nom · docker stop nom",
           "Services :  systemctl status|start|stop|restart|enable NOM · systemctl list-units --type=service · journalctl -u NOM [-n N]",
+          "Utilisateurs :  useradd -m NOM · passwd NOM · usermod -aG GROUPE NOM · groups NOM · id NOM · su NOM (exit pour revenir)",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · Ctrl+R recherche dans l'historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",
@@ -2210,6 +2328,7 @@ class Terminal {
           "Git:  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b name",
           "Docker:  docker build -t name . · docker images · docker run -d --name name image · docker ps [-a] · docker logs name · docker stop name",
           "Services:  systemctl status|start|stop|restart|enable NAME · systemctl list-units --type=service · journalctl -u NAME [-n N]",
+          "Users:  useradd -m NAME · passwd NAME · usermod -aG GROUP NAME · groups NAME · id NAME · su NAME (exit to come back)",
           "Tips: Tab autocompletes (even paths) · ↑/↓ history · Ctrl+R search in history · man grep for the manual",
           "Key ? (outside input): opens the keyboard shortcuts screen",
           "",

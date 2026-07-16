@@ -28,6 +28,14 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **Scénario 12 — Une nouvelle recrue (utilisateurs & groupes)** (2026-07-16) —
+  `useradd` (-m, /etc/passwd mis à jour dynamiquement), `passwd`, `usermod` (-aG ajoute,
+  -G seul REMPLACE — le piège réel est simulé fidèlement), `groups`, `id NOM`, `su`
+  (échec d'authentification sur compte sans mot de passe, prompt + whoami changent,
+  `exit` restaure) dans le terminal. 6 missions (67-72) : onboarding complet de « Sarah »
+  (lire /etc/passwd → useradd -m → passwd → usermod -aG sudo → groups → su + whoami).
+  Quiz 12, objectif « 👥 Ceinture Comptes », badge « 👥 Gardien des comptes », overlay EN
+  complet, 8 tests (144 au total). Compteurs : 72 missions / 12 scénarios partout
 - **Scénario 11 — Le site est tombé (services & logs)** (2026-07-16) — `systemctl`
   (status/start/stop/restart/enable/disable/list-units) et `journalctl` (-u, -n) simulés
   dans le terminal, avec un vrai conflit à diagnostiquer : nginx en `failed` parce
@@ -312,9 +320,6 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 `top`… De quoi nourrir plusieurs scénarios.)*
 
 **Nouveaux scénarios (contenu) :**
-- [ ] **Scénario 12 — Utilisateurs & groupes** : `useradd`, `passwd`, `usermod -aG`,
-      `groups`, `su`, lecture de `/etc/passwd` / `/etc/group`. Trame : onboarding d'un
-      nouvel admin dans l'équipe.
 - [ ] **Scénario 13 — Planification (cron)** : `crontab -l` / `-e` simulé, syntaxe à 5
       champs. Suite logique du scénario scripts : « automatise la sauvegarde de cette nuit ».
 - [ ] **Scénario 14 — Réseau niveau 2** : `ip a`, `dig`, `nslookup`, `curl` vers une API

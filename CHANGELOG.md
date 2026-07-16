@@ -6,6 +6,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Scénario 12 — « Une nouvelle recrue » (utilisateurs & groupes)** : `useradd` (avec
+  `-m` et mise à jour dynamique de `/etc/passwd`), `passwd`, `usermod` (le piège réel
+  est simulé : `-aG` ajoute, `-G` seul **remplace** les groupes), `groups`, `id NOM` et
+  `su` rejoignent le terminal. `su` échoue avec « Échec de l'authentification » sur un
+  compte sans mot de passe (comme `su root` sur Ubuntu), change le prompt et `whoami`,
+  et `exit` restaure l'identité précédente. 6 missions (ids 67-72) : l'onboarding complet
+  de Sarah — lire `/etc/passwd`, créer le compte, mot de passe, groupe sudo, vérification
+  (`groups`/`id`), test réel en `su`. Quiz 12, objectif « 👥 Ceinture Comptes », badge
+  « 👥 Gardien des comptes », traduction EN complète, entrées `help` + autocomplétion.
+  8 tests unitaires dédiés (144 au total). Compteurs : **72 missions / 12 scénarios**.
+  SW v35 → v36.
 - **Scénario 11 — « Le site est tombé » (services & logs systemd)** : `systemctl`
   (status/start/stop/restart/enable/disable/list-units) et `journalctl` (-u, -n) rejoignent
   le terminal simulé, avec un état de services persistant par mission et un **vrai conflit

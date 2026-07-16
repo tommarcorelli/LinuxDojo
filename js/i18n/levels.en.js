@@ -1449,6 +1449,133 @@ const LEVELS_EN = {
     },
   },
 
+  // ══ Scénario 12 — Une nouvelle recrue (utilisateurs & groupes) ══
+  12: {
+    title: "👥 Scenario 12 — A new recruit (users & groups)",
+    scenario: "Sarah joins the admin team on Monday. Your job: prepare her arrival — understand how Linux stores accounts, create hers, give her a password and the right permissions, without breaking anyone else's.",
+    missions: {
+      67: {
+        name: "Step 1 — The map of accounts",
+        lesson: {
+          title: "<code>/etc/passwd</code> — The account registry",
+          intro: "On Linux, the list of accounts is a plain text file: <code>/etc/passwd</code>. One line per account, 7 fields separated by <code>:</code> — name, password (an <code>x</code>: the real hash lives elsewhere, in <code>/etc/shadow</code>), UID, GID, description, home directory, shell.",
+          syntax: "name:x:UID:GID:description:/home/name:/bin/bash",
+          options: [
+            "The account's numeric identifier — 0 = root, ≥1000 = humans",
+            "The password is NOT here: it's hashed in /etc/shadow, unreadable without root",
+            "The shell launched at login (nologin = service account, login forbidden)",
+          ],
+          examples: [
+            "# every account on the machine",
+            "# the line of one specific account",
+          ],
+          tip: "Accounts with /usr/sbin/nologin (www-data, daemon…) aren't humans: they're service accounts, running programs with no right to log in. A server is full of them, that's normal.",
+        },
+        desc: "Before creating Sarah's account, look at how the existing ones are made: display <code>/etc/passwd</code>.",
+        hint: "cat /etc/passwd",
+        explanation: "Four accounts: root (UID 0, the superuser), two locked service accounts (daemon, www-data — their shell is nologin), and you (user, UID 1000). Sarah will get the next free UID. This file is the reference: every account-management tool merely edits it cleanly.",
+      },
+      68: {
+        name: "Step 2 — Create the account",
+        lesson: {
+          title: "<code>useradd</code> — Create a user",
+          intro: "<code>useradd</code> creates an account: it adds the line in <code>/etc/passwd</code>, assigns a UID, and — ONLY if you pass <code>-m</code> — creates the <code>/home/name</code> home directory. Without <code>-m</code>, the account exists but has nowhere to put its files: the classic beginner trap.",
+          syntax: "useradd -m name",
+          options: [
+            "Creates the /home/name home directory (NEVER forget it for a human)",
+          ],
+          examples: [
+            "# creates the account AND its /home/sarah",
+            "# check the new line",
+          ],
+          tip: "useradd succeeds silently (no message = no error). Check your work with grep sarah /etc/passwd or ls /home — trust doesn't exclude control.",
+        },
+        desc: "Create Sarah's account — username <code>sarah</code> — with her home directory.",
+        hint: "useradd -m sarah",
+        explanation: "The account exists: a new line in /etc/passwd (UID 1001, look with grep sarah /etc/passwd) and a brand-new /home/sarah thanks to -m. But Sarah can't log in yet: her account has no password.",
+      },
+      69: {
+        name: "Step 3 — A real password",
+        lesson: {
+          title: "<code>passwd</code> — Set the password",
+          intro: "An account freshly created by <code>useradd</code> is <strong>locked</strong>: no password, so no login possible. <code>passwd name</code> sets it (typing is hidden: nothing shows up as you type, that's normal — not even stars on a real system).",
+          syntax: "passwd [name]",
+          options: [
+            "Without argument: changes YOUR password",
+            "Changes sarah's (reserved to root/sudo in real life)",
+          ],
+          examples: [
+            "# sets the sarah account's password",
+          ],
+          tip: "The password hash lands in /etc/shadow, readable only by root — that's why /etc/passwd only shows an “x”. Splitting the two files fixed a real historical Unix flaw.",
+        },
+        desc: "Sarah's account exists (recreate it if needed) but it's locked. Set her password.",
+        hint: "useradd -m sarah && passwd sarah",
+        explanation: "“password updated successfully” — Sarah can now log in. All she's missing is permissions: by default, a new account can administer nothing at all, and that's exactly right (principle of least privilege).",
+      },
+      70: {
+        name: "Step 4 — The keys to sudo",
+        lesson: {
+          title: "<code>usermod -aG</code> — Add to a group",
+          intro: "Permissions on Linux go through <strong>groups</strong>: belonging to the <code>sudo</code> group lets you run commands as an administrator. <code>usermod -aG group name</code> adds a user to a group. The <code>-a</code> (append) is VITAL: <code>-G</code> alone REPLACES the group list instead of adding — the user loses all their other groups at once.",
+          syntax: "usermod -aG group name",
+          options: [
+            "ADDS to the group (existing groups are kept)",
+            "⚠️ REPLACES all secondary groups with this one — almost never what you want",
+          ],
+          examples: [
+            "# sarah joins the sudo group",
+            "# check her groups",
+          ],
+          tip: "-G without -a is a famous trap: admins have lost their own sudo access while trying to add themselves to a docker group. Reflex to engrave: usermod is ALWAYS -aG.",
+        },
+        desc: "Sarah joins the admin team: add her to the <code>sudo</code> group (recreate her account first if needed — and don't forget the <code>-a</code>).",
+        hint: "useradd -m sarah && usermod -aG sudo sarah",
+        explanation: "Sarah is in the sudo group — she can now administer the machine. Thanks to -a, her primary group “sarah” is intact. Remember the logic: you don't grant rights to a person, you add them to a group that holds them.",
+      },
+      71: {
+        name: "Step 5 — Verify the access",
+        lesson: {
+          title: "<code>groups</code> & <code>id</code> — Audit an account",
+          intro: "Never take a change at its word: <code>groups name</code> lists a user's groups, and <code>id name</code> gives the detailed version (UID, GID, groups with their numbers). It's also your audit toolbox: “why doesn't this colleague have access?” always starts with an <code>id</code>.",
+          syntax: "groups [name]  ·  id [name]",
+          options: [
+            "Simple list of groups (yours without an argument)",
+            "UID + GID + groups with numeric identifiers",
+          ],
+          examples: [
+            "# sarah : sarah sudo",
+            "# uid=1001(sarah) gid=1001(sarah) groups=…",
+          ],
+          tip: "On a real system, a user added to a group must log out and back in for new sessions to inherit it — when “it doesn't work”, it's often just that.",
+        },
+        desc: "Redo the full account setup (creation + sudo group), then check with <code>groups</code> that Sarah is indeed in <code>sudo</code>.",
+        hint: "useradd -m sarah && usermod -aG sudo sarah && groups sarah",
+        explanation: "“sarah : sarah sudo” — the permissions are in place and VERIFIED. Like in the previous scenario: an unverified change doesn't exist. Last step: step into Sarah's shoes to test her account from the inside.",
+      },
+      72: {
+        name: "Step 6 — In Sarah's shoes",
+        lesson: {
+          title: "<code>su</code> — Switch identity",
+          intro: "<code>su name</code> (switch user) opens a session as another user, inside your terminal: the prompt changes, and <code>whoami</code> confirms it. It's THE way to test a freshly created account — if you can't use it, the user won't either. <code>exit</code> gives you your identity back.",
+          syntax: "su name  ·  exit",
+          options: [
+            "Becomes that user (password required — the account must have one!)",
+            "Leaves the session and becomes the previous user again",
+          ],
+          examples: [
+            "# become sarah (her password is required)",
+            "# → sarah: the proof",
+          ],
+          tip: "su on an account WITHOUT a password fails (Authentication failure) — that's why su root fails on Ubuntu: the root account is deliberately locked there, you go through sudo instead.",
+        },
+        desc: "Final test: recreate the full account (with a password!), become <code>sarah</code> with <code>su</code>, and prove it with <code>whoami</code>.",
+        hint: "useradd -m sarah && passwd sarah && su sarah && whoami",
+        explanation: "The prompt shows sarah@dojo and whoami answers “sarah”: the account works end to end. Creation, password, groups, verification, real test — you just ran a user's complete onboarding, the move every admin repeats at each team arrival. Type exit to become yourself again. 👥",
+      },
+    },
+  },
+
 };
 
 if (typeof overlayLevels === "function") overlayLevels(LEVELS_EN);

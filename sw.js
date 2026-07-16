@@ -1,5 +1,5 @@
-// sw.js — Service Worker LinuxDojo v35
-const CACHE = "linuxdojo-v35";
+// sw.js — Service Worker LinuxDojo v36
+const CACHE = "linuxdojo-v36";
 const ASSETS = [
   "./","./index.html","./css/style.css",
   "./js/errors.js","./js/i18n.js",

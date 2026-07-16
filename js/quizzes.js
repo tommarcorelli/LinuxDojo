@@ -61,6 +61,12 @@ const QUIZZES = {
     { q: "Que signifie l'erreur « Address already in use » au démarrage d'un serveur web ?", options: ["Le disque est plein", "Un autre service occupe déjà le même port", "Le fichier de config est absent", "Le service n'est pas installé"], answer: 1 },
     { q: "Quelle est la différence entre « start » et « enable » ?", options: ["Aucune, ce sont des synonymes", "start = au prochain boot, enable = maintenant", "start = maintenant, enable = automatiquement à chaque boot", "enable est réservé à root"], answer: 2 },
   ],
+  12: [
+    { q: "Que contient réellement /etc/passwd ?", options: ["Les mots de passe en clair", "La liste des comptes (les hashs sont dans /etc/shadow)", "Uniquement le compte root", "L'historique des connexions"], answer: 1 },
+    { q: "À quoi sert le -m de « useradd -m sarah » ?", options: ["Mode silencieux", "Créer aussi le dossier personnel /home/sarah", "Donner les droits sudo", "Définir le mot de passe"], answer: 1 },
+    { q: "Pourquoi TOUJOURS -aG (et pas -G seul) avec usermod ?", options: ["C'est plus rapide", "-G seul est interdit", "Sans -a, la liste des groupes est REMPLACÉE au lieu d'être complétée", "-a rend la modification permanente"], answer: 2 },
+    { q: "Que se passe-t-il avec « su sarah » si le compte n'a pas de mot de passe ?", options: ["Ça fonctionne directement", "Le compte est supprimé", "Échec d'authentification : il faut d'abord passwd sarah", "su crée le mot de passe"], answer: 2 },
+  ],
 };
 
 const Quiz = {

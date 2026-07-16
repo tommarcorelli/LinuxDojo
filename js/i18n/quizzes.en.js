@@ -67,6 +67,12 @@ const QUIZZES_EN = {
     { q: "What does the « Address already in use » error mean when a web server starts?", options: ["The disk is full", "Another service already occupies the same port", "The config file is missing", "The service isn't installed"] },
     { q: "What's the difference between « start » and « enable »?", options: ["None, they're synonyms", "start = at next boot, enable = right now", "start = right now, enable = automatically at every boot", "enable is reserved for root"] },
   ],
+  12: [
+    { q: "What does /etc/passwd actually contain?", options: ["Plain-text passwords", "The list of accounts (the hashes live in /etc/shadow)", "Only the root account", "The login history"] },
+    { q: "What is the -m for in « useradd -m sarah »?", options: ["Silent mode", "Also create the /home/sarah home directory", "Grant sudo rights", "Set the password"] },
+    { q: "Why ALWAYS -aG (and not -G alone) with usermod?", options: ["It's faster", "-G alone is forbidden", "Without -a, the group list is REPLACED instead of extended", "-a makes the change permanent"] },
+    { q: "What happens with « su sarah » if the account has no password?", options: ["It works right away", "The account is deleted", "Authentication failure: you must run passwd sarah first", "su creates the password"] },
+  ],
 };
 
 if (typeof overlayQuizzes === "function") overlayQuizzes(QUIZZES_EN);

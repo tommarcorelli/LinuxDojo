@@ -548,6 +548,84 @@ test("l'état des services est réinitialisé par loadFS (isolation entre missio
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// UTILISATEURS & GROUPES (useradd / passwd / usermod / groups / su)
+// ═══════════════════════════════════════════════════════════════════════
+
+test("useradd -m crée le compte, le home, et la ligne /etc/passwd", () => {
+  const t = makeTerm({ "/etc/passwd": { type: "file", content: "root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:user:/home/user:/bin/bash" } });
+  const r = t.run("useradd -m sarah");
+  assertEqual(r.error, false);
+  assertEqual(t.state.useradd, "sarah");
+  assertEqual(t.state.useraddHome, true);
+  assertIncludes(t.run("ls /home").output, "sarah", "le home doit exister");
+  assertMatches(t.run("cat /etc/passwd").output, /sarah:x:1001/, "/etc/passwd doit gagner la ligne");
+});
+
+test("useradd refuse un doublon ; sans -m pas de home", () => {
+  const t = makeTerm({});
+  t.run("useradd bob");
+  assert(t.state.useraddHome !== true, "pas de -m → pas de home");
+  const dup = t.run("useradd bob");
+  assertEqual(dup.error, true, "doublon refusé");
+});
+
+test("passwd échoue sur un compte inexistant, réussit sinon", () => {
+  const t = makeTerm({});
+  assertEqual(t.run("passwd fantome").error, true);
+  t.run("useradd -m sarah");
+  const r = t.run("passwd sarah");
+  assertEqual(r.error, false);
+  assertIncludes(r.output, "succès");
+  assertEqual(t.state.passwd, "sarah");
+});
+
+test("usermod -aG ajoute au groupe sans écraser les existants", () => {
+  const t = makeTerm({});
+  runSeq(t, "useradd -m sarah && usermod -aG sudo sarah");
+  assertEqual(t.state.usermodAG, "sarah:sudo");
+  const g = t.run("groups sarah");
+  assertMatches(g.output, /sarah : sarah sudo/, "les deux groupes doivent être là");
+});
+
+test("usermod -G sans -a REMPLACE les groupes (piège simulé fidèlement)", () => {
+  const t = makeTerm({});
+  runSeq(t, "useradd -m sarah && usermod -aG sudo sarah && usermod -G docker sarah");
+  const g = t.run("groups sarah");
+  assert(!/sudo/.test(g.output), "sudo doit avoir été perdu (remplacement)");
+  assertMatches(g.output, /docker/, "docker doit être le seul groupe secondaire");
+});
+
+test("su échoue sans mot de passe, réussit après passwd, exit revient", () => {
+  const t = makeTerm({});
+  t.run("useradd -m sarah");
+  const ko = t.run("su sarah");
+  assertEqual(ko.error, true, "su doit échouer sur un compte verrouillé");
+  assertIncludes(ko.output, "authentification");
+  runSeq(t, "passwd sarah && su sarah");
+  assertEqual(t.state.su, "sarah");
+  assertEqual(t.run("whoami").output, "sarah", "whoami doit refléter le su");
+  assertMatches(t.promptStr(), /^sarah@/, "le prompt doit changer d'utilisateur");
+  t.run("exit");
+  assertEqual(t.run("whoami").output, "user", "exit doit rendre l'identité d'origine");
+});
+
+test("id sans argument reste compatible (uid=1000(user)...)", () => {
+  const t = makeTerm({});
+  const r = t.run("id");
+  assertIncludes(r.output, "uid=1000(user) gid=1000(user)");
+  assertIncludes(r.output, "27(sudo)");
+});
+
+test("id NOM détaille un compte créé ; les comptes sont réinitialisés par loadFS", () => {
+  const t = makeTerm({});
+  runSeq(t, "useradd -m sarah && usermod -aG sudo sarah");
+  const r = t.run("id sarah");
+  assertMatches(r.output, /uid=1001\(sarah\).*27\(sudo\)/, "id doit refléter uid et groupes");
+  t.loadFS({});
+  assertEqual(t.run("id sarah").error, true, "après loadFS, sarah ne doit plus exister");
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROBUSTESSE
 // ═══════════════════════════════════════════════════════════════════════
 
