@@ -37,7 +37,7 @@ const OBJECTIVES = [
   { id: "badges3",   icon: "🏅", title: "Collectionneur",      desc: "Débloque 3 badges",                          xp: 40, target: 3,   cur: g => g.badges.length },
   { id: "hacker",    icon: "💻", title: "Sur la voie du Hacker", desc: "Atteins le rang Hacker (800 XP)",          xp: 60, target: 800, cur: g => g.xp },
   { id: "boss1",     icon: "⚔️", title: "Premier trophée",     desc: "Terrasse ton premier boss",                  xp: 40, target: 1,   cur: () => _bossDone() },
-  { id: "bossall",   icon: "🐲", title: "Videur de donjon",    desc: "Terrasse les 6 boss (Sensei inclus)",        xp: 100, target: 6,  cur: () => _bossDone() },
+  { id: "bossall",   icon: "🐲", title: "Videur de donjon",    desc: "Terrasse les 7 boss (Sensei inclus)",        xp: 100, target: 7,  cur: () => _bossDone() },
   { id: "rtfm",      icon: "📖", title: "RTFM",                desc: "Consulte 3 pages de manuel (man cmd)",       xp: 20, target: 3,   cur: () => _statCmd("man") },
   { id: "eggs",      icon: "🥚", title: "Chasseur d'œufs",     desc: "Trouve 3 easter eggs (cowsay, sl, fortune…)", xp: 30, target: 3,  cur: () => ["cowsay","sl","fortune","vim","sudo"].filter(c => _statCmd(c) > 0).length },
   { id: "kata",      icon: "🥋", title: "Mémoire musculaire",  desc: "Atteins 70 pts de score sur un Kata",         xp: 35, target: 70,  cur: () => _kataBestScore() },

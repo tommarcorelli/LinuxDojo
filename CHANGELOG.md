@@ -6,6 +6,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **7ᵉ boss — Le Daemon Zombie** 🧟 : un service maudit qui se relève à chaque reboot
+  et étrangle le port 80. Le combat exploite le moteur systemd du scénario 11, et sa
+  mécanique de résurrection est réelle : chaque phase recharge l'état des services,
+  donc apache2 « se relève » vraiment entre les phases. 5 phases — repérer le service
+  `failed` (`list-units`), interroger ses logs (`journalctl`), l'abattre (`stop`), le
+  ré-abattre ET ranimer nginx avec preuve (`stop && start && status`), puis sceller la
+  tombe au boot (`disable apache2 && enable nginx`). HP 120, XP 140, thème vert zombie.
+  L'examen du Sensei exige désormais d'avoir vaincu les **6 boss réguliers**, et
+  l'objectif « Videur de donjon » passe à 7 boss. Traduction EN complète, compteurs
+  « 7 boss » mis à jour partout (les chips statiques de la landing, restées à « 60
+  missions / 6 boss » depuis le scénario 11, sont corrigées au passage — l'i18n les
+  réécrivait au chargement, le HTML statique était juste en retard). SW v38 → v39.
 - **Scénario 14 — « L'intranet a disparu » (diagnostic réseau de bout en bout)** :
   `ip a`/`ip r`, `dig` et `nslookup` (zone DNS simulée) rejoignent le terminal, et `curl`
   apprend les hôtes internes : `intranet.dojo.lan` refuse la connexion sur le port 80

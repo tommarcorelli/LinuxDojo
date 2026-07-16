@@ -22,7 +22,7 @@ const OBJECTIVES_EN = {
   badges3:    { title: "Collector",             desc: "Unlock 3 badges" },
   hacker:     { title: "On the Hacker's path",  desc: "Reach the Hacker rank (800 XP)" },
   boss1:      { title: "First trophy",          desc: "Defeat your first boss" },
-  bossall:    { title: "Dungeon cleaner",       desc: "Defeat the 6 bosses (Sensei included)" },
+  bossall:    { title: "Dungeon cleaner",       desc: "Defeat the 7 bosses (Sensei included)" },
   rtfm:       { title: "RTFM",                  desc: "Read 3 manual pages (man cmd)" },
   eggs:       { title: "Egg hunter",            desc: "Find 3 easter eggs (cowsay, sl, fortune…)" },
   kata:       { title: "Muscle memory",         desc: "Reach a 70-pt score on a Kata" },

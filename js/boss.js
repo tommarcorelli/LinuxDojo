@@ -324,6 +324,64 @@ const BOSS_FIGHTS = [
     ],
   },
 
+  /* ═══ BOSS 7 — LE DAEMON ZOMBIE ═════════════════════════════ */
+  {
+    id: "zombie",
+    name: "Le Daemon Zombie",
+    emoji: "🧟",
+    color: "#22c55e",
+    tagline: "On l'a arrêté cent fois. Il revient toujours au boot.",
+    story: "Un ancien service hante ce serveur : on a beau l'abattre, il se relève à chaque redémarrage et étrangle le port 80. Pour l'éliminer, il faudra faire mieux que l'arrêter — il faudra sceller sa tombe dans systemd.",
+    hp: 120,
+    xp: 140,
+    taunts: ["Le Zombie gémit : « boooot... reboooot... »", "Une main sort de la tombe et tape systemctl start sur TON clavier.", "GRRRAAH. Le Zombie mâchonne un fichier unit."],
+    winText: "enable d'un côté, disable de l'autre : la tombe est scellée dans systemd. Le Zombie ne survivra pas au prochain reboot. Le port 80 respire.",
+    phases: [
+      {
+        title: "L'odeur du soufre",
+        desc: "Quelque chose est mort sur ce serveur. Liste <strong>tous les services</strong> et repère celui qui est <code>failed</code>.",
+        hint: "systemctl list-units --type=service",
+        timeLimit: 60,
+        fs: {
+          "rapport-nuit.txt": { type:"file", content:"03:12 — le site est tombé. Encore.\nC'est la 3e fois ce mois-ci. Toujours après un reboot." },
+        },
+        check: (out, s) => s.sysList === true && /failed/.test(out),
+      },
+      {
+        title: "La voix d'outre-tombe",
+        desc: "<code>nginx</code> est mort en essayant de naître. Interroge <strong>ses logs</strong> : qui l'a étranglé ?",
+        hint: "journalctl -u nginx",
+        timeLimit: 75,
+        fs: {},
+        check: (out, s) => s.journalUnit === "nginx" && /address already in use/.test(out),
+      },
+      {
+        title: "Le premier coup de pelle",
+        desc: "Le Zombie habite le corps d'<code>apache2</code>, qui étrangle le port 80. <strong>Abats-le.</strong>",
+        hint: "systemctl stop apache2",
+        timeLimit: 60,
+        fs: {},
+        check: (out, s) => s.sysStop === "apache2",
+      },
+      {
+        title: "Il se relève !",
+        desc: "GRRRAAH — le Zombie s'est <strong>déjà relevé</strong> (apache2 tourne à nouveau) ! Abats-le encore, ranime <code>nginx</code>, et <strong>prouve</strong> qu'il est <code>active (running)</code>.",
+        hint: "systemctl stop apache2 && systemctl start nginx && systemctl status nginx",
+        timeLimit: 120,
+        fs: {},
+        check: (out, s) => s.sysStart === "nginx" && s.sysStatus === "nginx" && /active \(running\)/.test(out),
+      },
+      {
+        title: "Sceller la tombe",
+        desc: "Tant que le Zombie est <code>enabled</code>, chaque reboot le ressuscitera. <strong>Scelle sa tombe</strong> : désactive <code>apache2</code> au boot, et grave <code>nginx</code> à sa place.",
+        hint: "systemctl disable apache2 && systemctl enable nginx",
+        timeLimit: 90,
+        fs: {},
+        check: (out, s) => s.sysDisable === "apache2" && s.sysEnable === "nginx",
+      },
+    ],
+  },
+
   /* ═══ BOSS FINAL — L'EXAMEN DE LA CEINTURE NOIRE ════════════ */
   {
     id: "sensei",
@@ -334,7 +392,7 @@ const BOSS_FIGHTS = [
     story: "Le Sensei t'attend au sommet du dojo. Six épreuves éclair, tirées de tout ce que tu as appris. Réussis-les et repars avec la Ceinture Noire. 🖤",
     hp: 150,
     xp: 300,
-    requires: 5,   // nombre de boss à vaincre pour débloquer
+    requires: 6,   // nombre de boss à vaincre pour débloquer
     taunts: ["Le Sensei esquive sans même te regarder.", "« Trop lent. Recommence. »", "Le Sensei soupire, déçu."],
     winText: "Le Sensei s'incline. « Tu es prêt. » Il te tend la CEINTURE NOIRE du LinuxDojo. 🖤",
     phases: [

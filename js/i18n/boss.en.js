@@ -80,6 +80,21 @@ const BOSS_FIGHTS_EN = {
     ],
   },
 
+  zombie: {
+    name: "The Zombie Daemon",
+    tagline: "It's been stopped a hundred times. It always comes back at boot.",
+    story: "An old service haunts this server: no matter how many times it's put down, it rises again at every reboot and strangles port 80. To eliminate it, you'll have to do better than stop it — you'll have to seal its grave inside systemd.",
+    taunts: ["The Zombie moans: “boooot... reboooot...”", "A hand rises from the grave and types systemctl start on YOUR keyboard.", "GRRRAAH. The Zombie chews on a unit file."],
+    winText: "enable on one side, disable on the other: the grave is sealed inside systemd. The Zombie won't survive the next reboot. Port 80 breathes again.",
+    phases: [
+      { title: "The smell of sulfur", desc: "Something died on this server. List <strong>all the services</strong> and spot the one that is <code>failed</code>.", hint: "systemctl list-units --type=service" },
+      { title: "The voice from beyond", desc: "<code>nginx</code> died trying to be born. Question <strong>its logs</strong>: who strangled it?", hint: "journalctl -u nginx" },
+      { title: "The first shovel blow", desc: "The Zombie inhabits <code>apache2</code>'s body, which strangles port 80. <strong>Put it down.</strong>", hint: "systemctl stop apache2" },
+      { title: "It rises again!", desc: "GRRRAAH — the Zombie <strong>already stood back up</strong> (apache2 is running again)! Put it down again, revive <code>nginx</code>, and <strong>prove</strong> it is <code>active (running)</code>.", hint: "systemctl stop apache2 && systemctl start nginx && systemctl status nginx" },
+      { title: "Seal the grave", desc: "As long as the Zombie is <code>enabled</code>, every reboot will resurrect it. <strong>Seal its grave</strong>: disable <code>apache2</code> at boot, and engrave <code>nginx</code> in its place.", hint: "systemctl disable apache2 && systemctl enable nginx" },
+    ],
+  },
+
   sensei: {
     name: "SENSEI — Black Belt Exam",
     tagline: "Six trials. Tight timers. No mercy.",

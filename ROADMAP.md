@@ -28,6 +28,15 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **7ᵉ boss — Le Daemon Zombie** 🧟 (2026-07-16) — thème systemd, exploite le moteur du
+  scénario 11 : un service maudit qui « se relève à chaque reboot » (mécaniquement vrai :
+  chaque phase recharge le FS donc réinitialise les services — apache2 revient squatter
+  le port 80 entre les phases, c'est le gameplay). 5 phases : list-units (repérer le
+  failed) → journalctl (la cause) → stop apache2 → il se relève ! (stop + start nginx +
+  status running) → sceller la tombe (disable apache2 + enable nginx). HP 120, XP 140.
+  Le Sensei exige désormais **6 boss** vaincus (au lieu de 5) ; l'objectif « Videur de
+  donjon » passe à 7. Overlay EN complet, compteurs « 7 boss / 7 combats » partout
+  (landing FR+EN + chips statiques 60→84 corrigées au passage, index, README, i18n)
 - **Scénario 14 — L'intranet a disparu (diagnostic réseau)** (2026-07-16) — `ip a`/`ip r`,
   `dig`, `nslookup` (zone DNS simulée partagée `_dnsZone()`) et `curl` enrichi (parse
   hôte:port, `-I` pour les en-têtes, hôtes internes simulés : intranet.dojo.lan refuse
@@ -358,7 +367,6 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 - [ ] **Onboarding « 2 minutes »** — mini-tutoriel guidé pour le visiteur qui n'a jamais
       touché un terminal (arrivée depuis la landing). À prioriser si les analytics montrent
       de l'abandon sur la mission 1.
-- [ ] **7ᵉ boss** (thème : services/processus — le scénario 11 existe désormais, la voie est libre)
 - [ ] **Niveaux d'infiltration 16-20** exploitant les nouvelles commandes (cron caché,
       utilisateur suspect, service backdoor…)
 - [ ] **Badges secrets supplémentaires** (le système `markSecret()` est générique et prêt)

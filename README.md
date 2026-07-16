@@ -21,7 +21,7 @@ ou un post sur les réseaux, pas nécessaire pour jouer directement.
 | 🗺 **Explorer** | Monde ouvert navigable en commandes : inventaire, PNJ, portes verrouillées, 3 gemmes à réunir. |
 | ⚡ **Défis** | 20 défis chrono avec combo ×5 et record. |
 | 🔐 **Infiltration** | 15 niveaux style OverTheWire/Bandit : fouille, filtre, décode (base64, ROT13, hex, double encodage). |
-| ⚔️ **Salle des Boss** | 6 combats épiques en phases : le Kraken des Logs, le Spectre Invisible, l'Hydre des Données, le Golem Binaire, le Gardien des Serrures… et l'Examen de la Ceinture Noire. HP, cœurs, chrono. Battre le Sensei débloque un **certificat téléchargeable** (PNG). |
+| ⚔️ **Salle des Boss** | 7 combats épiques en phases : le Kraken des Logs, le Spectre Invisible, l'Hydre des Données, le Golem Binaire, le Gardien des Serrures, le Daemon Zombie… et l'Examen de la Ceinture Noire. HP, cœurs, chrono. Battre le Sensei débloque un **certificat téléchargeable** (PNG). |
 | 🥋 **Kata** | La mémoire musculaire du shell : 7 enchaînements de vraies commandes à taper au chrono. Mesure WPM et précision, garde tes records. |
 | 🧪 **Bac à sable** | Terminal libre avec ~50 commandes simulées, système de fichiers explorable. |
 | 📖 **Glossaire** | Référence complète des commandes (aussi accessible via `man <cmd>` dans le terminal !). |
