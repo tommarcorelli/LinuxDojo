@@ -298,7 +298,42 @@ que si vraiment décidé, car ils engagent sur la durée (maintenance double, ba
 Section de capture rapide — une idée qui arrive en cours de discussion atterrit ici en
 premier, avant d'être rangée dans la bonne phase au prochain passage sur ce fichier.
 
-- [ ] *(vide pour l'instant — les idées récentes ont déjà été rangées dans les phases ci-dessus)*
+*(Idées consignées le 2026-07-16 — nouveaux territoires identifiés en auditant les commandes
+que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`, `ip`, `dig`,
+`top`… De quoi nourrir plusieurs scénarios.)*
+
+**Nouveaux scénarios (contenu) :**
+- [ ] **Scénario 11 — Services & logs système** : `systemctl start/stop/status/enable`,
+      `journalctl -u`, `service`. Trame : « le serveur web est tombé, remets-le en route ».
+      Le plus proche des situations réelles d'admin (et des TP SISR).
+- [ ] **Scénario 12 — Utilisateurs & groupes** : `useradd`, `passwd`, `usermod -aG`,
+      `groups`, `su`, lecture de `/etc/passwd` / `/etc/group`. Trame : onboarding d'un
+      nouvel admin dans l'équipe.
+- [ ] **Scénario 13 — Planification (cron)** : `crontab -l` / `-e` simulé, syntaxe à 5
+      champs. Suite logique du scénario scripts : « automatise la sauvegarde de cette nuit ».
+- [ ] **Scénario 14 — Réseau niveau 2** : `ip a`, `dig`, `nslookup`, `curl` vers une API
+      simulée. Trame : diagnostiquer une panne réseau de bout en bout (DNS → IP → service).
+
+**Profondeur du moteur :**
+- [ ] **Permissions réellement appliquées** — `chmod` ne change aujourd'hui que l'affichage
+      `ls -l` : un fichier `000` devrait refuser `cat`, un script sans `x` refuser `./x.sh`,
+      `/root` refuser `cd` sauf élévation. Rendrait crédibles les missions permissions et le
+      boss Gardien des Serrures. (Attention aux checks existants : audit préalable requis.)
+- [ ] **SSH multi-machines** — mini-réseau de 2-3 machines ayant chacune son FS, `ssh` saute
+      réellement de l'une à l'autre (prompt/hostname changent, `exit` revient). Transformerait
+      le scénario 9 et ouvrirait des niveaux d'infiltration « pivoting ».
+
+**Nouveaux modes / contenu des modes :**
+- [ ] **Mode Examen blanc** — 20 questions/missions tirées au hasard dans tout le programme,
+      chrono global, note finale, re-passable à volonté. Pensé pour réviser avant un partiel ;
+      très cohérent avec la cible étudiante (BTS SIO/SISR).
+- [ ] **Onboarding « 2 minutes »** — mini-tutoriel guidé pour le visiteur qui n'a jamais
+      touché un terminal (arrivée depuis la landing). À prioriser si les analytics montrent
+      de l'abandon sur la mission 1.
+- [ ] **7ᵉ boss** (thème : services/processus, une fois le scénario 11 fait)
+- [ ] **Niveaux d'infiltration 16-20** exploitant les nouvelles commandes (cron caché,
+      utilisateur suspect, service backdoor…)
+- [ ] **Badges secrets supplémentaires** (le système `markSecret()` est générique et prêt)
 
 ---
 
