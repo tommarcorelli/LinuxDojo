@@ -29,7 +29,7 @@ ou un post sur les réseaux, pas nécessaire pour jouer directement.
 
 ## Le terminal simulé
 
-**Filesystem hiérarchique réel** : `cd logs/2024`, `cd ..`, `cd /`, chemins absolus et relatifs, `~`, `mkdir -p`, `mv fichier dossier/`, `cp -r`, `rm -r`, `find` et `tree` récursifs. Dans le bac à sable, tout un petit système est explorable : `cat /etc/passwd`, `tree /var`… et `/root` est verrouillé (évidemment).
+**Filesystem hiérarchique réel** : `cd logs/2024`, `cd ..`, `cd /`, chemins absolus et relatifs, `~`, `mkdir -p`, `mv fichier dossier/`, `cp -r`, `rm -r`, `find` et `tree` récursifs. Dans le bac à sable, tout un petit système est explorable : `cat /etc/passwd`, `tree /var`… et `/root` est verrouillé (évidemment). **Les permissions sont réellement appliquées** : lire le fichier d'un autre sans droit échoue (`Permission non accordée`), `./script.sh` exige le bit x (`bash script.sh` non), `chmod` numérique et symbolique font foi, et `/etc/shadow` est illisible — comme en vrai.
 
 **Un vrai mini-shell** : variables (`x=5`, `echo $x`, `"$x"` vs `'$x'`), substitution de commande `$(…)`, boucles `for … in … ; do … done`, conditions `if [ -f x ]; then … else … fi`, `test`/`[ ]`, `while`, `seq`, `$?`, et exécution de scripts avec `bash script.sh` ou `./script.sh`. Multi-ligne géré (le prompt passe à `>` en attendant `done`/`fi`).
 

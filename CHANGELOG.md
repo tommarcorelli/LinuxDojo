@@ -6,6 +6,20 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Les permissions sont désormais réellement appliquées** 🔒 — jusqu'ici, `chmod` ne
+  changeait que l'affichage de `ls -l` ; maintenant le simulateur fait respecter les
+  droits : lire le fichier d'un autre utilisateur sans droit de lecture échoue avec
+  « Permission non accordée » (cat, less, head/tail, grep, wc, sort, uniq, cut, diff,
+  sed, awk, base64, rot13, xxd, bash — les 15 lecteurs sont contrôlés, sans fuite de
+  contenu), `./script.sh` exige le bit d'exécution alors que `bash script.sh` n'exige
+  que la lecture (fidèle au vrai comportement), et les droits suivent l'identité prise
+  avec `su`. `chmod` applique maintenant les vrais modes : numérique (600, 644, 640…)
+  et symbolique (`+x`, `u+x`, `go-r`…). La triade effective est owner/others (groupes
+  volontairement ignorés — simplification pédagogique). Bonus : `/etc/shadow` existe
+  désormais dans le bac à sable et est réellement illisible (root only), exactement
+  comme la leçon du scénario 12 l'enseigne. Les missions permissions et le boss
+  Gardien des Serrures deviennent crédibles de bout en bout. 8 tests dédiés (166 au
+  total), zéro régression. SW v39 → v40.
 - **7ᵉ boss — Le Daemon Zombie** 🧟 : un service maudit qui se relève à chaque reboot
   et étrangle le port 80. Le combat exploite le moteur systemd du scénario 11, et sa
   mécanique de résurrection est réelle : chaque phase recharge l'état des services,

@@ -6,6 +6,8 @@ const SYSTEM_FS = {
   "/etc/hostname":   { type:"file", content:"dojo" },
   "/etc/os-release": { type:"file", content:'NAME="DojoLinux"\nVERSION="4.0 (Kata)"\nID=dojolinux\nPRETTY_NAME="DojoLinux 4.0"' },
   "/etc/passwd":     { type:"file", content:"root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:Apprenti:/home/user:/bin/bash\nsensei:x:1001:1001:Le Sensei:/home/sensei:/bin/zsh" },
+  // Protégé pour de vrai : les permissions sont appliquées, cat échoue comme sur un vrai Linux
+  "/etc/shadow":     { type:"file", perms:"-rw-------", owner:"root", group:"root", content:"root:$6$r0nD3LLa$K9vXqPzT...:19900:0:99999:7:::\nuser:$6$s3nS3i$xM4wQfRj...:19900:0:99999:7:::" },
   "/etc/motd":       { type:"file", content:"Bienvenue sur DojoLinux.\nLa voie du shell est longue, mais chaque commande te rapproche du sommet." },
   "/var":            { type:"dir" },
   "/var/log":        { type:"dir" },
@@ -193,12 +195,33 @@ class Terminal {
       cur = this._parentOf(cur);
     }
   }
-  // Résout un argument fichier → { path, node } ou null
+  // ── Permissions réellement appliquées ─────────────────────────
+  // Triade effective de l'utilisateur courant sur un nœud : owner (rwx 1-3)
+  // s'il est propriétaire (ou root), sinon others (7-9). Les groupes sont
+  // volontairement ignorés (simplification pédagogique du simulateur).
+  _permTriad(node) {
+    if ((this._curUser || "user") === "root") return "rwx";
+    const perms = node.perms || (node.type === "dir" ? "drwxr-xr-x" : "-rw-r--r--");
+    const owner = node.owner || "user";
+    return owner === (this._curUser || "user") ? perms.slice(1, 4) : perms.slice(7, 10);
+  }
+  _canRead(node) { return this._permTriad(node).includes("r"); }
+  _canExec(node) { return this._permTriad(node).includes("x"); }
+  _permErr(cmdName, fname) {
+    return sh(`${cmdName}: ${fname}: Permission non accordée 🔒\n💡 Regarde qui a le droit de quoi : ls -l — et corrige avec chmod (ou chown si le fichier ne t'appartient pas).`,
+              `${cmdName}: ${fname}: Permission denied 🔒\n💡 Look at who may do what: ls -l — and fix it with chmod (or chown if the file isn't yours).`);
+  }
+
+  // Résout un argument fichier → { path, node } ou null.
+  // denied: true = accès interdit (dossier verrouillé type /root, OU fichier
+  // dont les permissions ne donnent pas le droit de lecture à l'utilisateur).
   _file(arg) {
     const p = this._resolve(arg);
     if (this._denied(p)) return { path: p, node: null, denied: true };
     const node = this.fs[p];
-    return node ? { path: p, node } : null;
+    if (!node) return null;
+    if (node.type === "file" && !this._canRead(node)) return { path: p, node, denied: true };
+    return { path: p, node };
   }
   // Affichage du cwd : /home/user/logs → ~/logs
   _display(p) {
@@ -760,9 +783,16 @@ class Terminal {
     }
 
     // Exécution d'un script par chemin : ./script.sh, /home/user/x.sh, dossier/x.sh
+    // Contrairement à `bash x.sh` (qui ne demande que la lecture), cette forme
+    // exige le bit x — comme sur un vrai système.
     if (cmd.includes("/")) {
       const p = this._resolve(cmd);
       if (this._exists(p) && !this._isDir(p)) {
+        if (!this._canExec(this.fs[p])) {
+          const msg = sh(`bash: ${cmd}: Permission non accordée 🔒\n💡 Deux issues : rends-le exécutable (chmod +x ${cmd}) ou lance-le via l'interpréteur (bash ${cmd}).`, `bash: ${cmd}: Permission denied 🔒\n💡 Two ways out: make it executable (chmod +x ${cmd}) or run it through the interpreter (bash ${cmd}).`);
+          if (!silent) this.printErr(msg);
+          return { output: msg, error: true };
+        }
         if (!silent) return this._execScript(this.fs[p].content || "");
         // en contexte silencieux (condition), on n'exécute pas de sous-script
         return { output: "", error: false };
@@ -782,6 +812,7 @@ class Terminal {
         const file = args.filter(a => !a.startsWith("-"))[0];
         if (!file) { out = sh(`${cmd}: indique un script à exécuter\nExemple : bash deploy.sh`, `${cmd}: specify a script to run\nExample: bash deploy.sh`); err = true; break; }
         const f = this._file(file);
+        if (f && f.denied) { out = this._permErr(cmd, file); err = true; break; }
         if (!f || !f.node) { out = sh(`${cmd}: ${file}: fichier introuvable`, `${cmd}: ${file}: file not found`); err = true; break; }
         if (f.node.type === "dir") { out = sh(`${cmd}: ${file}: est un dossier`, `${cmd}: ${file}: is a directory`); err = true; break; }
         if (silent) return { output: "", error: false };
@@ -887,7 +918,7 @@ class Terminal {
         const chunks = [];
         for (const fname of fnames) {
           const f = this._file(fname);
-          if (f && f.denied) { out = sh(`cat: ${fname}: Permission non accordée 🔒`, `cat: ${fname}: Permission denied 🔒`); err = true; break; }
+          if (f && f.denied) { out = this._permErr("cat", fname); err = true; break; }
           if (!f) {
             const sugg = this._suggestFile(fname);
             out = sh(`cat: ${fname}: Aucun fichier ou dossier de ce type${sugg ? "\nVoulais-tu dire : " + sugg + " ?" : "\n\nTape 'ls' pour voir les fichiers disponibles."}`, `cat: ${fname}: No such file or directory${sugg ? "\nDid you mean: " + sugg + " ?" : "\n\nType 'ls' to see the available files."}`);
@@ -906,6 +937,7 @@ class Terminal {
         const fname = args[0];
         if (!fname) { out = sh(`${cmd}: manque le nom de fichier`, `${cmd}: missing file name`); err = true; break; }
         const f = this._file(fname);
+        if (f && f.denied) { out = this._permErr(cmd, fname); err = true; break; }
         if (!f || !f.node) { out = sh(`${cmd}: ${fname}: Aucun fichier ou dossier de ce type`, `${cmd}: ${fname}: No such file or directory`); err = true; break; }
         out = f.node.content || "";
         break;
@@ -1048,11 +1080,30 @@ class Terminal {
 
       case "chmod": {
         const target = args[args.length - 1];
-        if (!target || args.length < 2) { out = sh("chmod: manque les arguments\nUsage : chmod DROITS FICHIER\nExemples : chmod +x script.sh · chmod 600 secret.key", "chmod: missing arguments\nUsage: chmod PERMS FILE\nExamples: chmod +x script.sh · chmod 600 secret.key"); err = true; break; }
+        if (!target || args.length < 2) { out = sh("chmod: manque les arguments\nUsage : chmod DROITS FICHIER\nExemples : chmod +x script.sh · chmod 600 secret.key · chmod u+x s.sh", "chmod: missing arguments\nUsage: chmod PERMS FILE\nExamples: chmod +x script.sh · chmod 600 secret.key · chmod u+x s.sh"); err = true; break; }
         const abs = this._resolve(target);
+        const mode = args[0];
         if (this.fs[abs]) {
-          const mode = args[0];
-          this.fs[abs].perms = mode === "600" ? "-rw-------" : mode === "644" ? "-rw-r--r--" : "-rwxr-xr-x";
+          const node = this.fs[abs];
+          let perms = node.perms || (node.type === "dir" ? "drwxr-xr-x" : "-rw-r--r--");
+          if (/^[0-7]{3}$/.test(mode)) {
+            // Mode numérique : chaque chiffre encode une triade (4=r, 2=w, 1=x)
+            const tri = d => (d & 4 ? "r" : "-") + (d & 2 ? "w" : "-") + (d & 1 ? "x" : "-");
+            perms = perms[0] + tri(+mode[0]) + tri(+mode[1]) + tri(+mode[2]);
+          } else {
+            // Mode symbolique : [ugoa]±rwx (chmod +x = toutes les triades, comme le vrai)
+            const m = mode.match(/^([ugoa]*)([+-])([rwx]+)$/);
+            if (!m) { out = sh(`chmod: mode invalide : « ${mode} »\nExemples valides : 600, 644, 755, +x, u+x, go-w`, `chmod: invalid mode: '${mode}'\nValid examples: 600, 644, 755, +x, u+x, go-w`); err = true; break; }
+            const [, who, op, letters] = m;
+            const triads = [perms.slice(1, 4).split(""), perms.slice(4, 7).split(""), perms.slice(7, 10).split("")];
+            const idx = { r: 0, w: 1, x: 2 };
+            const apply = t => { for (const L of letters) t[idx[L]] = op === "+" ? L : "-"; };
+            const targets = (!who || who.includes("a")) ? [0, 1, 2]
+              : [..."ugo"].map((c, i) => who.includes(c) ? i : -1).filter(i => i >= 0);
+            targets.forEach(i => apply(triads[i]));
+            perms = perms[0] + triads.map(t => t.join("")).join("");
+          }
+          node.perms = perms;
         }
         this.state.chmod = target;
         out = "";
@@ -1575,6 +1626,8 @@ class Terminal {
         if (files.length < 2) { out = sh("diff: il faut deux fichiers\nUsage : diff FICHIER1 FICHIER2", "diff: two files are required\nUsage: diff FILE1 FILE2"); err = true; break; }
         const f1 = this._file(files[0]);
         const f2 = this._file(files[1]);
+        if (f1 && f1.denied) { out = this._permErr("diff", files[0]); err = true; break; }
+        if (f2 && f2.denied) { out = this._permErr("diff", files[1]); err = true; break; }
         if (!f1 || !f1.node) { out = sh(`diff: ${files[0]}: Aucun fichier ou dossier de ce type`, `diff: ${files[0]}: No such file or directory`); err = true; break; }
         if (!f2 || !f2.node) { out = sh(`diff: ${files[1]}: Aucun fichier ou dossier de ce type`, `diff: ${files[1]}: No such file or directory`); err = true; break; }
         const l1 = (f1.node.content || "").split("\n");
@@ -1610,6 +1663,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("grep", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`grep: ${fname}: Aucun fichier ou dossier de ce type`, `grep: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
@@ -1672,6 +1726,7 @@ class Terminal {
         const rows = [];
         for (const fname of fnames) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("wc", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`wc: ${fname}: Aucun fichier ou dossier de ce type`, `wc: ${fname}: No such file or directory`); err = true; break; }
           rows.push(count(f.node.content || "", fname));
         }
@@ -1689,6 +1744,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("sort", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`sort: impossible de lire: ${fname}: Aucun fichier ou dossier de ce type`, `sort: cannot read: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
@@ -1877,6 +1933,7 @@ class Terminal {
         let content2 = stdin;
         if (fname3) {
           const f3 = this._file(fname3);
+          if (f3 && f3.denied) { out = this._permErr("sed", fname3); err = true; break; }
           if (f3 && f3.node) content2 = f3.node.content || "";
         }
         if (expr) {
@@ -1911,6 +1968,7 @@ class Terminal {
         let content3 = stdin;
         if (fname4) {
           const f4 = this._file(fname4);
+          if (f4 && f4.denied) { out = this._permErr("awk", fname4); err = true; break; }
           if (f4 && f4.node) content3 = f4.node.content || "";
         }
         if (prog) {
@@ -1929,6 +1987,7 @@ class Terminal {
         let src = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("base64", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`base64: ${fname}: Fichier introuvable`, `base64: ${fname}: File not found`); err = true; break; }
           src = f.node.content || "";
         }
@@ -1945,6 +2004,7 @@ class Terminal {
         let src = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("rot13", fname); err = true; break; }
           if (f && f.node) src = f.node.content || "";
         }
         out = (src || "").replace(/[a-zA-Z]/g, c => {
@@ -1961,6 +2021,7 @@ class Terminal {
         let src = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("xxd", fname); err = true; break; }
           if (f && f.node) src = f.node.content || "";
         }
         src = src || "";
@@ -1994,6 +2055,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr(cmd, fname); err = true; break; }
           if (!f || !f.node) { out = sh(`${cmd}: ${fname}: Aucun fichier ou dossier de ce type`, `${cmd}: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
@@ -2008,6 +2070,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("uniq", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`uniq: ${fname}: Aucun fichier ou dossier de ce type`, `uniq: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }
@@ -2037,6 +2100,7 @@ class Terminal {
         let content = stdin;
         if (fname) {
           const f = this._file(fname);
+          if (f && f.denied) { out = this._permErr("cut", fname); err = true; break; }
           if (!f || !f.node) { out = sh(`cut: ${fname}: Aucun fichier ou dossier de ce type`, `cut: ${fname}: No such file or directory`); err = true; break; }
           content = f.node.content || "";
         }

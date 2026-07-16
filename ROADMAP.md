@@ -28,6 +28,19 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **Permissions réellement appliquées** (2026-07-17) — le moteur fait respecter les
+  permissions : triade effective calculée par `_permTriad()` (owner si propriétaire ou
+  root, sinon others — groupes volontairement ignorés), lecture contrôlée au niveau de
+  `_file()` (flag `denied`) et vérifiée par les 15 commandes lectrices (cat, less/more,
+  head/tail, grep, wc, sort, uniq, cut, diff, sed, awk, base64, rot13, xxd, bash) avec
+  message « Permission non accordée 🔒 » + indice ; `./script.sh` exige le bit x (mais
+  `bash script.sh` non, comme en vrai) ; `chmod` réécrit pour appliquer les vrais modes
+  (numérique 0-7 par triade, symbolique [ugoa]±rwx) ; les droits suivent l'identité
+  changée par `su`. Bonus : `/etc/shadow` ajouté au bac à sable, réellement illisible
+  (root only) — cohérent avec la leçon du scénario 12. Audit de compat : les fichiers
+  restrictifs existants n'ont pas d'owner (donc appartiennent au joueur, lisibles), les
+  scripts `./` du contenu ont tous le bit x. 8 tests dédiés (166 au total), zéro
+  régression sur les 158 existants
 - **7ᵉ boss — Le Daemon Zombie** 🧟 (2026-07-16) — thème systemd, exploite le moteur du
   scénario 11 : un service maudit qui « se relève à chaque reboot » (mécaniquement vrai :
   chaque phase recharge le FS donc réinitialise les services — apache2 revient squatter
@@ -352,10 +365,6 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
       sont tous livrés ; prochaine fournée d'idées bienvenue ici)*
 
 **Profondeur du moteur :**
-- [ ] **Permissions réellement appliquées** — `chmod` ne change aujourd'hui que l'affichage
-      `ls -l` : un fichier `000` devrait refuser `cat`, un script sans `x` refuser `./x.sh`,
-      `/root` refuser `cd` sauf élévation. Rendrait crédibles les missions permissions et le
-      boss Gardien des Serrures. (Attention aux checks existants : audit préalable requis.)
 - [ ] **SSH multi-machines** — mini-réseau de 2-3 machines ayant chacune son FS, `ssh` saute
       réellement de l'une à l'autre (prompt/hostname changent, `exit` revient). Transformerait
       le scénario 9 et ouvrirait des niveaux d'infiltration « pivoting ».

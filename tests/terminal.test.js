@@ -751,6 +751,78 @@ test("curl générique inchangé (mission 28 : /html|http|200|example/)", () => 
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// PERMISSIONS RÉELLEMENT APPLIQUÉES (lecture + exécution)
+// ═══════════════════════════════════════════════════════════════════════
+
+test("cat refuse un fichier d'autrui sans lecture pour others", () => {
+  const t = makeTerm({ "secret.txt": { type: "file", perms: "-rw-------", owner: "root", content: "top secret" } });
+  const r = t.run("cat secret.txt");
+  assertEqual(r.error, true);
+  assertIncludes(r.output, "Permission non accordée");
+  assert(!/top secret/.test(r.output), "le contenu ne doit pas fuiter");
+});
+
+test("cat lit son PROPRE fichier en -rw------- (triade owner)", () => {
+  const t = makeTerm({ "perso.txt": { type: "file", perms: "-rw-------", content: "à moi" } });
+  const r = t.run("cat perso.txt");
+  assertEqual(r.error, false);
+  assertIncludes(r.output, "à moi");
+});
+
+test("chmod 644 rend lisible un fichier d'autrui ; chown aussi", () => {
+  const t = makeTerm({
+    "a.txt": { type: "file", perms: "-rw-------", owner: "root", content: "AAA" },
+    "b.txt": { type: "file", perms: "-rw-------", owner: "root", content: "BBB" },
+  });
+  t.run("chmod 644 a.txt");
+  assertIncludes(t.run("cat a.txt").output, "AAA");
+  t.run("chown user b.txt");
+  assertIncludes(t.run("cat b.txt").output, "BBB");
+});
+
+test("grep et head refusent aussi la lecture interdite", () => {
+  const t = makeTerm({ "s.log": { type: "file", perms: "-rw-------", owner: "root", content: "ERROR x" } });
+  assertEqual(t.run("grep ERROR s.log").error, true);
+  assertEqual(t.run("head s.log").error, true);
+});
+
+test("./script.sh exige le bit x ; bash script.sh non ; chmod +x débloque", () => {
+  const t = makeTerm({ "go.sh": { type: "file", perms: "-rw-r--r--", content: "echo GO" } });
+  const ko = t.run("./go.sh");
+  assertEqual(ko.error, true, "sans bit x, ./ doit refuser");
+  assertIncludes(ko.output, "Permission non accordée");
+  assertIncludes(t.run("bash go.sh").output, "GO", "bash ne demande que la lecture");
+  t.run("chmod +x go.sh");
+  assertIncludes(t.run("./go.sh").output, "GO", "exécutable après chmod +x");
+});
+
+test("chmod numérique et symbolique écrivent des triades exactes", () => {
+  const t = makeTerm({ "f.txt": { type: "file", content: "x" } });
+  t.run("chmod 640 f.txt");
+  assertMatches(t.run("ls -l").output, /-rw-r-----.*f\.txt/, "640 → rw-r-----");
+  t.run("chmod u+x f.txt");
+  assertMatches(t.run("ls -l").output, /-rwxr-----.*f\.txt/, "u+x ne touche que la triade owner");
+  t.run("chmod go-r f.txt");
+  assertMatches(t.run("ls -l").output, /-rwx------.*f\.txt/, "go-r retire r aux deux autres triades");
+});
+
+test("/etc/shadow du bac à sable est réellement illisible (root only)", () => {
+  const t = makeTerm({}, { system: true });
+  const r = t.run("cat /etc/shadow");
+  assertEqual(r.error, true, "shadow doit être protégé");
+  assertIncludes(r.output, "Permission non accordée");
+  assertEqual(t.run("cat /etc/passwd").error, false, "passwd reste lisible, comme en vrai");
+});
+
+test("les droits suivent l'identité changée par su", () => {
+  const t = makeTerm({ "prive.txt": { type: "file", perms: "-rw-------", content: "privé" } });
+  runSeq(t, "useradd -m sarah && passwd sarah && su sarah");
+  assertEqual(t.run("cat prive.txt").error, true, "sarah n'est ni owner ni dans others autorisés");
+  t.run("exit");
+  assertEqual(t.run("cat prive.txt").error, false, "user relit son propre fichier");
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROBUSTESSE
 // ═══════════════════════════════════════════════════════════════════════
 
