@@ -1321,6 +1321,134 @@ const LEVELS_EN = {
     },
   },
 
+  // ══ Scénario 11 — Le site est tombé (services & logs) ══
+  11: {
+    title: "🚨 Scenario 11 — The website is down (services & logs)",
+    scenario: "Monday morning, 8:12 AM: the company website stopped responding. On a real Linux server, applications run as services managed by systemd. Your move: diagnose, read the logs, find the culprit and bring the service back up.",
+    missions: {
+      61: {
+        name: "Step 1 — Assess the situation",
+        lesson: {
+          title: "<code>systemctl status</code> — A service's state",
+          intro: "On a modern Linux server, the programs that run continuously (web server, SSH, database…) are <strong>services</strong> managed by <code>systemd</code>. <code>systemctl status</code> is THE first reflex when something stops responding: it says whether the service is up (<code>active (running)</code>), stopped (<code>inactive</code>) or crashed (<code>failed</code>).",
+          syntax: "systemctl status service",
+          options: [
+            "The service is running normally",
+            "The service is stopped (on purpose, or never started)",
+            "The service CRASHED — it tried to start and couldn't",
+          ],
+          examples: [
+            "# state of the nginx web server",
+            "# overview of every service",
+          ],
+          tip: "\"The website stopped responding\" doesn't say WHY. The \"Active:\" line of systemctl status does: cleanly stopped (inactive) and crashed (failed) are two very different investigations.",
+        },
+        desc: "The website (served by <code>nginx</code>) stopped responding. Start the investigation: check the state of the <code>nginx</code> service.",
+        hint: "systemctl status nginx",
+        explanation: "Verdict: \"Active: failed\" — nginx tried to start and crashed (status=1/FAILURE). This is not a voluntary stop, it's a crash. The next logical step: read the service's logs to understand WHY it refused to start.",
+      },
+      62: {
+        name: "Step 2 — Read the service's logs",
+        lesson: {
+          title: "<code>journalctl</code> — The systemd journal",
+          intro: "systemd centralizes the logs of ALL services into a single journal. <code>journalctl</code> reads it, and the <code>-u</code> (unit) option filters on a single service — without it, you drown in the whole machine's logs.",
+          syntax: "journalctl -u service [-n N]",
+          options: [
+            "Only shows THIS service's logs",
+            "Only the last 20 lines",
+          ],
+          examples: [
+            "# all the logs of the nginx service",
+            "# the last 10 lines",
+          ],
+          tip: "In real use, `journalctl -u nginx -f` follows the logs live (like `tail -f`), and `--since \"10 min ago\"` limits to the last minutes. The -u reflex, though, is universal.",
+        },
+        desc: "The status says <code>nginx</code> crashed at startup, but not why. Check the service's logs to find the exact cause.",
+        hint: "journalctl -u nginx",
+        explanation: "The cause is written in plain sight: \"bind() to 0.0.0.0:80 failed (98: Address already in use)\". nginx couldn't attach to port 80… because someone else already occupies it. A port can only be listened to by ONE service at a time — now to find the squatter.",
+      },
+      63: {
+        name: "Step 3 — Find and stop the squatter",
+        lesson: {
+          title: "<code>systemctl stop</code> — Stop a service",
+          intro: "The logs point the finger: port 80 is already taken. <code>systemctl list-units --type=service</code> lists the active services — and among them, <code>apache2</code>, ANOTHER web server, left running after the weekend maintenance. Two web servers, one port 80: there's the conflict. <code>systemctl stop</code> stops a service cleanly.",
+          syntax: "systemctl stop service",
+          options: [
+            "Stops the service now (it will start again at next boot if it's enabled)",
+          ],
+          examples: [
+            "# who's running right now?",
+            "# stop the competing web server",
+          ],
+          tip: "systemctl stop succeeds silently — no message, and that's normal! On Linux, no news is good news. Check with systemctl status if you want confirmation.",
+        },
+        desc: "List the services to identify the competing web server left running, then stop it: it's the one occupying <code>nginx</code>'s port 80.",
+        hint: "systemctl stop apache2",
+        explanation: "apache2 is stopped, port 80 is freed. This scenario is a classic: a maintenance installs or wakes up a second web server, and at the next reboot, both fight for the same port. First come, first served — the other one crashes.",
+      },
+      64: {
+        name: "Step 4 — Start the service again",
+        lesson: {
+          title: "<code>systemctl start</code> — Start a service",
+          intro: "Port 80 is free, nginx can now start. <code>systemctl start</code> launches a service right away. Mind the nuance with <code>restart</code>: <code>start</code> starts a stopped service, <code>restart</code> stops THEN restarts a running one (useful after a configuration change).",
+          syntax: "systemctl start service",
+          options: [
+            "Starts a stopped service",
+            "Stops then restarts (reloads the config along the way)",
+          ],
+          examples: [
+            "# starts the web server",
+            "# after changing its configuration",
+          ],
+          tip: "If the service crashes again immediately on start, back to square journalctl -u: the cause of the crash is always written there. Diagnosing BEFORE restarting in a loop is what separates an admin from a button-masher.",
+        },
+        desc: "The squatter is neutralized (stop <code>apache2</code> if you haven't already), port 80 is free: start <code>nginx</code>.",
+        hint: "systemctl stop apache2 && systemctl start nginx",
+        explanation: "nginx started — silently, therefore without error. Note that if you had tried to start it BEFORE stopping apache2, it would have crashed again with the same port error: the order of operations matters, and the diagnosis is what gave it to you.",
+      },
+      65: {
+        name: "Step 5 — Check the site is back",
+        lesson: {
+          title: "Verify after fixing — the reflex that saves you",
+          intro: "An incident isn't over when you've typed the repair command: it's over when you've VERIFIED everything is back. Re-check the status (it must say <code>active (running)</code>) and glance at the recent logs to confirm a clean start.",
+          syntax: "systemctl status service",
+          options: [
+            "What you want to see after the repair",
+            "The service's main process — proof that it's running",
+          ],
+          examples: [
+            "# the status must be “active (running)”",
+            "# the last 5 lines: clean startup?",
+          ],
+          tip: "On a real incident, verification goes all the way: a curl on the site to see the page respond. Checking the service is good; checking the SERVICE DELIVERED is better.",
+        },
+        desc: "Run the full repair path again (stop <code>apache2</code>, start <code>nginx</code>), then check <code>nginx</code>'s status: it must be <code>active (running)</code>.",
+        hint: "systemctl stop apache2 && systemctl start nginx && systemctl status nginx",
+        explanation: "\"Active: active (running)\" — the website is back online. Diagnosis → cause → fix → verification: you just ran the exact loop of a real incident response, the one on-call engineers repeat every week.",
+      },
+      66: {
+        name: "Step 6 — Make sure it never happens again",
+        lesson: {
+          title: "<code>systemctl enable</code> — Surviving the reboot",
+          intro: "Last trap: <code>start</code> only counts for NOW. At the server's next reboot, systemd only relaunches <strong>enabled</strong> services. If nginx stayed <code>disabled</code>, the site will go down again at the first update — and apache2 will come back squatting the port if it stayed enabled. <code>enable</code> and <code>disable</code> set the behavior at boot.",
+          syntax: "systemctl enable|disable service",
+          options: [
+            "The service will start automatically at every boot",
+            "The service will no longer start automatically (but can still be started with start)",
+          ],
+          examples: [
+            "# nginx will survive reboots",
+            "# apache2 won't come back squatting port 80",
+          ],
+          tip: "start/stop = right now; enable/disable = at boot. The two are independent: a service can be active but disabled (it will drop at reboot), or inactive but enabled (it will come back). Mixing them up is THE classic cause of \"it was working again, why did it go down?\"",
+        },
+        desc: "Close the incident properly: enable <code>nginx</code>'s automatic start at boot, and disable <code>apache2</code>'s so it never comes back squatting port 80.",
+        hint: "systemctl enable nginx && systemctl disable apache2",
+        explanation: "Incident closed, AND the root cause is handled: nginx will come back on its own at every boot, apache2 will no longer fight for port 80. status → journalctl → stop/start → enable: you now hold the full systemd toolkit, the one that runs almost every Linux server in production. 🚨",
+      },
+    },
+  },
+
 };
 
 if (typeof overlayLevels === "function") overlayLevels(LEVELS_EN);

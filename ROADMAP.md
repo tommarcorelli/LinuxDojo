@@ -28,6 +28,15 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **Scénario 11 — Le site est tombé (services & logs)** (2026-07-16) — `systemctl`
+  (status/start/stop/restart/enable/disable/list-units) et `journalctl` (-u, -n) simulés
+  dans le terminal, avec un vrai conflit à diagnostiquer : nginx en `failed` parce
+  qu'apache2 squatte le port 80 (démarrer nginx sans arrêter apache2 échoue vraiment).
+  6 missions (61-66, ids libres : Expert = 9001+) suivant la boucle réponse à incident
+  (status → journalctl → stop → start → vérif → enable/disable), quiz 11, objectif
+  « 🚨 Ceinture Services », badge « 🚨 Pompier de service », overlay EN complet, 8 tests
+  unitaires dédiés (dont l'isolation loadFS et le conflit de port). Compteurs mis à jour
+  partout : 66 missions / 11 scénarios (landing, index, README, i18n FR+EN)
 
 ---
 
@@ -303,9 +312,6 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 `top`… De quoi nourrir plusieurs scénarios.)*
 
 **Nouveaux scénarios (contenu) :**
-- [ ] **Scénario 11 — Services & logs système** : `systemctl start/stop/status/enable`,
-      `journalctl -u`, `service`. Trame : « le serveur web est tombé, remets-le en route ».
-      Le plus proche des situations réelles d'admin (et des TP SISR).
 - [ ] **Scénario 12 — Utilisateurs & groupes** : `useradd`, `passwd`, `usermod -aG`,
       `groups`, `su`, lecture de `/etc/passwd` / `/etc/group`. Trame : onboarding d'un
       nouvel admin dans l'équipe.
@@ -330,7 +336,7 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 - [ ] **Onboarding « 2 minutes »** — mini-tutoriel guidé pour le visiteur qui n'a jamais
       touché un terminal (arrivée depuis la landing). À prioriser si les analytics montrent
       de l'abandon sur la mission 1.
-- [ ] **7ᵉ boss** (thème : services/processus, une fois le scénario 11 fait)
+- [ ] **7ᵉ boss** (thème : services/processus — le scénario 11 existe désormais, la voie est libre)
 - [ ] **Niveaux d'infiltration 16-20** exploitant les nouvelles commandes (cron caché,
       utilisateur suspect, service backdoor…)
 - [ ] **Badges secrets supplémentaires** (le système `markSecret()` est générique et prêt)

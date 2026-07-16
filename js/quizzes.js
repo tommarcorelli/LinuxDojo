@@ -55,6 +55,12 @@ const QUIZZES = {
     { q: "Quelle commande affiche uniquement les conteneurs EN COURS d'exécution ?", options: ["docker ps -a", "docker images", "docker ps", "docker logs"], answer: 2 },
     { q: "Comment consulter la sortie (console.log, etc.) d'un conteneur en arrière-plan ?", options: ["docker ps", "docker logs nom", "docker build nom", "docker images nom"], answer: 1 },
   ],
+  11: [
+    { q: "Un service affiche « Active: failed ». Ça veut dire quoi ?", options: ["Il est arrêté volontairement", "Il a essayé de démarrer et a planté", "Il tourne normalement", "Il n'existe pas"], answer: 1 },
+    { q: "Comment voir les logs du SEUL service nginx ?", options: ["journalctl", "journalctl -u nginx", "systemctl logs nginx", "cat nginx.log"], answer: 1 },
+    { q: "Que signifie l'erreur « Address already in use » au démarrage d'un serveur web ?", options: ["Le disque est plein", "Un autre service occupe déjà le même port", "Le fichier de config est absent", "Le service n'est pas installé"], answer: 1 },
+    { q: "Quelle est la différence entre « start » et « enable » ?", options: ["Aucune, ce sont des synonymes", "start = au prochain boot, enable = maintenant", "start = maintenant, enable = automatiquement à chaque boot", "enable est réservé à root"], answer: 2 },
+  ],
 };
 
 const Quiz = {

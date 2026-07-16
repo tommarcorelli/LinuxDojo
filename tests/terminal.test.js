@@ -479,6 +479,75 @@ test("git status affiche 'propre' une fois tout committé", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// SERVICES SYSTEMD (simulation systemctl / journalctl)
+// ═══════════════════════════════════════════════════════════════════════
+
+test("systemctl status montre nginx en failed au départ", () => {
+  const t = makeTerm({});
+  const r = t.run("systemctl status nginx");
+  assertMatches(r.output, /Active: failed/, "nginx doit démarrer le scénario en failed");
+  assertEqual(t.state.sysStatus, "nginx");
+});
+
+test("journalctl -u nginx révèle le conflit de port", () => {
+  const t = makeTerm({});
+  const r = t.run("journalctl -u nginx");
+  assertMatches(r.output, /Address already in use/, "les logs doivent donner la cause du crash");
+  assertEqual(t.state.journalUnit, "nginx");
+});
+
+test("systemctl start nginx échoue tant qu'apache2 occupe le port 80", () => {
+  const t = makeTerm({});
+  const r = t.run("systemctl start nginx");
+  assertEqual(r.error, true, "le démarrage doit échouer port occupé");
+  assert(t.state.sysStart !== "nginx", "sysStart ne doit PAS être posé sur un échec");
+});
+
+test("stop apache2 puis start nginx réussit (résolution du conflit)", () => {
+  const t = makeTerm({});
+  const r = runSeq(t, "systemctl stop apache2 && systemctl start nginx");
+  assertEqual(r.error, false, "nginx doit démarrer une fois le port libéré");
+  assertEqual(t.state.sysStop, "apache2");
+  assertEqual(t.state.sysStart, "nginx");
+  const st = t.run("systemctl status nginx");
+  assertMatches(st.output, /active \(running\)/, "le statut doit refléter le démarrage");
+});
+
+test("systemctl enable/disable posent l'état et répondent comme systemd", () => {
+  const t = makeTerm({});
+  const en = t.run("systemctl enable nginx");
+  assertIncludes(en.output, "Created symlink");
+  assertEqual(t.state.sysEnable, "nginx");
+  const dis = t.run("systemctl disable apache2");
+  assertIncludes(dis.output, "Removed");
+  assertEqual(t.state.sysDisable, "apache2");
+});
+
+test("systemctl accepte le suffixe .service et refuse une unité inconnue", () => {
+  const t = makeTerm({});
+  const ok = t.run("systemctl status nginx.service");
+  assertEqual(t.state.sysStatus, "nginx", "nginx.service doit être normalisé en nginx");
+  assertEqual(ok.error, false);
+  const ko = t.run("systemctl status foobar");
+  assertEqual(ko.error, true);
+  assertIncludes(ko.output, "could not be found");
+});
+
+test("journalctl -n limite le nombre de lignes", () => {
+  const t = makeTerm({});
+  const r = t.run("journalctl -u nginx -n 2");
+  assertEqual(r.output.split("\n").length, 2, "-n 2 doit ne garder que 2 lignes");
+});
+
+test("l'état des services est réinitialisé par loadFS (isolation entre missions)", () => {
+  const t = makeTerm({});
+  runSeq(t, "systemctl stop apache2 && systemctl start nginx");
+  t.loadFS({});
+  const r = t.run("systemctl status nginx");
+  assertMatches(r.output, /Active: failed/, "après loadFS, nginx doit être retombé en failed");
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROBUSTESSE
 // ═══════════════════════════════════════════════════════════════════════
 

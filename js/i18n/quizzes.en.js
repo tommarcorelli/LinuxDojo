@@ -61,6 +61,12 @@ const QUIZZES_EN = {
     { q: "Which command shows only the RUNNING containers?", options: ["docker ps -a", "docker images", "docker ps", "docker logs"] },
     { q: "How do you view the output (console.log, etc.) of a background container?", options: ["docker ps", "docker logs name", "docker build name", "docker images name"] },
   ],
+  11: [
+    { q: "A service shows « Active: failed ». What does that mean?", options: ["It was stopped on purpose", "It tried to start and crashed", "It's running normally", "It doesn't exist"] },
+    { q: "How do you see the logs of ONLY the nginx service?", options: ["journalctl", "journalctl -u nginx", "systemctl logs nginx", "cat nginx.log"] },
+    { q: "What does the « Address already in use » error mean when a web server starts?", options: ["The disk is full", "Another service already occupies the same port", "The config file is missing", "The service isn't installed"] },
+    { q: "What's the difference between « start » and « enable »?", options: ["None, they're synonyms", "start = at next boot, enable = right now", "start = right now, enable = automatically at every boot", "enable is reserved for root"] },
+  ],
 };
 
 if (typeof overlayQuizzes === "function") overlayQuizzes(QUIZZES_EN);

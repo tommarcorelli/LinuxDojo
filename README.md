@@ -17,7 +17,7 @@ ou un post sur les réseaux, pas nécessaire pour jouer directement.
 
 | Mode | Description |
 |---|---|
-| 📖 **Apprendre** | 10 scénarios réalistes, 60 missions : leçon → exercice → explication. Quiz de fin de chapitre + révision espacée. Du premier `ls` jusqu'à la réponse à incident, l'**automatisation par scripts**, le **versioning avec Git**, l'**administration distante en SSH** et la **conteneurisation avec Docker**. Indices à 3 paliers (nudge gratuit → syntaxe → solution) pour ne jamais rester bloqué. Plus un **Mode Expert** (8 missions sans indices) pour ceux qui ont tout terminé. |
+| 📖 **Apprendre** | 11 scénarios réalistes, 66 missions : leçon → exercice → explication. Quiz de fin de chapitre + révision espacée. Du premier `ls` jusqu'à la réponse à incident, l'**automatisation par scripts**, le **versioning avec Git**, l'**administration distante en SSH**, la **conteneurisation avec Docker** et la **gestion des services systemd** (`systemctl`/`journalctl`). Indices à 3 paliers (nudge gratuit → syntaxe → solution) pour ne jamais rester bloqué. Plus un **Mode Expert** (8 missions sans indices) pour ceux qui ont tout terminé. |
 | 🗺 **Explorer** | Monde ouvert navigable en commandes : inventaire, PNJ, portes verrouillées, 3 gemmes à réunir. |
 | ⚡ **Défis** | 20 défis chrono avec combo ×5 et record. |
 | 🔐 **Infiltration** | 15 niveaux style OverTheWire/Bandit : fouille, filtre, décode (base64, ROT13, hex, double encodage). |
@@ -33,7 +33,7 @@ ou un post sur les réseaux, pas nécessaire pour jouer directement.
 
 **Un vrai mini-shell** : variables (`x=5`, `echo $x`, `"$x"` vs `'$x'`), substitution de commande `$(…)`, boucles `for … in … ; do … done`, conditions `if [ -f x ]; then … else … fi`, `test`/`[ ]`, `while`, `seq`, `$?`, et exécution de scripts avec `bash script.sh` ou `./script.sh`. Multi-ligne géré (le prompt passe à `>` en attendant `done`/`fi`).
 
-Navigation (`ls`, `cd`, `pwd`, `tree`, `find`), fichiers (`cat`, `head`, `tail`, `touch`, `mkdir`, `cp`, `mv`, `rm`, `chmod`, `chown`, `chgrp`), texte (`grep`, `sort`, `uniq`, `wc`, `cut`, `tr`, `sed`, `awk`, `diff`), système (`ps`, `kill`, `df`, `du`, `free`, `uptime`, `uname`, `date`, `history`, `env`, `export`, `alias`, `jobs`, `fg`, `xargs`), décodage (`base64`, `rot13`, `xxd`), versioning (`git init/add/commit/log/branch/checkout/status`), aide (`man`, `whatis`, `help`)…
+Navigation (`ls`, `cd`, `pwd`, `tree`, `find`), fichiers (`cat`, `head`, `tail`, `touch`, `mkdir`, `cp`, `mv`, `rm`, `chmod`, `chown`, `chgrp`), texte (`grep`, `sort`, `uniq`, `wc`, `cut`, `tr`, `sed`, `awk`, `diff`), système (`ps`, `kill`, `df`, `du`, `free`, `uptime`, `uname`, `date`, `history`, `env`, `export`, `alias`, `jobs`, `fg`, `xargs`), services (`systemctl status/start/stop/enable`, `journalctl -u`), décodage (`base64`, `rot13`, `xxd`), versioning (`git init/add/commit/log/branch/checkout/status`), aide (`man`, `whatis`, `help`)…
 
 Pipes `|`, redirections `>` et `>>`, jokers `*.txt` (même en sous-dossier : `ls logs/*.log`), autocomplétion Tab qui suit les chemins, historique ↑/↓, prompt qui affiche le dossier courant, messages d'erreur pédagogiques avec suggestions de typos.
 
@@ -91,7 +91,7 @@ LinuxDojo/
 │   └── style.css
 ├── js/
 │   ├── terminal.js       le mini-shell simulé (cœur du projet)
-│   ├── levels.js         scénarios & missions (9 chapitres)
+│   ├── levels.js         scénarios & missions (11 chapitres)
 │   ├── glossary.js       référence des commandes (man)
 │   ├── game.js           état global, XP, rangs, badges
 │   ├── gameshell.js       orchestration UI

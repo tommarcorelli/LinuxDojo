@@ -35,6 +35,7 @@ class Terminal {
     this._jobCounter = 0;
     this._git = null;   // dépôt git simulé (null tant que 'git init' n'a pas été fait)
     this._docker = null; // daemon docker simulé (images/conteneurs) — créé au premier usage
+    this._services = null; // services systemd simulés — créés au premier systemctl/journalctl
     this._sshStack = []; // pile des prompts précédents avant chaque 'ssh' (pour 'exit')
   }
 
@@ -66,7 +67,48 @@ class Terminal {
     this._jobCounter = 0;
     this._git = null;
     this._docker = null;
+    this._services = null;
     this._sshStack = [];
+  }
+
+  // ── Services systemd simulés ──────────────────────────────────
+  // Scénario de départ : nginx est tombé (failed) parce qu'apache2, resté
+  // actif, occupe le port 80. ssh et cron tournent normalement.
+  _initServices() {
+    if (this._services) return;
+    this._services = {
+      nginx:   { active: false, failed: true,  enabled: false, pid: 0,    desc: "A high performance web server" },
+      apache2: { active: true,  failed: false, enabled: true,  pid: 512,  desc: "The Apache HTTP Server" },
+      ssh:     { active: true,  failed: false, enabled: true,  pid: 801,  desc: "OpenBSD Secure Shell server" },
+      cron:    { active: true,  failed: false, enabled: true,  pid: 604,  desc: "Regular background program processing daemon" },
+    };
+  }
+
+  // Journal simulé d'un service (journalctl -u NOM) — reflète son état courant.
+  // Les messages systemd/nginx restent en anglais (comme sur un vrai Linux),
+  // seuls la date et l'éventuel commentaire applicatif suivent la langue.
+  _journal(unit) {
+    const s = this._services[unit];
+    const day = sh("juil. 16", "Jul 16");
+    const at = (n, src, pid) => `${day} 08:0${n} serveur ${src}[${pid}]:`;
+    if (unit === "nginx") {
+      if (s.failed || !s.active) return [
+        `${at(1, "systemd", 1)} Starting A high performance web server...`,
+        `${at(1, "nginx", 1337)} nginx: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)`,
+        `${at(1, "nginx", 1337)} nginx: [emerg] still could not bind()`,
+        `${at(1, "systemd", 1)} nginx.service: Control process exited, code=exited, status=1/FAILURE`,
+        `${at(1, "systemd", 1)} Failed to start A high performance web server.`,
+      ];
+      return [
+        `${at(2, "systemd", 1)} Starting A high performance web server...`,
+        `${at(2, "systemd", 1)} Started A high performance web server.`,
+        `${at(2, "nginx", 2001)} ` + sh("serveur web démarré, en écoute sur le port 80", "web server started, listening on port 80"),
+      ];
+    }
+    if (unit === "apache2") return s.active
+      ? [`${at(0, "systemd", 1)} Started The Apache HTTP Server.`, `${at(0, "apache2", 512)} AH00558: apache2: resuming normal operations, listening on port 80`]
+      : [`${at(1, "systemd", 1)} Stopping The Apache HTTP Server...`, `${at(1, "systemd", 1)} Stopped The Apache HTTP Server.`];
+    return [`${at(0, "systemd", 1)} Started ${s.desc}.`];
   }
 
   /* ── Chemins ───────────────────────────────────────────────── */
@@ -227,7 +269,7 @@ class Terminal {
     }
 
     // Commandes connues proches
-    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat"];
+    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
       return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`, `${cmd}: command not found\n💡 Did you mean: ${close} ?`);
@@ -257,7 +299,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -1215,6 +1257,102 @@ class Terminal {
         break;
       }
 
+      case "systemctl": {
+        this._initServices();
+        const sub = args[0];
+        const unit = (args[1] || "").replace(/\.service$/, "");
+        if (!sub) {
+          out = sh("Usage :  systemctl COMMANDE [UNITÉ]\n\nCommandes courantes :\n  status    Affiche l'état d'un service\n  start     Démarre un service\n  stop      Arrête un service\n  restart   Redémarre un service\n  enable    Active le démarrage automatique au boot\n  disable   Désactive le démarrage automatique\n  list-units --type=service   Liste les services", "Usage:  systemctl COMMAND [UNIT]\n\nCommon commands:\n  status    Show a service's state\n  start     Start a service\n  stop      Stop a service\n  restart   Restart a service\n  enable    Enable automatic start at boot\n  disable   Disable automatic start\n  list-units --type=service   List services");
+          err = true; break;
+        }
+
+        if (sub === "list-units" || sub === "list-unit-files") {
+          const rows = Object.entries(this._services).map(([n, s]) =>
+            `${(n + ".service").padEnd(18)} loaded ${s.failed ? "failed   failed " : s.active ? "active   running" : "inactive dead   "} ${s.desc}`);
+          out = "UNIT               LOAD   ACTIVE   SUB     DESCRIPTION\n" + rows.join("\n");
+          this.state.sysList = true;
+          break;
+        }
+
+        if (!unit) { out = sh(`systemctl ${sub} : il manque le nom du service\nUsage : systemctl ${sub} NOM`, `systemctl ${sub}: missing service name\nUsage: systemctl ${sub} NAME`); err = true; break; }
+        const svc = this._services[unit];
+        if (!svc) { out = `Unit ${unit}.service could not be found.`; err = true; break; }
+
+        if (sub === "status") {
+          const stateLine = svc.failed
+            ? "failed (Result: exit-code)"
+            : svc.active ? "active (running)" : "inactive (dead)";
+          const dot = svc.failed ? "×" : svc.active ? "●" : "○";
+          out = [
+            `${dot} ${unit}.service - ${svc.desc}`,
+            `     Loaded: loaded (/lib/systemd/system/${unit}.service; ${svc.enabled ? "enabled" : "disabled"}; preset: enabled)`,
+            `     Active: ${stateLine}`,
+            svc.failed ? sh(`    Process: ExecStart=/usr/sbin/${unit} (code=exited, status=1/FAILURE)\n💡 Le service a planté au démarrage. Consulte ses logs : journalctl -u ${unit}`, `    Process: ExecStart=/usr/sbin/${unit} (code=exited, status=1/FAILURE)\n💡 The service crashed at startup. Check its logs: journalctl -u ${unit}`) : `   Main PID: ${svc.active ? svc.pid + " (" + unit + ")" : "n/a"}`,
+          ].join("\n");
+          this.state.sysStatus = unit;
+          break;
+        }
+
+        if (sub === "start" || sub === "restart") {
+          // Conflit pédagogique : nginx ne peut pas démarrer tant qu'apache2 occupe le port 80
+          if (unit === "nginx" && this._services.apache2 && this._services.apache2.active) {
+            svc.failed = true; svc.active = false;
+            out = sh(`Job for nginx.service failed because the control process exited with error code.\nSee "systemctl status nginx" and "journalctl -u nginx" for details.\n💡 Un autre service occupe peut-être déjà le port 80...`, `Job for nginx.service failed because the control process exited with error code.\nSee "systemctl status nginx" and "journalctl -u nginx" for details.\n💡 Another service may already be squatting port 80...`);
+            err = true; break;
+          }
+          svc.active = true; svc.failed = false;
+          this.state[sub === "start" ? "sysStart" : "sysRestart"] = unit;
+          out = ""; // comme le vrai systemctl : silencieux quand tout va bien
+          break;
+        }
+
+        if (sub === "stop") {
+          svc.active = false; svc.failed = false;
+          this.state.sysStop = unit;
+          out = "";
+          break;
+        }
+
+        if (sub === "enable") {
+          svc.enabled = true;
+          this.state.sysEnable = unit;
+          out = `Created symlink /etc/systemd/system/multi-user.target.wants/${unit}.service → /lib/systemd/system/${unit}.service.`;
+          break;
+        }
+
+        if (sub === "disable") {
+          svc.enabled = false;
+          this.state.sysDisable = unit;
+          out = `Removed "/etc/systemd/system/multi-user.target.wants/${unit}.service".`;
+          break;
+        }
+
+        out = sh(`systemctl : commande inconnue « ${sub} »\nEssaie : status, start, stop, restart, enable, disable, list-units`, `systemctl: unknown command "${sub}"\nTry: status, start, stop, restart, enable, disable, list-units`);
+        err = true;
+        break;
+      }
+
+      case "journalctl": {
+        this._initServices();
+        const uIdx = args.indexOf("-u");
+        const unit = uIdx >= 0 ? (args[uIdx + 1] || "").replace(/\.service$/, "") : null;
+        const nIdx = args.indexOf("-n");
+        const nLines = nIdx >= 0 ? parseInt(args[nIdx + 1], 10) || 10 : 0;
+        if (uIdx >= 0 && !unit) { out = sh("journalctl : il manque le nom du service après -u\nUsage : journalctl -u NOM", "journalctl: missing service name after -u\nUsage: journalctl -u NAME"); err = true; break; }
+        if (unit && !this._services[unit]) { out = `-- No entries --\n💡 Unit ${unit}.service ${sh("introuvable", "not found")}.`; err = true; break; }
+        let lines;
+        if (unit) {
+          lines = this._journal(unit);
+          this.state.journalUnit = unit;
+        } else {
+          lines = Object.keys(this._services).flatMap(u => this._journal(u).slice(-2));
+          this.state.journal = true;
+        }
+        if (nLines > 0) lines = lines.slice(-nLines);
+        out = lines.join("\n");
+        break;
+      }
+
       case "alias": {
         if (!args.length) {
           const entries = Object.entries(this._aliases);
@@ -2044,6 +2182,7 @@ class Terminal {
           "Scripting :  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
           "Git :  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b nom",
           "Docker :  docker build -t nom . · docker images · docker run -d --name nom image · docker ps [-a] · docker logs nom · docker stop nom",
+          "Services :  systemctl status|start|stop|restart|enable NOM · systemctl list-units --type=service · journalctl -u NOM [-n N]",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · Ctrl+R recherche dans l'historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",
@@ -2070,6 +2209,7 @@ class Terminal {
           "Scripting:  x=5 · echo $x · $(cmd) · for f in *.txt; do ... done · if [ ... ]; then ... fi · bash script.sh",
           "Git:  git init · git add . · git commit -m \"msg\" · git log · git branch · git checkout -b name",
           "Docker:  docker build -t name . · docker images · docker run -d --name name image · docker ps [-a] · docker logs name · docker stop name",
+          "Services:  systemctl status|start|stop|restart|enable NAME · systemctl list-units --type=service · journalctl -u NAME [-n N]",
           "Tips: Tab autocompletes (even paths) · ↑/↓ history · Ctrl+R search in history · man grep for the manual",
           "Key ? (outside input): opens the keyboard shortcuts screen",
           "",

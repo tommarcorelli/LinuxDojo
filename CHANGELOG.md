@@ -6,6 +6,20 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Scénario 11 — « Le site est tombé » (services & logs systemd)** : `systemctl`
+  (status/start/stop/restart/enable/disable/list-units) et `journalctl` (-u, -n) rejoignent
+  le terminal simulé, avec un état de services persistant par mission et un **vrai conflit
+  à diagnostiquer** — nginx est en `failed` parce qu'apache2, resté actif après une
+  maintenance, occupe le port 80 ; tenter `systemctl start nginx` sans arrêter apache2
+  échoue réellement avec l'erreur du journal (`Address already in use`). 6 nouvelles
+  missions (ids 61-66) déroulant la boucle complète de réponse à incident : status →
+  journalctl → stop du squatteur → start → vérification `active (running)` → enable/disable
+  pour survivre au reboot. Quiz de chapitre, objectif « 🚨 Ceinture Services », badge
+  « 🚨 Pompier de service », traduction EN complète (overlay `levels.en.js` + quiz +
+  objectif + badge), entrées `help` et autocomplétion Tab. 8 tests unitaires dédiés
+  (136 au total) dont l'isolation de l'état entre missions (`loadFS`) et le conflit de port. Compteurs mis à jour partout : **66 missions / 11 scénarios**
+  (landing, index, README, i18n FR+EN). Le déblocage du mode Expert suit automatiquement
+  (calculé dynamiquement sur le total). SW v34 → v35.
 - **Analytics GoatCounter activée** — `GC_CODE = "marcorelli"` renseigné (dashboard :
   https://marcorelli.goatcounter.com), et évènements personnalisés câblés :
   `mission-ok-{id}` à chaque mission réussie, `mission-hint1/2/3-{id}` à chaque palier

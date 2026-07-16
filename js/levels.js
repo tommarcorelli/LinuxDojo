@@ -1845,6 +1845,184 @@ const CHAPTERS = [
       }
 
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 11,
+    title: "🚨 Scénario 11 — Le site est tombé (services & logs)",
+    scenario: "Lundi matin, 8h12 : le site web de la boîte ne répond plus. Sur un vrai serveur Linux, les applications tournent comme des services gérés par systemd. À toi de jouer : diagnostiquer, lire les logs, trouver le coupable et remettre le service en route.",
+    missions: [
+
+      {
+        id: 61,
+        name: "Étape 1 — État des lieux",
+        cmd: "systemctl status",
+        xp: 35,
+        lesson: {
+          title: "<code>systemctl status</code> — L'état d'un service",
+          intro: "Sur un serveur Linux moderne, les programmes qui tournent en continu (serveur web, SSH, base de données…) sont des <strong>services</strong> gérés par <code>systemd</code>. <code>systemctl status</code> est LE premier réflexe quand quelque chose ne répond plus : il dit si le service est actif (<code>active (running)</code>), arrêté (<code>inactive</code>) ou planté (<code>failed</code>).",
+          syntax: "systemctl status service",
+          options: [
+            { flag: "active (running)", desc: "Le service tourne normalement" },
+            { flag: "inactive (dead)",  desc: "Le service est arrêté (volontairement ou jamais démarré)" },
+            { flag: "failed",           desc: "Le service a PLANTÉ — il a essayé de démarrer et n'a pas pu" },
+          ],
+          examples: [
+            { cmd: "systemctl status nginx", comment: "# état du serveur web nginx" },
+            { cmd: "systemctl list-units --type=service", comment: "# vue d'ensemble de tous les services" },
+          ],
+          tip: "« Le site ne répond plus » ne dit pas POURQUOI. La ligne « Active: » de systemctl status, si : arrêté proprement (inactive) et planté (failed), ce n'est pas du tout la même enquête."
+        },
+        desc: "Le site web (servi par <code>nginx</code>) ne répond plus. Commence l'enquête : vérifie l'état du service <code>nginx</code>.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\nLe site web ne répond plus depuis la maintenance de ce week-end.\nPremier réflexe : vérifier l'état du service nginx." },
+        },
+        hint: "systemctl status nginx",
+        check: (out, s) => s.sysStatus === "nginx" && /failed/.test(out),
+        explanation: "Verdict : « Active: failed » — nginx a essayé de démarrer et a planté (status=1/FAILURE). Ce n'est pas un arrêt volontaire, c'est un crash. Prochaine étape logique : lire les logs du service pour comprendre POURQUOI il a refusé de démarrer."
+      },
+
+      {
+        id: 62,
+        name: "Étape 2 — Lire les logs du service",
+        cmd: "journalctl -u",
+        xp: 40,
+        lesson: {
+          title: "<code>journalctl</code> — Le journal de systemd",
+          intro: "systemd centralise les logs de TOUS les services dans un journal unique. <code>journalctl</code> le consulte, et l'option <code>-u</code> (unit) filtre sur un seul service — sans elle, tu te noies dans les logs de toute la machine.",
+          syntax: "journalctl -u service [-n N]",
+          options: [
+            { flag: "-u service", desc: "Ne montre que les logs de CE service" },
+            { flag: "-n 20",      desc: "Les 20 dernières lignes seulement" },
+          ],
+          examples: [
+            { cmd: "journalctl -u nginx",       comment: "# tous les logs du service nginx" },
+            { cmd: "journalctl -u nginx -n 10", comment: "# les 10 dernières lignes" },
+          ],
+          tip: "En vrai usage, `journalctl -u nginx -f` suit les logs en direct (comme `tail -f`), et `--since \"10 min ago\"` limite aux dernières minutes. Le réflexe -u, lui, est universel."
+        },
+        desc: "Le statut dit que <code>nginx</code> a planté au démarrage, mais pas pourquoi. Consulte les logs du service pour trouver la cause exacte.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\nStatut : nginx est en failed (crash au démarrage).\nÀ faire : lire les logs du service pour identifier la cause." },
+        },
+        hint: "journalctl -u nginx",
+        check: (out, s) => s.journalUnit === "nginx" && /address already in use/.test(out),
+        explanation: "La cause est écrite noir sur blanc : « bind() to 0.0.0.0:80 failed (98: Address already in use) ». nginx n'a pas pu s'attacher au port 80… parce que quelqu'un d'autre l'occupe déjà. Un port ne peut être écouté que par UN service à la fois — reste à trouver le squatteur."
+      },
+
+      {
+        id: 63,
+        name: "Étape 3 — Trouver et arrêter le squatteur",
+        cmd: "systemctl stop",
+        xp: 40,
+        lesson: {
+          title: "<code>systemctl stop</code> — Arrêter un service",
+          intro: "Les logs accusent : le port 80 est déjà pris. <code>systemctl list-units --type=service</code> liste les services actifs — et parmi eux, <code>apache2</code>, un AUTRE serveur web, resté allumé après la maintenance du week-end. Deux serveurs web, un seul port 80 : voilà le conflit. <code>systemctl stop</code> arrête un service proprement.",
+          syntax: "systemctl stop service",
+          options: [
+            { flag: "stop",  desc: "Arrête le service maintenant (il redémarrera au prochain boot s'il est enabled)" },
+          ],
+          examples: [
+            { cmd: "systemctl list-units --type=service", comment: "# qui tourne en ce moment ?" },
+            { cmd: "systemctl stop apache2",              comment: "# arrête le serveur web concurrent" },
+          ],
+          tip: "systemctl stop réussit en silence — pas de message, c'est normal ! Sur Linux, pas de nouvelles = bonnes nouvelles. Vérifie avec systemctl status si tu veux une confirmation."
+        },
+        desc: "Liste les services pour identifier le serveur web concurrent resté allumé, puis arrête-le : c'est lui qui occupe le port 80 de <code>nginx</code>.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\nCause identifiée : le port 80 est déjà occupé (Address already in use).\nÀ faire : trouver quel service occupe le port et l'arrêter." },
+        },
+        hint: "systemctl stop apache2",
+        check: (out, s) => s.sysStop === "apache2",
+        explanation: "apache2 est arrêté, le port 80 est libéré. Ce scénario est un grand classique : une maintenance installe ou réveille un deuxième serveur web, et au redémarrage suivant, les deux se battent pour le même port. Le premier arrivé gagne, l'autre plante."
+      },
+
+      {
+        id: 64,
+        name: "Étape 4 — Redémarrer le service",
+        cmd: "systemctl start",
+        xp: 45,
+        lesson: {
+          title: "<code>systemctl start</code> — Démarrer un service",
+          intro: "Le port 80 est libre, nginx peut maintenant démarrer. <code>systemctl start</code> lance un service tout de suite. Attention à la nuance avec <code>restart</code> : <code>start</code> démarre un service arrêté, <code>restart</code> arrête PUIS redémarre un service qui tourne (utile après un changement de configuration).",
+          syntax: "systemctl start service",
+          options: [
+            { flag: "start",   desc: "Démarre un service arrêté" },
+            { flag: "restart", desc: "Arrête puis redémarre (recharge la config au passage)" },
+          ],
+          examples: [
+            { cmd: "systemctl start nginx",   comment: "# démarre le serveur web" },
+            { cmd: "systemctl restart nginx", comment: "# après avoir modifié sa configuration" },
+          ],
+          tip: "Si le service replante immédiatement au start, retour à la case journalctl -u : la cause du crash y est toujours écrite. Diagnostiquer AVANT de redémarrer en boucle, c'est ce qui distingue un admin d'un presse-boutons."
+        },
+        desc: "Le squatteur est neutralisé (arrête <code>apache2</code> si ce n'est pas déjà fait), le port 80 est libre : démarre <code>nginx</code>.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\napache2 arrêté, le port 80 est libre.\nÀ faire : démarrer nginx." },
+        },
+        hint: "systemctl stop apache2 && systemctl start nginx",
+        check: (out, s) => s.sysStart === "nginx",
+        explanation: "nginx a démarré — en silence, donc sans erreur. Note que si tu avais essayé de le démarrer AVANT d'arrêter apache2, il aurait replanté avec la même erreur de port : l'ordre des opérations compte, et c'est le diagnostic qui te l'a donné."
+      },
+
+      {
+        id: 65,
+        name: "Étape 5 — Vérifier que le site est revenu",
+        cmd: "systemctl status",
+        xp: 40,
+        lesson: {
+          title: "Vérifier après réparer — le réflexe qui sauve",
+          intro: "Un incident n'est pas terminé quand on a tapé la commande de réparation : il est terminé quand on a VÉRIFIÉ que tout est revenu. Re-vérifie le statut (il doit dire <code>active (running)</code>) et jette un œil aux logs récents pour confirmer un démarrage propre.",
+          syntax: "systemctl status service",
+          options: [
+            { flag: "Active: active (running)", desc: "Ce que tu veux voir après la réparation" },
+            { flag: "Main PID",                 desc: "Le processus principal du service — la preuve qu'il tourne" },
+          ],
+          examples: [
+            { cmd: "systemctl status nginx",    comment: "# le statut doit être « active (running) »" },
+            { cmd: "journalctl -u nginx -n 5",  comment: "# les 5 dernières lignes : démarrage propre ?" },
+          ],
+          tip: "Sur un vrai incident, la vérification va jusqu'au bout : un curl sur le site pour voir la page répondre. Vérifier le service, c'est bien ; vérifier le SERVICE RENDU, c'est mieux."
+        },
+        desc: "Refais le parcours de réparation complet (arrêter <code>apache2</code>, démarrer <code>nginx</code>), puis vérifie le statut de <code>nginx</code> : il doit être <code>active (running)</code>.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\nnginx démarré. Dernière étape avant de clore l'incident :\nvérifier que le service est bien « active (running) »." },
+        },
+        hint: "systemctl stop apache2 && systemctl start nginx && systemctl status nginx",
+        check: (out, s) => s.sysStatus === "nginx" && /active \(running\)/.test(out),
+        explanation: "« Active: active (running) » — le site est de retour en ligne. Diagnostic → cause → correction → vérification : tu viens de dérouler la boucle exacte d'une vraie réponse à incident, celle que les astreintes répètent chaque semaine."
+      },
+
+      {
+        id: 66,
+        name: "Étape 6 — Que ça ne se reproduise plus",
+        cmd: "systemctl enable",
+        xp: 50,
+        lesson: {
+          title: "<code>systemctl enable</code> — Survivre au redémarrage",
+          intro: "Dernier piège : <code>start</code> ne vaut que pour MAINTENANT. Au prochain redémarrage du serveur, systemd ne relance que les services <strong>enabled</strong>. Si nginx est resté <code>disabled</code>, le site retombera à la première mise à jour — et apache2, lui, reviendra squatter le port s'il est resté enabled. <code>enable</code> et <code>disable</code> règlent le comportement au boot.",
+          syntax: "systemctl enable|disable service",
+          options: [
+            { flag: "enable",  desc: "Le service démarrera automatiquement à chaque boot" },
+            { flag: "disable", desc: "Le service ne démarrera plus automatiquement (mais reste utilisable avec start)" },
+          ],
+          examples: [
+            { cmd: "systemctl enable nginx",    comment: "# nginx survivra aux redémarrages" },
+            { cmd: "systemctl disable apache2", comment: "# apache2 ne reviendra plus squatter le port 80" },
+          ],
+          tip: "start/stop = maintenant ; enable/disable = au boot. Les deux sont indépendants : un service peut être actif mais disabled (il tombera au reboot), ou inactif mais enabled (il reviendra). Les confondre est LA cause classique du « ça remarchait, pourquoi c'est retombé ? »"
+        },
+        desc: "Clos l'incident proprement : active le démarrage automatique de <code>nginx</code> au boot, et désactive celui d'<code>apache2</code> pour qu'il ne revienne pas squatter le port 80.",
+        fs: {
+          "incident.txt": { type: "file", content: "INCIDENT #4212 — lundi 08:12\nLe site est revenu. Pour clore l'incident :\n- nginx doit démarrer automatiquement au boot (enable)\n- apache2 ne doit PLUS démarrer automatiquement (disable)" },
+        },
+        hint: "systemctl enable nginx && systemctl disable apache2",
+        check: (out, s) => s.sysEnable === "nginx" && s.sysDisable === "apache2",
+        explanation: "Incident clos, ET la cause racine est traitée : nginx reviendra seul à chaque boot, apache2 ne reviendra plus se battre pour le port 80. status → journalctl → stop/start → enable : tu tiens la panoplie systemd complète, celle qui fait tourner la quasi-totalité des serveurs Linux en production. 🚨"
+      }
+
+    ]
   }
 ];
 
