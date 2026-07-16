@@ -20,11 +20,11 @@
   const PROMPT = isEN ? "visitor@linuxdojo:~$ " : "visiteur@linuxdojo:~$ ";
   const SEQUENCE = isEN ? [
     { cmd: "whoami", out: "visitor" },
-    { cmd: "cat programme.txt", out: "78 missions · 6 boss fights · 15 infiltration levels\n20 timed challenges · 1 Black Belt certificate" },
+    { cmd: "cat programme.txt", out: "84 missions · 6 boss fights · 15 infiltration levels\n20 timed challenges · 1 Black Belt certificate" },
     { cmd: "./linuxdojo --start", out: 'Loading the dojo... <span class="dim">[██████████] 100%</span>\nReady. Click ▶ Start to enter.' },
   ] : [
     { cmd: "whoami", out: "visiteur" },
-    { cmd: "cat programme.txt", out: "78 missions · 6 combats de boss · 15 niveaux d'infiltration\n20 défis chrono · 1 certificat de Ceinture Noire" },
+    { cmd: "cat programme.txt", out: "84 missions · 6 combats de boss · 15 niveaux d'infiltration\n20 défis chrono · 1 certificat de Ceinture Noire" },
     { cmd: "./linuxdojo --demarrer", out: 'Chargement du dojo... <span class="dim">[██████████] 100%</span>\nPrêt. Clique sur ▶ Commencer pour entrer.' },
   ];
 

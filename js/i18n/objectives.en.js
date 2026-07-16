@@ -11,6 +11,7 @@ const OBJECTIVES_EN = {
   scenario11: { title: "Services Belt",         desc: "Complete the 6 missions of the services & logs scenario" },
   scenario12: { title: "Accounts Belt",         desc: "Complete the 6 missions of the users & groups scenario" },
   scenario13: { title: "Cron Belt",             desc: "Complete the 6 missions of the scheduling scenario" },
+  scenario14: { title: "Diagnostic Belt",       desc: "Complete the 6 missions of the network-diagnosis scenario" },
   typist:     { title: "Shell pianist",         desc: "Type 50 commands in total" },
   toolbox:    { title: "Toolbox",               desc: "Use ls, cat and grep at least once" },
   quiz1:      { title: "Serious student",       desc: "Pass an end-of-chapter quiz" },

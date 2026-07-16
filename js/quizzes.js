@@ -73,6 +73,12 @@ const QUIZZES = {
     { q: "Que signifie */5 dans le champ minute ?", options: ["À la 5e minute pile", "5 fois par jour", "Toutes les 5 minutes", "Pendant 5 minutes"], answer: 2 },
     { q: "Que fait « crontab -r » ?", options: ["Recharge la crontab", "Affiche la crontab", "Renomme la crontab", "Supprime TOUTE la crontab, sans confirmation"], answer: 3 },
   ],
+  14: [
+    { q: "Quelle commande affiche les adresses IP de TA machine ?", options: ["ping", "ip a", "dig", "curl"], answer: 1 },
+    { q: "Pourquoi pinguer une IP (10.0.0.1) plutôt qu'un nom à l'étape « réseau local » ?", options: ["C'est plus rapide", "Les noms ne se pinguent pas", "Pour tester le réseau SANS dépendre du DNS", "Les IP répondent toujours"], answer: 2 },
+    { q: "dig répond « status: NXDOMAIN ». Ça veut dire quoi ?", options: ["Le serveur web est éteint", "Ce nom n'existe pas pour le serveur DNS", "Le port est fermé", "La requête a expiré"], answer: 1 },
+    { q: "curl affiche « Connection refused ». Qu'est-ce que ça prouve ?", options: ["Le DNS est cassé", "Le réseau est coupé", "La machine répond mais rien n'écoute sur ce port", "Le pare-feu bloque tout"], answer: 2 },
+  ],
 };
 
 const Quiz = {

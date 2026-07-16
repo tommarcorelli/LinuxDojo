@@ -686,6 +686,71 @@ test("la crontab est réinitialisée par loadFS (isolation entre missions)", () 
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// RÉSEAU V2 (ip / dig / nslookup / curl intranet)
+// ═══════════════════════════════════════════════════════════════════════
+
+test("ip a montre lo + eth0 avec l'adresse 10.0.0.42", () => {
+  const t = makeTerm({});
+  const r = t.run("ip a");
+  assertMatches(r.output, /eth0.*UP/s, "eth0 doit être UP");
+  assertIncludes(r.output, "10.0.0.42/24");
+  assertEqual(t.state.ipA, true);
+});
+
+test("ip r montre la passerelle par défaut", () => {
+  const t = makeTerm({});
+  const r = t.run("ip r");
+  assertIncludes(r.output, "default via 10.0.0.1");
+  assertEqual(t.state.ipR, true);
+});
+
+test("dig résout un nom de la zone, NXDOMAIN sinon", () => {
+  const t = makeTerm({});
+  const ok = t.run("dig intranet.dojo.lan");
+  assertMatches(ok.output, /NOERROR/, "statut NOERROR pour un nom connu");
+  assertIncludes(ok.output, "10.0.0.80");
+  assertEqual(t.state.dig, "intranet.dojo.lan");
+  const ko = t.run("dig nexistepas.dojo.lan");
+  assertMatches(ko.output, /NXDOMAIN/, "statut NXDOMAIN pour un nom inconnu");
+});
+
+test("nslookup répond avec l'adresse ou une erreur claire", () => {
+  const t = makeTerm({});
+  const ok = t.run("nslookup intranet.dojo.lan");
+  assertIncludes(ok.output, "10.0.0.80");
+  const ko = t.run("nslookup fantome.lan");
+  assertEqual(ko.error, true);
+  assertIncludes(ko.output, "NXDOMAIN");
+});
+
+test("curl sur l'intranet : refusé port 80, répond sur :8080", () => {
+  const t = makeTerm({});
+  const ko = t.run("curl http://intranet.dojo.lan");
+  assertEqual(ko.error, true, "port 80 fermé → erreur");
+  assertMatches(ko.output, /port 80.*refus/i, "l'erreur doit citer le port et le refus");
+  const ok = t.run("curl http://intranet.dojo.lan:8080");
+  assertEqual(ok.error, false);
+  assertIncludes(ok.output, "Bienvenue sur l'intranet");
+  assertEqual(t.state.curl, "http://intranet.dojo.lan:8080");
+});
+
+test("curl -I ne renvoie que les en-têtes (200 OK + Server)", () => {
+  const t = makeTerm({});
+  const r = t.run("curl -I http://intranet.dojo.lan:8080");
+  assertIncludes(r.output, "200 OK");
+  assertIncludes(r.output, "nginx");
+  assert(!/<html>/.test(r.output), "-I ne doit pas renvoyer le body");
+  assertEqual(t.state.curlI, true);
+});
+
+test("curl générique inchangé (mission 28 : /html|http|200|example/)", () => {
+  const t = makeTerm({});
+  const r = t.run("curl https://prod.monserveur.com");
+  assertEqual(r.error, false);
+  assertMatches(r.output, /html|http|200|example/i, "le check historique doit toujours passer");
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROBUSTESSE
 // ═══════════════════════════════════════════════════════════════════════
 

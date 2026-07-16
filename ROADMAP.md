@@ -28,6 +28,16 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **Scénario 14 — L'intranet a disparu (diagnostic réseau)** (2026-07-16) — `ip a`/`ip r`,
+  `dig`, `nslookup` (zone DNS simulée partagée `_dnsZone()`) et `curl` enrichi (parse
+  hôte:port, `-I` pour les en-têtes, hôtes internes simulés : intranet.dojo.lan refuse
+  le port 80 et répond sur :8080 — le service avait « déménagé » pendant une maintenance ;
+  le comportement générique historique de curl est préservé, testé contre le check de la
+  mission 28). 6 missions (79-84) : l'échelle de diagnostic complète — ip a (moi) →
+  ping IP (réseau, sans DNS exprès) → dig (DNS) → curl (Connection refused = service) →
+  curl :8080 (trouvé) → curl -I (preuve 200 OK). Quiz 14, objectif « 🌐 Ceinture
+  Diagnostic », badge « 🌐 Limier du réseau », overlay EN, 7 tests (158 au total).
+  Compteurs : 84 missions / 14 scénarios partout
 - **Scénario 13 — La sauvegarde de 3h du matin (cron)** (2026-07-16) — `crontab`
   simulé (`-l`, `-r`, `-e` renvoie vers l'installation par fichier, `crontab FICHIER`
   avec validation champ par champ : `*`, `*/N`, `N`, `N-M`, listes — un champ invalide
@@ -329,8 +339,8 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 `top`… De quoi nourrir plusieurs scénarios.)*
 
 **Nouveaux scénarios (contenu) :**
-- [ ] **Scénario 14 — Réseau niveau 2** : `ip a`, `dig`, `nslookup`, `curl` vers une API
-      simulée. Trame : diagnostiquer une panne réseau de bout en bout (DNS → IP → service).
+- [ ] *(les 4 scénarios identifiés le 2026-07-16 — services, utilisateurs, cron, réseau —
+      sont tous livrés ; prochaine fournée d'idées bienvenue ici)*
 
 **Profondeur du moteur :**
 - [ ] **Permissions réellement appliquées** — `chmod` ne change aujourd'hui que l'affichage

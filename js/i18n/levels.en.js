@@ -1702,6 +1702,135 @@ const LEVELS_EN = {
     },
   },
 
+  // ══ Scénario 14 — L'intranet a disparu (diagnostic réseau) ══
+  14: {
+    title: "🌐 Scenario 14 — The intranet vanished (network diagnosis)",
+    scenario: "“The intranet doesn't work anymore!” — that's all the ticket says. Not why, not since when, not for whom. A network diagnosis is a ladder you climb rung by rung: my machine → the local network → DNS → the service. At each step, you clear one suspect. Climb.",
+    missions: {
+      79: {
+        name: "Step 1 — Do I even have network?",
+        lesson: {
+          title: "<code>ip a</code> — My interfaces and addresses",
+          intro: "Every diagnosis starts with yourself: do I have an IP address? <code>ip a</code> (address) lists the machine's <strong>network interfaces</strong>: <code>lo</code> (the loopback, 127.0.0.1, always there) and <code>eth0</code> (the real network card). What you're looking for: an <code>inet</code> line with an address, and the <code>UP</code> state.",
+          syntax: "ip a  ·  ip r",
+          options: [
+            "The interfaces and their IP addresses (inet = IPv4)",
+            "The routing table — including the default gateway (default via …)",
+            "The interface is active; DOWN = unplugged cable or interface shut down",
+          ],
+          examples: [
+            "# do I have an IP address?",
+            "# where do my packets go out?",
+          ],
+          tip: "No “inet” line on eth0 = no address = the problem is on YOUR side (DHCP, cable, Wi-Fi), no point looking further. That's rung zero of the ladder.",
+        },
+        desc: "The ticket says “the intranet doesn't work anymore”. Rung 1 of the ladder: check that YOUR machine has an IP address.",
+        hint: "ip a",
+        explanation: "eth0 is UP with the address 10.0.0.42/24: your machine is properly connected to the 10.0.0.0/24 network. First suspect cleared — the problem isn't your network card. Next rung: does the local network answer?",
+      },
+      80: {
+        name: "Step 2 — Does the local network answer?",
+        lesson: {
+          title: "<code>ping</code> — Test connectivity",
+          intro: "<code>ping</code> sends ICMP packets and counts the replies. Rung 2's target is the <strong>gateway</strong> (the local network's router, often .1 — you find it in <code>ip r</code>, on the “default via” line). If it answers with 0% loss, the whole local network is cleared.",
+          syntax: "ping address",
+          options: [
+            "The local network works perfectly",
+            "The target is unreachable — cable, switch, or target powered off",
+          ],
+          examples: [
+            "# spot the gateway (default via 10.0.0.1)",
+            "# does the gateway answer?",
+          ],
+          tip: "Pinging an IP (not a name!) at this step is deliberate: it tests the network WITHOUT depending on DNS. If “ping 10.0.0.1” works but “ping intranet” fails, you just isolated DNS in one move.",
+        },
+        desc: "Rung 2: check that the network's gateway (<code>10.0.0.1</code>, visible in <code>ip r</code>) answers ping.",
+        hint: "ping 10.0.0.1",
+        explanation: "3 packets transmitted, 3 received, 0% loss: the local network is in perfect health. Second suspect cleared. Note the method: we pinged a raw IP, on purpose — DNS hasn't been tested yet, and that's exactly the next rung.",
+      },
+      81: {
+        name: "Step 3 — Does DNS resolve the name?",
+        lesson: {
+          title: "<code>dig</code> — Query the DNS",
+          intro: "Humans type <code>intranet.dojo.lan</code>, machines want <code>10.0.0.80</code>: <strong>DNS</strong> does the translation. <code>dig name</code> queries it and shows the raw answer. The two lines that matter: <code>status</code> (NOERROR = the name exists, NXDOMAIN = unknown) and the <code>ANSWER SECTION</code> (the returned address).",
+          syntax: "dig name  ·  nslookup name",
+          options: [
+            "The name exists, the address is in ANSWER SECTION",
+            "The name doesn't exist for this DNS server — typo or broken zone",
+            "The historical alternative, easier to read, available everywhere",
+          ],
+          examples: [
+            "# the full DNS answer",
+            "# the same thing, short format",
+          ],
+          tip: "“It's always DNS” is THE network admins' meme — because it's true half the time. Hence this dedicated rung: NEVER assume name resolution works, prove it.",
+        },
+        desc: "Rung 3: ask the DNS for <code>intranet.dojo.lan</code>'s address. Does it exist, and which IP does it point to?",
+        hint: "dig intranet.dojo.lan",
+        explanation: "status: NOERROR, and the ANSWER SECTION answers: intranet.dojo.lan → 10.0.0.80. DNS is doing its job, third suspect cleared. Only one possible culprit remains: the service itself, on machine 10.0.0.80.",
+      },
+      82: {
+        name: "Step 4 — Confront the service",
+        lesson: {
+          title: "<code>curl</code> — Talk to the service itself",
+          intro: "Machine OK, network OK, DNS OK: time to talk to the service. <code>curl http://name</code> makes a real HTTP request. And there, every error has a precise meaning: <code>Could not resolve host</code> = DNS (but you already cleared it), <code>Connection refused</code> = the machine answers but NOTHING listens on this port, <code>timeout</code> = a firewall swallows the packets.",
+          syntax: "curl http://host[:port]",
+          options: [
+            "The machine is there, but no service listens on this port",
+            "DNS problem (rung 3 would have shown it)",
+            "Packets lost on the way — often a firewall",
+          ],
+          examples: [
+            "# does the web service answer?",
+          ],
+          tip: "“Connection refused” is GOOD news for the diagnosis: it's an active refusal, proof that network and DNS work end to end. The investigation closes in on the port itself.",
+        },
+        desc: "Rung 4: make an HTTP request to <code>http://intranet.dojo.lan</code> and read the error — it says exactly where the problem is.",
+        hint: "curl http://intranet.dojo.lan",
+        explanation: "“Failed to connect to intranet.dojo.lan port 80: Connection refused” — machine 10.0.0.80 answers, but nothing listens on port 80. The culprit is cornered: the web service. And the ticket mentions a maintenance this weekend… what if the service had simply changed port?",
+      },
+      83: {
+        name: "Step 5 — The port that moved out",
+        lesson: {
+          title: "Testing another port",
+          intro: "A “vanished” service often listens elsewhere: port changed during a maintenance, default config of a new version… The classic alternative web ports: <code>8080</code>, <code>8000</code>, <code>3000</code>. With curl, you specify the port after the name: <code>http://host:8080</code>.",
+          syntax: "curl http://host:port",
+          options: [
+            "THE classic alternative web port (proxies, tomcat, test apps)",
+            "HTTPS — if the service migrated to encrypted",
+          ],
+          examples: [
+            "# and on port 8080?",
+          ],
+          tip: "On the server itself, “netstat -tlnp” or “ss -tlnp” lists the ports actually listening — the definitive answer to “but WHERE does it listen?”. From the outside, you test candidate ports one by one.",
+        },
+        desc: "The ticket mentions a maintenance this weekend. Test the classic alternative web port: <code>http://intranet.dojo.lan:8080</code>.",
+        hint: "curl http://intranet.dojo.lan:8080",
+        explanation: "“Welcome to the dojo intranet — migrated to port 8080 during the weekend maintenance.” The intranet wasn't dead: it had moved. That's the epilogue of a huge share of “it doesn't work anymore” tickets: the service runs, just not where everyone is looking for it.",
+      },
+      84: {
+        name: "Step 6 — Proof by headers",
+        lesson: {
+          title: "<code>curl -I</code> — The HTTP headers",
+          intro: "To close a ticket, you need clean proof. <code>curl -I</code> (HEAD) only asks for the <strong>HTTP headers</strong>: the status code (<code>200 OK</code>, <code>404</code>, <code>500</code>…), the server that answers (<code>Server:</code>), the content type. It's the lightest health check there is — the one you put in monitoring probes.",
+          syntax: "curl -I http://host:port",
+          options: [
+            "The service answers normally — the proof to attach to the ticket",
+            "Who actually answers (nginx, apache…) — useful to spot bad routing",
+            "The service is there but sick — the investigation would continue server-side (journalctl!)",
+          ],
+          examples: [
+            "# just the headers: fast and clean",
+          ],
+          tip: "Every brick of this diagnosis is already yours: a sick service is treated with systemctl/journalctl (scenario 11), and to NEVER again depend on the maintenance's port, you put a proxy in front — but that's another story.",
+        },
+        desc: "Close the ticket with proof: fetch the HTTP headers of <code>http://intranet.dojo.lan:8080</code> and check the <code>200 OK</code>.",
+        hint: "curl -I http://intranet.dojo.lan:8080",
+        explanation: "HTTP/1.1 200 OK, served by nginx: formal proof, ticket closed. Look at the ladder you just climbed: ip a (me) → ping (network) → dig (DNS) → curl (service) → curl -I (proof). That method never changes, from the small intranet to the outages of the web giants. 🌐",
+      },
+    },
+  },
+
 };
 
 if (typeof overlayLevels === "function") overlayLevels(LEVELS_EN);

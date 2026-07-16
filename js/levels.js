@@ -2390,6 +2390,185 @@ const CHAPTERS = [
       }
 
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 14,
+    title: "🌐 Scénario 14 — L'intranet a disparu (diagnostic réseau)",
+    scenario: "« L'intranet ne marche plus ! » — voilà tout ce que dit le ticket. Ni pourquoi, ni depuis quand, ni pour qui. Un diagnostic réseau, c'est une échelle qu'on grimpe barreau par barreau : ma machine → le réseau local → le DNS → le service. À chaque étape, on innocente un suspect. Grimpe.",
+    missions: [
+
+      {
+        id: 79,
+        name: "Étape 1 — Est-ce que MOI j'ai le réseau ?",
+        cmd: "ip a",
+        xp: 35,
+        lesson: {
+          title: "<code>ip a</code> — Mes interfaces et mes adresses",
+          intro: "Tout diagnostic commence par soi-même : ai-je une adresse IP ? <code>ip a</code> (address) liste les <strong>interfaces réseau</strong> de la machine : <code>lo</code> (la boucle locale, 127.0.0.1, toujours là) et <code>eth0</code> (la vraie carte réseau). Ce qu'on y cherche : une ligne <code>inet</code> avec une adresse, et l'état <code>UP</code>.",
+          syntax: "ip a  ·  ip r",
+          options: [
+            { flag: "ip a",  desc: "Les interfaces et leurs adresses IP (inet = IPv4)" },
+            { flag: "ip r",  desc: "La table de routage — dont la passerelle par défaut (default via …)" },
+            { flag: "state UP", desc: "L'interface est active ; DOWN = câble débranché ou interface coupée" },
+          ],
+          examples: [
+            { cmd: "ip a", comment: "# ai-je une adresse IP ?" },
+            { cmd: "ip r", comment: "# par où sortent mes paquets ?" },
+          ],
+          tip: "Pas de ligne « inet » sur eth0 = pas d'adresse = le problème est chez TOI (DHCP, câble, Wi-Fi), inutile d'aller chercher plus loin. C'est le barreau zéro de l'échelle."
+        },
+        desc: "Le ticket dit « l'intranet ne marche plus ». Barreau 1 de l'échelle : vérifie que TA machine a une adresse IP.",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — « L'intranet ne marche plus !! »\nMéthode : moi → réseau local → DNS → service.\nBarreau 1 : ip a (ai-je une adresse ?)" },
+        },
+        hint: "ip a",
+        check: (out, s) => s.ipA === true && /10\.0\.0\.42/.test(out),
+        explanation: "eth0 est UP avec l'adresse 10.0.0.42/24 : ta machine est correctement connectée au réseau 10.0.0.0/24. Premier suspect innocenté — le problème n'est pas ta carte réseau. Barreau suivant : est-ce que le réseau local répond ?"
+      },
+
+      {
+        id: 80,
+        name: "Étape 2 — Le réseau local répond-il ?",
+        cmd: "ping",
+        xp: 40,
+        lesson: {
+          title: "<code>ping</code> — Tester la connectivité",
+          intro: "<code>ping</code> envoie des paquets ICMP et compte les réponses. La cible du barreau 2, c'est la <strong>passerelle</strong> (le routeur du réseau local, souvent .1 — tu la trouves dans <code>ip r</code>, ligne « default via »). Si elle répond avec 0% de perte, tout le réseau local est innocenté.",
+          syntax: "ping adresse",
+          options: [
+            { flag: "0% perte",  desc: "Le réseau local fonctionne parfaitement" },
+            { flag: "100% perte", desc: "La cible est injoignable — câble, switch, ou cible éteinte" },
+          ],
+          examples: [
+            { cmd: "ip r",          comment: "# repère la passerelle (default via 10.0.0.1)" },
+            { cmd: "ping 10.0.0.1", comment: "# la passerelle répond-elle ?" },
+          ],
+          tip: "Pinguer une IP (et pas un nom !) à cette étape est volontaire : ça teste le réseau SANS dépendre du DNS. Si « ping 10.0.0.1 » marche mais « ping intranet » échoue, tu viens d'isoler le DNS d'un coup."
+        },
+        desc: "Barreau 2 : vérifie que la passerelle du réseau (<code>10.0.0.1</code>, visible dans <code>ip r</code>) répond au ping.",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — suite\nBarreau 1 OK : 10.0.0.42/24 sur eth0.\nBarreau 2 : la passerelle 10.0.0.1 répond-elle ? (ping une IP, pas un nom !)" },
+        },
+        hint: "ping 10.0.0.1",
+        check: (out, s) => s.ping === "10.0.0.1" && /0% perte|0% packet loss/.test(out),
+        explanation: "3 paquets transmis, 3 reçus, 0% de perte : le réseau local est en parfaite santé. Deuxième suspect innocenté. Note la méthode : on a pingué une IP brute, exprès — le DNS n'a pas encore été testé, c'est justement le prochain barreau."
+      },
+
+      {
+        id: 81,
+        name: "Étape 3 — Le DNS résout-il le nom ?",
+        cmd: "dig",
+        xp: 40,
+        lesson: {
+          title: "<code>dig</code> — Interroger le DNS",
+          intro: "Les humains tapent <code>intranet.dojo.lan</code>, les machines veulent <code>10.0.0.80</code> : le <strong>DNS</strong> fait la traduction. <code>dig nom</code> l'interroge et montre la réponse brute. Les deux lignes qui comptent : <code>status</code> (NOERROR = le nom existe, NXDOMAIN = inconnu) et la <code>ANSWER SECTION</code> (l'adresse retournée).",
+          syntax: "dig nom  ·  nslookup nom",
+          options: [
+            { flag: "NOERROR",   desc: "Le nom existe, l'adresse est dans ANSWER SECTION" },
+            { flag: "NXDOMAIN",  desc: "Le nom n'existe pas pour ce serveur DNS — faute de frappe ou zone cassée" },
+            { flag: "nslookup",  desc: "L'alternative historique, plus simple à lire, disponible partout" },
+          ],
+          examples: [
+            { cmd: "dig intranet.dojo.lan",      comment: "# la réponse DNS complète" },
+            { cmd: "nslookup intranet.dojo.lan", comment: "# la même chose, format court" },
+          ],
+          tip: "« It's always DNS » est LE mème des admins réseau — parce que c'est vrai une fois sur deux. D'où ce barreau dédié : ne JAMAIS supposer que la résolution de nom marche, la prouver."
+        },
+        desc: "Barreau 3 : demande au DNS l'adresse de <code>intranet.dojo.lan</code>. Existe-t-il, et vers quelle IP pointe-t-il ?",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — suite\nBarreaux 1-2 OK : machine et réseau local innocentés.\nBarreau 3 : dig intranet.dojo.lan — le nom se résout-il ?" },
+        },
+        hint: "dig intranet.dojo.lan",
+        check: (out, s) => s.dig === "intranet.dojo.lan" && /10\.0\.0\.80/.test(out),
+        explanation: "status: NOERROR, et l'ANSWER SECTION répond : intranet.dojo.lan → 10.0.0.80. Le DNS fait son travail, troisième suspect innocenté. Il ne reste qu'un accusé possible : le service lui-même, sur la machine 10.0.0.80."
+      },
+
+      {
+        id: 82,
+        name: "Étape 4 — Confronter le service",
+        cmd: "curl",
+        xp: 45,
+        lesson: {
+          title: "<code>curl</code> — Parler au service lui-même",
+          intro: "Machine OK, réseau OK, DNS OK : il est temps de parler au service. <code>curl http://nom</code> fait une vraie requête HTTP. Et là, chaque erreur a un sens précis : <code>Could not resolve host</code> = DNS (mais tu l'as déjà innocenté), <code>Connection refused</code> = la machine répond mais RIEN n'écoute sur ce port, <code>timeout</code> = un pare-feu avale les paquets.",
+          syntax: "curl http://hôte[:port]",
+          options: [
+            { flag: "Connection refused", desc: "La machine est là, mais aucun service n'écoute sur ce port" },
+            { flag: "Could not resolve",  desc: "Problème DNS (le barreau 3 l'aurait montré)" },
+            { flag: "timeout",            desc: "Paquets perdus en route — souvent un pare-feu" },
+          ],
+          examples: [
+            { cmd: "curl http://intranet.dojo.lan", comment: "# le service web répond-il ?" },
+          ],
+          tip: "« Connection refused » est une BONNE nouvelle pour le diagnostic : c'est un refus actif, la preuve que le réseau et le DNS marchent de bout en bout. L'enquête se referme sur le port lui-même."
+        },
+        desc: "Barreau 4 : fais une requête HTTP vers <code>http://intranet.dojo.lan</code> et lis l'erreur — elle dit exactement où est le problème.",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — suite\nBarreaux 1-3 OK : machine, réseau, DNS innocentés.\nBarreau 4 : curl http://intranet.dojo.lan — que dit le service ?" },
+        },
+        hint: "curl http://intranet.dojo.lan",
+        check: (out, s) => /connexion refus|connection refused/.test(out) && /port 80/.test(out),
+        explanation: "« Failed to connect to intranet.dojo.lan port 80: Connexion refusée » — la machine 10.0.0.80 répond, mais rien n'écoute sur le port 80. Le coupable est cerné : le service web. Or le ticket mentionne une maintenance ce week-end… et si le service avait simplement changé de port ?"
+      },
+
+      {
+        id: 83,
+        name: "Étape 5 — Le port qui avait déménagé",
+        cmd: "curl :8080",
+        xp: 45,
+        lesson: {
+          title: "Tester un autre port",
+          intro: "Un service « disparu » écoute souvent ailleurs : port changé pendant une maintenance, config par défaut d'une nouvelle version… Les ports alternatifs classiques du web : <code>8080</code>, <code>8000</code>, <code>3000</code>. Avec curl, on précise le port après le nom : <code>http://hôte:8080</code>.",
+          syntax: "curl http://hôte:port",
+          options: [
+            { flag: ":8080", desc: "LE port web alternatif classique (proxies, tomcat, apps de test)" },
+            { flag: ":443",  desc: "HTTPS — si le service a migré vers du chiffré" },
+          ],
+          examples: [
+            { cmd: "curl http://intranet.dojo.lan:8080", comment: "# et sur le port 8080 ?" },
+          ],
+          tip: "Sur le serveur lui-même, « netstat -tlnp » ou « ss -tlnp » liste les ports réellement en écoute — c'est la réponse définitive à « mais il écoute OÙ ? ». Depuis l'extérieur, on teste les ports candidats un par un."
+        },
+        desc: "Le ticket parle d'une maintenance ce week-end. Teste le port web alternatif classique : <code>http://intranet.dojo.lan:8080</code>.",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — suite\nPort 80 : connexion refusée. Une maintenance a eu lieu ce week-end...\nHypothèse : le service a changé de port. Candidat n°1 : 8080." },
+        },
+        hint: "curl http://intranet.dojo.lan:8080",
+        check: (out, s) => /bienvenue sur l'intranet|welcome to the dojo intranet/.test(out),
+        explanation: "« Bienvenue sur l'intranet du dojo — migré sur le port 8080 pendant la maintenance du week-end. » L'intranet n'était pas mort : il avait déménagé. C'est l'épilogue d'une énorme part des tickets « ça ne marche plus » : le service tourne, mais plus là où tout le monde le cherche."
+      },
+
+      {
+        id: 84,
+        name: "Étape 6 — La preuve par les en-têtes",
+        cmd: "curl -I",
+        xp: 50,
+        lesson: {
+          title: "<code>curl -I</code> — Les en-têtes HTTP",
+          intro: "Pour clore un ticket, il faut une preuve propre. <code>curl -I</code> (HEAD) ne demande que les <strong>en-têtes HTTP</strong> : le code de statut (<code>200 OK</code>, <code>404</code>, <code>500</code>…), le serveur qui répond (<code>Server:</code>), le type de contenu. C'est le contrôle de santé le plus léger qui existe — celui qu'on met dans les sondes de supervision.",
+          syntax: "curl -I http://hôte:port",
+          options: [
+            { flag: "200 OK",  desc: "Le service répond normalement — la preuve à mettre dans le ticket" },
+            { flag: "Server:", desc: "Qui répond réellement (nginx, apache…) — utile pour repérer un mauvais aiguillage" },
+            { flag: "5xx",     desc: "Le service est là mais malade — l'enquête continuerait côté serveur (journalctl !)" },
+          ],
+          examples: [
+            { cmd: "curl -I http://intranet.dojo.lan:8080", comment: "# juste les en-têtes : rapide et propre" },
+          ],
+          tip: "Chaque brique de ce diagnostic t'appartient déjà : le service malade se soigne avec systemctl/journalctl (scénario 11), et pour ne plus JAMAIS dépendre du port de la maintenance, on met un proxy — mais ça, c'est une autre histoire."
+        },
+        desc: "Clos le ticket avec une preuve : récupère les en-têtes HTTP de <code>http://intranet.dojo.lan:8080</code> et vérifie le <code>200 OK</code>.",
+        fs: {
+          "ticket-4213.txt": { type: "file", content: "TICKET #4213 — résolution\nCause : intranet migré du port 80 au port 8080 (maintenance).\nPreuve à joindre : curl -I → HTTP/1.1 200 OK" },
+        },
+        hint: "curl -I http://intranet.dojo.lan:8080",
+        check: (out, s) => s.curlI === true && /200 ok/.test(out) && /nginx/.test(out),
+        explanation: "HTTP/1.1 200 OK, servi par nginx : preuve formelle, ticket clos. Regarde l'échelle que tu viens de grimper : ip a (moi) → ping (réseau) → dig (DNS) → curl (service) → curl -I (preuve). Cette méthode-là ne change jamais, du petit intranet aux pannes des géants du web. 🌐"
+      }
+
+    ]
   }
 ];
 

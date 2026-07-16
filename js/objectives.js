@@ -26,6 +26,7 @@ const OBJECTIVES = [
   { id: "scenario11", icon: "🚨", title: "Ceinture Services",  desc: "Termine les 6 missions du scénario services & logs", xp: 45, target: 6, cur: g => [61,62,63,64,65,66].filter(i => g.completed.has(i)).length },
   { id: "scenario12", icon: "👥", title: "Ceinture Comptes",   desc: "Termine les 6 missions du scénario utilisateurs & groupes", xp: 45, target: 6, cur: g => [67,68,69,70,71,72].filter(i => g.completed.has(i)).length },
   { id: "scenario13", icon: "⏰", title: "Ceinture Cron",      desc: "Termine les 6 missions du scénario planification", xp: 45, target: 6, cur: g => [73,74,75,76,77,78].filter(i => g.completed.has(i)).length },
+  { id: "scenario14", icon: "🌐", title: "Ceinture Diagnostic", desc: "Termine les 6 missions du scénario diagnostic réseau", xp: 45, target: 6, cur: g => [79,80,81,82,83,84].filter(i => g.completed.has(i)).length },
   { id: "typist",    icon: "⌨️", title: "Pianiste du shell",   desc: "Tape 50 commandes en tout",                  xp: 25, target: 50,  cur: () => _statTotal() },
   { id: "toolbox",   icon: "🧰", title: "Boîte à outils",      desc: "Utilise ls, cat et grep au moins une fois",  xp: 30, target: 3,   cur: () => ["ls","cat","grep"].filter(c => _statCmd(c) > 0).length },
   { id: "quiz1",     icon: "🎓", title: "Élève sérieux",       desc: "Réussis un quiz de fin de chapitre",         xp: 30, target: 1,   cur: g => g.quizzes.size },

@@ -6,6 +6,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Scénario 14 — « L'intranet a disparu » (diagnostic réseau de bout en bout)** :
+  `ip a`/`ip r`, `dig` et `nslookup` (zone DNS simulée) rejoignent le terminal, et `curl`
+  apprend les hôtes internes : `intranet.dojo.lan` refuse la connexion sur le port 80
+  (« Connection refused ») mais répond sur `:8080` — le service avait déménagé pendant
+  la maintenance du week-end. `curl -I` renvoie les seuls en-têtes (200 OK, Server:
+  nginx). Le comportement générique de curl est préservé pour les missions existantes
+  (non-régression testée). 6 missions (ids 79-84) qui enseignent LA méthode : ip a (moi)
+  → ping d'une IP (le réseau, sans dépendre du DNS) → dig (le DNS) → curl (le service,
+  et le sens précis de chaque erreur) → tester :8080 → preuve par les en-têtes. Quiz 14,
+  objectif « 🌐 Ceinture Diagnostic », badge « 🌐 Limier du réseau », traduction EN
+  complète, entrées `help` + autocomplétion. 7 tests unitaires dédiés (158 au total).
+  Compteurs : **84 missions / 14 scénarios**. SW v37 → v38.
 - **Scénario 13 — « La sauvegarde de 3h du matin » (planification cron)** : `crontab`
   rejoint le terminal simulé (`-l`, `-r` sans confirmation comme le vrai, `-e` qui
   oriente vers le workflow fichier, et `crontab FICHIER` avec **validation réelle champ

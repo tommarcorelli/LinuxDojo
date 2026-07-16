@@ -79,6 +79,12 @@ const QUIZZES_EN = {
     { q: "What does */5 mean in the minute field?", options: ["At minute 5 exactly", "5 times a day", "Every 5 minutes", "For 5 minutes"] },
     { q: "What does « crontab -r » do?", options: ["Reloads the crontab", "Shows the crontab", "Renames the crontab", "Removes the WHOLE crontab, without confirmation"] },
   ],
+  14: [
+    { q: "Which command shows YOUR machine's IP addresses?", options: ["ping", "ip a", "dig", "curl"] },
+    { q: "Why ping an IP (10.0.0.1) rather than a name at the “local network” step?", options: ["It's faster", "Names can't be pinged", "To test the network WITHOUT depending on DNS", "IPs always answer"] },
+    { q: "dig answers « status: NXDOMAIN ». What does that mean?", options: ["The web server is off", "This name doesn't exist for the DNS server", "The port is closed", "The request timed out"] },
+    { q: "curl shows « Connection refused ». What does that prove?", options: ["DNS is broken", "The network is down", "The machine answers but nothing listens on this port", "The firewall blocks everything"] },
+  ],
 };
 
 if (typeof overlayQuizzes === "function") overlayQuizzes(QUIZZES_EN);

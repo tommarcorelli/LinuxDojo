@@ -79,6 +79,15 @@ class Terminal {
     this._crontab = null;
   }
 
+  // ── Zone DNS simulée (partagée par dig / nslookup / curl) ─────
+  _dnsZone() {
+    return {
+      "intranet.dojo.lan": "10.0.0.80",
+      "dojo.lan": "10.0.0.10",
+      "linuxdojo.io": "185.199.108.153",
+    };
+  }
+
   // ── Comptes utilisateurs simulés ──────────────────────────────
   // user (le joueur) a déjà un mot de passe ; root est verrouillé (pas de
   // mot de passe, comme sur Ubuntu) — su root échoue donc, c'est voulu.
@@ -289,7 +298,7 @@ class Terminal {
     }
 
     // Commandes connues proches
-    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab"];
+    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab","ip","dig","nslookup"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
       return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`, `${cmd}: command not found\n💡 Did you mean: ${close} ?`);
@@ -319,7 +328,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab","ip","dig","nslookup"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -1788,8 +1797,77 @@ class Terminal {
 
       case "curl": {
         const url = args.find(a => a.startsWith("http"));
+        const headOnly = args.includes("-I");
         if (!url) { out = sh("curl: manque l'URL", "curl: missing URL"); err = true; break; }
-        out = `HTTP/1.1 200 OK\n<!DOCTYPE html>\n<html><head><title>Example Domain</title></head>\n<body><h1>Example Domain</h1></body></html>`;
+        this.state.curl = url;
+        if (headOnly) this.state.curlI = true;
+        const um = url.match(/^https?:\/\/([^\/:]+)(?::(\d+))?/);
+        const uHost = um ? um[1] : "";
+        const uPort = um && um[2] ? um[2] : "80";
+        // Hôtes internes simulés (zone DNS du dojo) — l'intranet a déménagé sur :8080
+        if (uHost === "intranet.dojo.lan" || uHost === "10.0.0.80") {
+          if (uPort !== "8080") {
+            out = sh(`curl: (7) Failed to connect to ${uHost} port ${uPort} : Connexion refusée\n💡 La machine répond (le DNS et le réseau sont bons), mais RIEN n'écoute sur ce port.`, `curl: (7) Failed to connect to ${uHost} port ${uPort}: Connection refused\n💡 The machine answers (DNS and network are fine), but NOTHING listens on this port.`);
+            err = true; break;
+          }
+          out = headOnly
+            ? "HTTP/1.1 200 OK\nServer: nginx/1.24.0\nContent-Type: text/html; charset=utf-8\nContent-Length: 154"
+            : sh(`HTTP/1.1 200 OK\n<!DOCTYPE html>\n<html><head><title>Intranet du dojo</title></head>\n<body><h1>Bienvenue sur l'intranet du dojo 🥋</h1>\n<p>Migré sur le port 8080 pendant la maintenance du week-end.</p></body></html>`, `HTTP/1.1 200 OK\n<!DOCTYPE html>\n<html><head><title>Dojo intranet</title></head>\n<body><h1>Welcome to the dojo intranet 🥋</h1>\n<p>Migrated to port 8080 during the weekend maintenance.</p></body></html>`);
+          break;
+        }
+        if (/\.(lan|local)$/.test(uHost) && !this._dnsZone()[uHost]) {
+          out = `curl: (6) Could not resolve host: ${uHost}`;
+          err = true; break;
+        }
+        out = headOnly
+          ? "HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\nContent-Length: 1256"
+          : `HTTP/1.1 200 OK\n<!DOCTYPE html>\n<html><head><title>Example Domain</title></head>\n<body><h1>Example Domain</h1></body></html>`;
+        break;
+      }
+
+      case "ip": {
+        const sub = args[0];
+        if (sub === "a" || sub === "addr" || sub === "address") {
+          out = [
+            "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 state UNKNOWN",
+            "    inet 127.0.0.1/8 scope host lo",
+            "2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP",
+            "    link/ether 52:54:00:d0:4a:07 brd ff:ff:ff:ff:ff:ff",
+            "    inet 10.0.0.42/24 brd 10.0.0.255 scope global dynamic eth0",
+          ].join("\n");
+          this.state.ipA = true;
+          break;
+        }
+        if (sub === "r" || sub === "route") {
+          out = "default via 10.0.0.1 dev eth0 proto dhcp src 10.0.0.42 metric 100\n10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.42";
+          this.state.ipR = true;
+          break;
+        }
+        out = sh("Usage :  ip a (adresses) · ip r (routes)", "Usage:  ip a (addresses) · ip r (routes)");
+        err = true;
+        break;
+      }
+
+      case "dig": {
+        const name = args.find(a => !a.startsWith("-") && !a.startsWith("@"));
+        if (!name) { out = sh("dig : il manque le nom à résoudre\nUsage : dig NOM", "dig: missing the name to resolve\nUsage: dig NAME"); err = true; break; }
+        this.state.dig = name;
+        const ipAddr = this._dnsZone()[name.replace(/\.$/, "")];
+        if (!ipAddr) {
+          out = `; <<>> DiG 9.18 <<>> ${name}\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 4212\n;; QUESTION SECTION:\n;${name}.\t\tIN\tA\n\n;; SERVER: 10.0.0.1#53(10.0.0.1)`;
+          break;
+        }
+        out = `; <<>> DiG 9.18 <<>> ${name}\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4212\n;; ANSWER SECTION:\n${name}.\t\t3600\tIN\tA\t${ipAddr}\n\n;; Query time: 0 msec\n;; SERVER: 10.0.0.1#53(10.0.0.1)`;
+        break;
+      }
+
+      case "nslookup": {
+        const name = args.find(a => !a.startsWith("-"));
+        if (!name) { out = sh("nslookup : il manque le nom à résoudre\nUsage : nslookup NOM", "nslookup: missing the name to resolve\nUsage: nslookup NAME"); err = true; break; }
+        this.state.nslookup = name;
+        const ipAddr = this._dnsZone()[name];
+        if (!ipAddr) { out = `Server:\t\t10.0.0.1\nAddress:\t10.0.0.1#53\n\n** server can't find ${name}: NXDOMAIN`; err = true; break; }
+        out = `Server:\t\t10.0.0.1\nAddress:\t10.0.0.1#53\n\nName:\t${name}\nAddress: ${ipAddr}`;
         break;
       }
 
@@ -2334,7 +2412,7 @@ class Terminal {
           "Système      : ps aux, kill, whoami, id, df -h, du, free, uptime, uname -a, date",
           "Propriété    : chown user:groupe fichier, chgrp groupe fichier",
           "Environnement: echo $VAR, env, export VAR=x, history, hostname, alias nom='cmd', unalias",
-          "Réseau       : curl, ping, ssh utilisateur@hôte, scp fichier user@hôte:/chemin, netstat",
+          "Réseau       : curl [-I], ping, ip a, ip r, dig NOM, nslookup NOM, ssh utilisateur@hôte, scp fichier user@hôte:/chemin, netstat",
           "Décodage     : base64 [-d], rot13, xxd -r -p",
           "Comparaison  : diff fichier1 fichier2",
           "Enchaînement : cmd | xargs [-n N] autre_cmd",
@@ -2363,7 +2441,7 @@ class Terminal {
           "System       : ps aux, kill, whoami, id, df -h, du, free, uptime, uname -a, date",
           "Ownership    : chown user:group file, chgrp group file",
           "Environment  : echo $VAR, env, export VAR=x, history, hostname, alias name='cmd', unalias",
-          "Network      : curl, ping, ssh user@host, scp file user@host:/path, netstat",
+          "Network      : curl [-I], ping, ip a, ip r, dig NAME, nslookup NAME, ssh user@host, scp file user@host:/path, netstat",
           "Decoding     : base64 [-d], rot13, xxd -r -p",
           "Comparison   : diff file1 file2",
           "Chaining     : cmd | xargs [-n N] other_cmd",
