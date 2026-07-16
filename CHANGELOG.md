@@ -6,6 +6,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 ## [Non publié]
 
 ### Ajouté
+- **Scénario 13 — « La sauvegarde de 3h du matin » (planification cron)** : `crontab`
+  rejoint le terminal simulé (`-l`, `-r` sans confirmation comme le vrai, `-e` qui
+  oriente vers le workflow fichier, et `crontab FICHIER` avec **validation réelle champ
+  par champ** — `*`, `*/N`, `N`, `N-M`, listes ; une ligne invalide cite son numéro et
+  l'installation est refusée en bloc, fidèle au « errors in crontab file, can't
+  install »). 6 missions (ids 73-78) : décoder les 5 champs dans `/etc/crontab`,
+  composer sa ligne avec `echo` + redirection (les `*` entre guillemets ne sont pas
+  globbés — testé), installer, auditer avec `-l`, fréquences `*/5` + ajout `>>` sans
+  écraser, et tout déprogrammer avec `-r` (le réflexe `crontab -l > secours.cron` est
+  enseigné). Quiz 13, objectif « ⏰ Ceinture Cron », badge « ⏰ Maître du temps »,
+  traduction EN complète, entrées `help` + autocomplétion. 7 tests unitaires dédiés
+  (151 au total). Compteurs : **78 missions / 13 scénarios**. SW v36 → v37.
 - **Scénario 12 — « Une nouvelle recrue » (utilisateurs & groupes)** : `useradd` (avec
   `-m` et mise à jour dynamique de `/etc/passwd`), `passwd`, `usermod` (le piège réel
   est simulé : `-aG` ajoute, `-G` seul **remplace** les groupes), `groups`, `id NOM` et

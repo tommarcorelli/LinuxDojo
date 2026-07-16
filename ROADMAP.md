@@ -28,6 +28,15 @@ qui a été identifié comme piste d'amélioration y est consigné.
   (Apprendre, Bac à sable, Exploration) : tape pour filtrer, `Ctrl+R` pour le résultat
   précédent, `Entrée` pour lancer, `Échap` pour annuler — état affiché dans le placeholder
   du champ, sans nouvel élément DOM
+- **Scénario 13 — La sauvegarde de 3h du matin (cron)** (2026-07-16) — `crontab`
+  simulé (`-l`, `-r`, `-e` renvoie vers l'installation par fichier, `crontab FICHIER`
+  avec validation champ par champ : `*`, `*/N`, `N`, `N-M`, listes — un champ invalide
+  cite son numéro de ligne et rien n'est installé, comme le vrai). 6 missions (73-78) :
+  décoder les 5 champs (/etc/crontab), écrire la ligne (echo + `>` sans globber les `*`
+  entre guillemets), installer, auditer (`-l`), fréquences `*/5` + ajout `>>`, tout
+  supprimer (`-r`, avec le réflexe `-l > secours.cron` en leçon). Quiz 13, objectif
+  « ⏰ Ceinture Cron », badge « ⏰ Maître du temps », overlay EN, 7 tests (151 au total).
+  Compteurs : 78 missions / 13 scénarios partout
 - **Scénario 12 — Une nouvelle recrue (utilisateurs & groupes)** (2026-07-16) —
   `useradd` (-m, /etc/passwd mis à jour dynamiquement), `passwd`, `usermod` (-aG ajoute,
   -G seul REMPLACE — le piège réel est simulé fidèlement), `groups`, `id NOM`, `su`
@@ -320,8 +329,6 @@ que le terminal simulé ne couvre pas encore : `systemctl`, `crontab`, `useradd`
 `top`… De quoi nourrir plusieurs scénarios.)*
 
 **Nouveaux scénarios (contenu) :**
-- [ ] **Scénario 13 — Planification (cron)** : `crontab -l` / `-e` simulé, syntaxe à 5
-      champs. Suite logique du scénario scripts : « automatise la sauvegarde de cette nuit ».
 - [ ] **Scénario 14 — Réseau niveau 2** : `ip a`, `dig`, `nslookup`, `curl` vers une API
       simulée. Trame : diagnostiquer une panne réseau de bout en bout (DNS → IP → service).
 

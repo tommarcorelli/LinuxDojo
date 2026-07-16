@@ -129,6 +129,7 @@ const BADGES = [
   { id: "chapter10",   label: "🐳 Capitaine de conteneurs", cond: g => [55,56,57,58,59,60].every(id => g.completed.has(id)) },
   { id: "chapter11",   label: "🚨 Pompier de service",      cond: g => [61,62,63,64,65,66].every(id => g.completed.has(id)) },
   { id: "chapter12",   label: "👥 Gardien des comptes",     cond: g => [67,68,69,70,71,72].every(id => g.completed.has(id)) },
+  { id: "chapter13",   label: "⏰ Maître du temps",         cond: g => [73,74,75,76,77,78].every(id => g.completed.has(id)) },
   { id: "master",      label: "⚡ Maître Linux",  cond: g => g.completed.size >= 36 },
   { id: "xp100",       label: "💯 Centurion",     cond: g => g.xp >= 100 },
   { id: "xp500",       label: "🔥 Inferno",       cond: g => g.xp >= 500 },

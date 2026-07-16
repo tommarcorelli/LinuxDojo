@@ -67,6 +67,12 @@ const QUIZZES = {
     { q: "Pourquoi TOUJOURS -aG (et pas -G seul) avec usermod ?", options: ["C'est plus rapide", "-G seul est interdit", "Sans -a, la liste des groupes est REMPLACÉE au lieu d'être complétée", "-a rend la modification permanente"], answer: 2 },
     { q: "Que se passe-t-il avec « su sarah » si le compte n'a pas de mot de passe ?", options: ["Ça fonctionne directement", "Le compte est supprimé", "Échec d'authentification : il faut d'abord passwd sarah", "su crée le mot de passe"], answer: 2 },
   ],
+  13: [
+    { q: "Que signifie la ligne cron « 0 3 * * * » ?", options: ["Toutes les 3 minutes", "Tous les jours à 03h00", "Le 3 de chaque mois", "3 fois par heure"], answer: 1 },
+    { q: "Dans quel ordre viennent les 5 champs de temps ?", options: ["heure minute jour mois année", "minute heure jour-du-mois mois jour-de-semaine", "jour mois heure minute seconde", "seconde minute heure jour mois"], answer: 1 },
+    { q: "Que signifie */5 dans le champ minute ?", options: ["À la 5e minute pile", "5 fois par jour", "Toutes les 5 minutes", "Pendant 5 minutes"], answer: 2 },
+    { q: "Que fait « crontab -r » ?", options: ["Recharge la crontab", "Affiche la crontab", "Renomme la crontab", "Supprime TOUTE la crontab, sans confirmation"], answer: 3 },
+  ],
 };
 
 const Quiz = {

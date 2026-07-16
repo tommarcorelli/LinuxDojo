@@ -2206,6 +2206,190 @@ const CHAPTERS = [
       }
 
     ]
+  },
+
+  // ════════════════════════════════════════════════════════════
+  {
+    id: 13,
+    title: "⏰ Scénario 13 — La sauvegarde de 3h du matin (cron)",
+    scenario: "Personne ne se lève à 3h du matin pour lancer une sauvegarde. Sur Linux, c'est cron qui s'en charge : un planificateur qui exécute des commandes à heure fixe, chaque nuit, chaque semaine, pour toujours. À toi de programmer la sauvegarde nocturne du serveur — et d'apprendre à relire ces mystérieuses lignes en « 0 3 * * * ».",
+    missions: [
+
+      {
+        id: 73,
+        name: "Étape 1 — Décoder les 5 champs",
+        cmd: "cat /etc/crontab",
+        xp: 35,
+        lesson: {
+          title: "La syntaxe cron — 5 champs pour dire « quand »",
+          intro: "Une ligne cron commence par <strong>5 champs de temps</strong>, puis la commande : <code>minute heure jour-du-mois mois jour-de-semaine</code>. Une <code>*</code> signifie « tous ». Ainsi <code>0 3 * * *</code> = à 3h00, tous les jours ; <code>30 8 * * 1</code> = à 8h30 chaque lundi (0 = dimanche).",
+          syntax: "m h dom mon dow  commande",
+          options: [
+            { flag: "0 3 * * *",   desc: "Tous les jours à 03h00" },
+            { flag: "30 8 * * 1",  desc: "Chaque lundi à 08h30 (dow : 0=dim, 1=lun… 6=sam)" },
+            { flag: "0 0 1 * *",   desc: "Le 1er de chaque mois à minuit" },
+          ],
+          examples: [
+            { cmd: "cat /etc/crontab", comment: "# la crontab système, avec l'ordre des champs en commentaire" },
+          ],
+          tip: "L'ordre se mémorise en lisant de gauche à droite du plus précis au plus large : minute, heure, jour, mois, jour-de-semaine. Le site crontab.guru traduit n'importe quelle ligne en français — même les admins seniors l'utilisent."
+        },
+        desc: "Avant d'écrire ta première ligne cron, regarde à quoi ressemble la crontab système : affiche <code>/etc/crontab</code> et repère l'ordre des champs.",
+        fs: {
+          "consigne.txt": { type: "file", content: "Objectif de la semaine : automatiser la sauvegarde nocturne (3h00).\nD'abord, comprendre la syntaxe : cat /etc/crontab" },
+          "/etc/crontab": { type: "file", content: "# /etc/crontab — crontab système\n# m h dom mon dow user  command\n17 *  * * *  root  cd / && run-parts /etc/cron.hourly\n25 6  * * *  root  test -x /usr/sbin/anacron || run-parts /etc/cron.daily\n47 6  * * 7  root  test -x /usr/sbin/anacron || run-parts /etc/cron.weekly" },
+        },
+        hint: "cat /etc/crontab",
+        check: (out, s) => /m h dom mon dow/.test(out),
+        explanation: "Tu viens de lire tes premières lignes cron : « 17 * * * * » = à la 17e minute de chaque heure, « 25 6 * * * » = tous les jours à 6h25, « 47 6 * * 7 » = le dimanche à 6h47. Le commentaire « m h dom mon dow » en tête est l'aide-mémoire officiel — tous les /etc/crontab du monde l'affichent."
+      },
+
+      {
+        id: 74,
+        name: "Étape 2 — Écrire la ligne de sauvegarde",
+        cmd: "echo >",
+        xp: 40,
+        lesson: {
+          title: "Écrire sa crontab dans un fichier",
+          intro: "Sur un vrai serveur, <code>crontab -e</code> ouvre un éditeur. Mais les admins qui automatisent leurs serveurs font autrement : ils écrivent les lignes dans un <strong>fichier versionné</strong>, puis l'installent d'un coup. Première étape : composer la ligne « tous les jours à 3h00, lance backup.sh » et l'écrire dans un fichier avec la redirection <code>&gt;</code>.",
+          syntax: "echo \"0 3 * * * commande\" > fichier.cron",
+          options: [
+            { flag: "0 3 * * *", desc: "minute 0, heure 3, tous les jours = 03h00 chaque nuit" },
+            { flag: ">",         desc: "Redirige la sortie d'echo vers le fichier (l'écrase s'il existe)" },
+          ],
+          examples: [
+            { cmd: "echo \"0 3 * * * bash backup.sh\" > sauvegarde.cron", comment: "# compose la ligne dans un fichier" },
+            { cmd: "cat sauvegarde.cron",                                 comment: "# toujours relire ce qu'on vient d'écrire" },
+          ],
+          tip: "Les guillemets autour de la ligne sont indispensables : sans eux, le shell essaierait d'interpréter les * comme des jokers de fichiers avant même qu'echo ne les voie."
+        },
+        desc: "Compose la ligne cron « tous les jours à 3h00, lance <code>bash backup.sh</code> », écris-la dans <code>sauvegarde.cron</code>, puis relis le fichier pour vérifier.",
+        fs: {
+          "backup.sh": { type: "file", content: "#!/bin/bash\ntar -czf /tmp/backup-$(date +%F).tar.gz /home/user/donnees" },
+          "consigne.txt": { type: "file", content: "Ligne attendue : 0 3 * * * bash backup.sh\nÀ écrire dans : sauvegarde.cron (echo + redirection >), puis relire avec cat." },
+        },
+        hint: "echo \"0 3 * * * bash backup.sh\" > sauvegarde.cron && cat sauvegarde.cron",
+        check: (out, s) => s.redirect === "sauvegarde.cron" && /0 3 \* \* \* bash backup\.sh/.test(out),
+        explanation: "Ta ligne est posée dans le fichier et relue : minute 0, heure 3, tous les jours, toutes les semaines, tous les mois → bash backup.sh. Le fichier n'est encore qu'un brouillon : cron ne le connaît pas. L'installation, c'est l'étape suivante."
+      },
+
+      {
+        id: 75,
+        name: "Étape 3 — Installer la crontab",
+        cmd: "crontab",
+        xp: 40,
+        lesson: {
+          title: "<code>crontab fichier</code> — Installer ses tâches",
+          intro: "<code>crontab fichier</code> remplace ta crontab par le contenu du fichier. C'est atomique : soit toutes les lignes sont valides et tout est installé, soit cron refuse tout (« errors in crontab file, can't install »). Un fichier = une source de vérité, réinstallable à l'identique sur n'importe quel serveur.",
+          syntax: "crontab fichier",
+          options: [
+            { flag: "crontab f", desc: "Installe le contenu de f comme crontab (remplace l'existante)" },
+            { flag: "silencieux", desc: "Aucun message si tout va bien — pas de nouvelles, bonnes nouvelles" },
+          ],
+          examples: [
+            { cmd: "crontab sauvegarde.cron", comment: "# installe la sauvegarde nocturne" },
+          ],
+          tip: "Si cron refuse ton fichier, le message donne le numéro de la ligne fautive. Cause n°1 : il manque un des 5 champs de temps (« 3 * * * cmd » au lieu de « 0 3 * * * cmd »)."
+        },
+        desc: "Le fichier <code>sauvegarde.cron</code> est prêt. Installe-le : à partir de cette nuit, la sauvegarde tournera toute seule.",
+        fs: {
+          "sauvegarde.cron": { type: "file", content: "0 3 * * * bash backup.sh" },
+          "backup.sh": { type: "file", content: "#!/bin/bash\ntar -czf /tmp/backup-$(date +%F).tar.gz /home/user/donnees" },
+        },
+        hint: "crontab sauvegarde.cron",
+        check: (out, s) => s.crontabInstall === "sauvegarde.cron",
+        explanation: "Installée — en silence, donc sans erreur. À partir de maintenant, cron exécutera bash backup.sh chaque nuit à 3h00, que tu sois connecté ou non, en vacances ou non. C'est toute la beauté de la chose : tu viens de te rendre inutile à 3h du matin."
+      },
+
+      {
+        id: 76,
+        name: "Étape 4 — Vérifier ce que cron a retenu",
+        cmd: "crontab -l",
+        xp: 40,
+        lesson: {
+          title: "<code>crontab -l</code> — Relire sa crontab",
+          intro: "Comment savoir ce que cron exécutera cette nuit ? <code>crontab -l</code> (list) affiche ta crontab telle qu'elle est réellement installée — pas telle que tu crois l'avoir écrite. C'est LE réflexe d'audit : sur une machine inconnue, c'est souvent la première commande d'un admin qui enquête sur « qu'est-ce qui tourne ici la nuit ? ».",
+          syntax: "crontab -l",
+          options: [
+            { flag: "-l", desc: "Affiche la crontab installée de l'utilisateur courant" },
+          ],
+          examples: [
+            { cmd: "crontab -l", comment: "# qu'est-ce qui est VRAIMENT planifié ?" },
+          ],
+          tip: "« no crontab for user » n'est pas un bug : ça veut juste dire qu'aucune tâche n'est planifiée pour ce compte. Chaque utilisateur a SA crontab — celle de root est souvent la plus intéressante à auditer."
+        },
+        desc: "Installe la crontab (si ce n'est pas déjà fait), puis vérifie avec <code>crontab -l</code> que la ligne de 3h00 est bien enregistrée.",
+        fs: {
+          "sauvegarde.cron": { type: "file", content: "0 3 * * * bash backup.sh" },
+          "backup.sh": { type: "file", content: "#!/bin/bash\ntar -czf /tmp/backup-$(date +%F).tar.gz /home/user/donnees" },
+        },
+        hint: "crontab sauvegarde.cron && crontab -l",
+        check: (out, s) => s.crontabL === true && /0 3 \* \* \*/.test(out),
+        explanation: "La ligne est là, confirmée par cron lui-même. Écrire → installer → relire : la boucle est la même que pour les services du scénario 11 — une configuration non vérifiée n'existe pas."
+      },
+
+      {
+        id: 77,
+        name: "Étape 5 — Toutes les 5 minutes",
+        cmd: "*/5",
+        xp: 45,
+        lesson: {
+          title: "<code>*/N</code> — Les fréquences",
+          intro: "Cron sait faire mieux que des heures fixes : <code>*/5</code> dans le champ minute signifie « toutes les 5 minutes ». On combine : <code>*/10 8-18 * * 1-5</code> = toutes les 10 minutes, de 8h à 18h, du lundi au vendredi — la surveillance type d'un service en journée. Pour AJOUTER une ligne à ton fichier sans écraser l'existante, la redirection devient <code>&gt;&gt;</code>.",
+          syntax: "*/5 * * * * commande",
+          options: [
+            { flag: "*/5",   desc: "Toutes les 5 unités (ici : minutes)" },
+            { flag: "8-18",  desc: "Une plage : de 8h à 18h" },
+            { flag: ">>",    desc: "Ajoute à la fin du fichier (>> ajoute, > écrase !)" },
+          ],
+          examples: [
+            { cmd: "echo \"*/5 * * * * bash surveille.sh\" >> sauvegarde.cron", comment: "# AJOUTE la surveillance (>> !)" },
+            { cmd: "crontab sauvegarde.cron && crontab -l",                     comment: "# réinstalle et vérifie les 2 lignes" },
+          ],
+          tip: "Le piège du > au lieu du >> : un > écrase le fichier et fait disparaître la sauvegarde de 3h. Si crontab -l ne montre qu'une ligne au lieu de deux, tu sais ce qui s'est passé."
+        },
+        desc: "Le serveur doit aussi être surveillé : ajoute (sans écraser !) la ligne « toutes les 5 minutes, lance <code>bash surveille.sh</code> » au fichier, réinstalle, et vérifie que les DEUX tâches sont planifiées.",
+        fs: {
+          "sauvegarde.cron": { type: "file", content: "0 3 * * * bash backup.sh" },
+          "backup.sh": { type: "file", content: "#!/bin/bash\ntar -czf /tmp/backup-$(date +%F).tar.gz /home/user/donnees" },
+          "surveille.sh": { type: "file", content: "#!/bin/bash\nuptime >> /var/log/surveillance.log" },
+        },
+        hint: "echo \"*/5 * * * * bash surveille.sh\" >> sauvegarde.cron && crontab sauvegarde.cron && crontab -l",
+        check: (out, s) => s.crontabL === true && /\*\/5 \* \* \* \*/.test(out) && /0 3 \* \* \*/.test(out),
+        explanation: "Deux tâches cohabitent : la sauvegarde nocturne et la surveillance aux 5 minutes. Grâce au >>, l'ancienne ligne a survécu à l'ajout de la nouvelle. Ta crontab devient ce qu'elle est sur tout vrai serveur : la liste de tout ce que la machine fait sans qu'on le lui demande."
+      },
+
+      {
+        id: 78,
+        name: "Étape 6 — Tout déprogrammer",
+        cmd: "crontab -r",
+        xp: 50,
+        lesson: {
+          title: "<code>crontab -r</code> — Repartir de zéro",
+          intro: "Ce serveur de test part à la casse : ses tâches planifiées doivent disparaître avec lui. <code>crontab -r</code> (remove) supprime TOUTE la crontab — d'un coup, en silence, et <strong>sans confirmation</strong>. C'est l'une des commandes les plus dangereuses de cet outil : -r est juste à côté de -e sur le clavier, et il n'y a pas de corbeille.",
+          syntax: "crontab -r",
+          options: [
+            { flag: "-r", desc: "Supprime toute la crontab de l'utilisateur — sans rien demander" },
+          ],
+          examples: [
+            { cmd: "crontab -l > secours.cron", comment: "# le réflexe de survie AVANT un -r : sauvegarder" },
+            { cmd: "crontab -r",                comment: "# tout supprimer" },
+            { cmd: "crontab -l",                comment: "# → « no crontab » : la preuve" },
+          ],
+          tip: "Le vrai réflexe de pro : crontab -l > secours.cron AVANT tout crontab -r. Si c'était une erreur, crontab secours.cron restaure tout. Sans cette copie, c'est perdu — définitivement."
+        },
+        desc: "Dernière mission : installe la crontab, supprime-la ENTIÈREMENT, puis prouve avec <code>crontab -l</code> qu'il ne reste plus rien.",
+        fs: {
+          "sauvegarde.cron": { type: "file", content: "0 3 * * * bash backup.sh\n*/5 * * * * bash surveille.sh" },
+          "backup.sh": { type: "file", content: "#!/bin/bash\ntar -czf /tmp/backup-$(date +%F).tar.gz /home/user/donnees" },
+          "surveille.sh": { type: "file", content: "#!/bin/bash\nuptime >> /var/log/surveillance.log" },
+        },
+        hint: "crontab sauvegarde.cron && crontab -r && crontab -l",
+        check: (out, s) => s.crontabR === true && /aucune crontab|no crontab/.test(out),
+        explanation: "« aucune crontab » : le serveur ne fera plus rien la nuit. Syntaxe à 5 champs, fichier installable, -l pour auditer, */N pour les fréquences, -r pour tout effacer (et le réflexe -l > secours.cron avant !) : cron n'a plus de secret pour toi. C'est l'outil qui fait tourner les sauvegardes, les rapports et les nettoyages de la moitié d'Internet. ⏰"
+      }
+
+    ]
   }
 ];
 

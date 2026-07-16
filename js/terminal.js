@@ -40,6 +40,7 @@ class Terminal {
     this._curUser = "user"; // utilisateur courant (changé par su, lu par whoami/id)
     this._suStack = [];  // pile des utilisateurs précédents avant chaque 'su' (pour 'exit')
     this._sshStack = []; // pile des prompts précédents avant chaque 'ssh' (pour 'exit')
+    this._crontab = null; // crontab simulée de l'utilisateur (null = « no crontab »)
   }
 
   // Charge le filesystem d'une mission.
@@ -75,6 +76,7 @@ class Terminal {
     this._curUser = "user";
     this._suStack = [];
     this._sshStack = [];
+    this._crontab = null;
   }
 
   // ── Comptes utilisateurs simulés ──────────────────────────────
@@ -287,7 +289,7 @@ class Terminal {
     }
 
     // Commandes connues proches
-    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su"];
+    const known = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","ping","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab"];
     const close = known.find(k => this._levenshtein(cmd, k) <= 2);
     if (close) {
       return sh(`${cmd}: commande introuvable\n💡 Voulais-tu dire : ${close} ?`, `${cmd}: command not found\n💡 Did you mean: ${close} ?`);
@@ -317,7 +319,7 @@ class Terminal {
 
     // Complétion de commande (premier mot)
     if (parts.length === 1) {
-      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su"];
+      const cmds = ["ls","cd","cat","less","more","pwd","mkdir","touch","cp","mv","rm","chmod","chown","chgrp","grep","find","wc","sort","echo","ps","kill","whoami","id","df","ln","tar","curl","sed","awk","clear","help","head","tail","uniq","cut","tr","tree","du","date","uname","hostname","uptime","free","history","man","whatis","env","export","ping","base64","rot13","xxd","for","while","if","test","seq","bash","true","false","alias","unalias","xargs","diff","jobs","fg","git","ssh","scp","netstat","docker","systemctl","journalctl","useradd","passwd","usermod","groups","su","crontab"];
       const matches = cmds.filter(c => c.startsWith(last));
       if (matches.length === 1) {
         inputEl.value = matches[0] + " ";
@@ -1453,6 +1455,52 @@ class Terminal {
         break;
       }
 
+      case "crontab": {
+        const sub = args[0];
+        if (!sub) {
+          out = sh("Usage :  crontab [-l | -r | fichier]\n  -l        affiche la crontab actuelle\n  -r        supprime TOUTE la crontab\n  fichier   installe le contenu du fichier comme crontab", "Usage:  crontab [-l | -r | file]\n  -l        show the current crontab\n  -r        remove the WHOLE crontab\n  file      install the file's contents as the crontab");
+          err = true; break;
+        }
+        if (sub === "-l") {
+          if (!this._crontab) { out = sh(`aucune crontab pour ${this._curUser}`, `no crontab for ${this._curUser}`); err = true; break; }
+          out = this._crontab.join("\n");
+          this.state.crontabL = true;
+          break;
+        }
+        if (sub === "-r") {
+          if (!this._crontab) { out = sh(`aucune crontab pour ${this._curUser}`, `no crontab for ${this._curUser}`); err = true; break; }
+          this._crontab = null;
+          this.state.crontabR = true;
+          out = ""; // comme le vrai : suppression silencieuse, sans confirmation
+          break;
+        }
+        if (sub === "-e") {
+          out = sh("(pas d'éditeur interactif dans le dojo)\n💡 Fais comme les admins qui scriptent leurs serveurs : écris tes lignes dans un fichier, puis installe-le avec :  crontab fichier", "(no interactive editor in the dojo)\n💡 Do it like admins who script their servers: write your lines in a file, then install it with:  crontab file");
+          break;
+        }
+        // crontab FICHIER — installe le contenu du fichier
+        const abs = this._resolve(sub);
+        const f = this.fs[abs];
+        if (!f || f.type !== "file") { out = sh(`crontab : impossible d'ouvrir « ${sub} » : fichier introuvable`, `crontab: can't open '${sub}': no such file`); err = true; break; }
+        const lines = (f.content || "").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+        if (!lines.length) { out = sh(`crontab : « ${sub} » ne contient aucune tâche`, `crontab: '${sub}' contains no job`); err = true; break; }
+        // Un champ de temps valide : * , */N , N , N-M , listes (1,15) et pas (N-M/S)
+        const field = /^(\*(\/\d+)?|\d+(-\d+)?(\/\d+)?(,\d+(-\d+)?)*)$/;
+        const bad = lines.findIndex(l => {
+          if (/^@(reboot|hourly|daily|weekly|monthly|yearly)\s+\S/.test(l)) return false;
+          const tok = l.split(/\s+/);
+          return tok.length < 6 || !tok.slice(0, 5).every(tf => field.test(tf));
+        });
+        if (bad >= 0) {
+          out = sh(`"${sub}":${bad + 1}: syntaxe invalide — attendu 5 champs de temps puis une commande\n(minute heure jour-du-mois mois jour-de-semaine commande)\ncrontab : erreurs dans le fichier, installation annulée`, `"${sub}":${bad + 1}: invalid syntax — expected 5 time fields then a command\n(minute hour day-of-month month day-of-week command)\ncrontab: errors in crontab file, can't install`);
+          err = true; break;
+        }
+        this._crontab = lines;
+        this.state.crontabInstall = sub;
+        out = ""; // installation silencieuse, comme le vrai
+        break;
+      }
+
       case "alias": {
         if (!args.length) {
           const entries = Object.entries(this._aliases);
@@ -2301,6 +2349,7 @@ class Terminal {
           "Docker :  docker build -t nom . · docker images · docker run -d --name nom image · docker ps [-a] · docker logs nom · docker stop nom",
           "Services :  systemctl status|start|stop|restart|enable NOM · systemctl list-units --type=service · journalctl -u NOM [-n N]",
           "Utilisateurs :  useradd -m NOM · passwd NOM · usermod -aG GROUPE NOM · groups NOM · id NOM · su NOM (exit pour revenir)",
+          "Planification :  crontab FICHIER (installe) · crontab -l (affiche) · crontab -r (supprime tout)",
           "Astuces : Tab autocomplète (même les chemins) · ↑/↓ historique · Ctrl+R recherche dans l'historique · man grep pour le manuel",
           "Touche ? (hors saisie) : ouvre l'écran des raccourcis clavier",
           "",
@@ -2329,6 +2378,7 @@ class Terminal {
           "Docker:  docker build -t name . · docker images · docker run -d --name name image · docker ps [-a] · docker logs name · docker stop name",
           "Services:  systemctl status|start|stop|restart|enable NAME · systemctl list-units --type=service · journalctl -u NAME [-n N]",
           "Users:  useradd -m NAME · passwd NAME · usermod -aG GROUP NAME · groups NAME · id NAME · su NAME (exit to come back)",
+          "Scheduling:  crontab FILE (install) · crontab -l (show) · crontab -r (remove all)",
           "Tips: Tab autocompletes (even paths) · ↑/↓ history · Ctrl+R search in history · man grep for the manual",
           "Key ? (outside input): opens the keyboard shortcuts screen",
           "",

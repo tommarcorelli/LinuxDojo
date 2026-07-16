@@ -73,6 +73,12 @@ const QUIZZES_EN = {
     { q: "Why ALWAYS -aG (and not -G alone) with usermod?", options: ["It's faster", "-G alone is forbidden", "Without -a, the group list is REPLACED instead of extended", "-a makes the change permanent"] },
     { q: "What happens with « su sarah » if the account has no password?", options: ["It works right away", "The account is deleted", "Authentication failure: you must run passwd sarah first", "su creates the password"] },
   ],
+  13: [
+    { q: "What does the cron line « 0 3 * * * » mean?", options: ["Every 3 minutes", "Every day at 3:00 AM", "On the 3rd of every month", "3 times per hour"] },
+    { q: "In what order do the 5 time fields come?", options: ["hour minute day month year", "minute hour day-of-month month day-of-week", "day month hour minute second", "second minute hour day month"] },
+    { q: "What does */5 mean in the minute field?", options: ["At minute 5 exactly", "5 times a day", "Every 5 minutes", "For 5 minutes"] },
+    { q: "What does « crontab -r » do?", options: ["Reloads the crontab", "Shows the crontab", "Renames the crontab", "Removes the WHOLE crontab, without confirmation"] },
+  ],
 };
 
 if (typeof overlayQuizzes === "function") overlayQuizzes(QUIZZES_EN);

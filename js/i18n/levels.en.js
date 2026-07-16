@@ -1576,6 +1576,132 @@ const LEVELS_EN = {
     },
   },
 
+  // ══ Scénario 13 — La sauvegarde de 3h du matin (cron) ══
+  13: {
+    title: "⏰ Scenario 13 — The 3 AM backup (cron)",
+    scenario: "Nobody gets up at 3 AM to launch a backup. On Linux, cron takes care of it: a scheduler that runs commands at fixed times, every night, every week, forever. Your job: schedule the server's nightly backup — and learn to read those mysterious “0 3 * * *” lines.",
+    missions: {
+      73: {
+        name: "Step 1 — Decode the 5 fields",
+        lesson: {
+          title: "The cron syntax — 5 fields to say “when”",
+          intro: "A cron line starts with <strong>5 time fields</strong>, then the command: <code>minute hour day-of-month month day-of-week</code>. A <code>*</code> means “every”. So <code>0 3 * * *</code> = at 3:00 AM, every day; <code>30 8 * * 1</code> = at 8:30 every Monday (0 = Sunday).",
+          syntax: "m h dom mon dow  command",
+          options: [
+            "Every day at 3:00 AM",
+            "Every Monday at 8:30 AM (dow: 0=Sun, 1=Mon… 6=Sat)",
+            "On the 1st of every month at midnight",
+          ],
+          examples: [
+            "# the system crontab, with the field order as a comment",
+          ],
+          tip: "The order is memorized by reading left to right from most precise to broadest: minute, hour, day, month, day-of-week. The crontab.guru website translates any line into plain language — even senior admins use it.",
+        },
+        desc: "Before writing your first cron line, look at what the system crontab looks like: display <code>/etc/crontab</code> and spot the field order.",
+        hint: "cat /etc/crontab",
+        explanation: "You just read your first cron lines: “17 * * * *” = at minute 17 of every hour, “25 6 * * *” = every day at 6:25, “47 6 * * 7” = Sundays at 6:47. The “m h dom mon dow” comment at the top is the official cheat sheet — every /etc/crontab in the world displays it.",
+      },
+      74: {
+        name: "Step 2 — Write the backup line",
+        lesson: {
+          title: "Writing your crontab into a file",
+          intro: "On a real server, <code>crontab -e</code> opens an editor. But admins who automate their servers do it differently: they write the lines in a <strong>versioned file</strong>, then install it in one go. First step: compose the line “every day at 3:00 AM, run backup.sh” and write it to a file with the <code>&gt;</code> redirection.",
+          syntax: "echo \"0 3 * * * command\" > file.cron",
+          options: [
+            "minute 0, hour 3, every day = 3:00 AM every night",
+            "Redirects echo's output to the file (overwrites it if it exists)",
+          ],
+          examples: [
+            "# composes the line into a file",
+            "# always re-read what you just wrote",
+          ],
+          tip: "The quotes around the line are essential: without them, the shell would try to interpret the * as file wildcards before echo even sees them.",
+        },
+        desc: "Compose the cron line “every day at 3:00 AM, run <code>bash backup.sh</code>”, write it into <code>sauvegarde.cron</code>, then re-read the file to check.",
+        hint: "echo \"0 3 * * * bash backup.sh\" > sauvegarde.cron && cat sauvegarde.cron",
+        explanation: "Your line is in the file and re-read: minute 0, hour 3, every day, every week, every month → bash backup.sh. The file is still just a draft: cron doesn't know about it. Installing it is the next step.",
+      },
+      75: {
+        name: "Step 3 — Install the crontab",
+        lesson: {
+          title: "<code>crontab file</code> — Install your jobs",
+          intro: "<code>crontab file</code> replaces your crontab with the file's contents. It's atomic: either all lines are valid and everything is installed, or cron refuses everything (“errors in crontab file, can't install”). One file = one source of truth, reinstallable identically on any server.",
+          syntax: "crontab file",
+          options: [
+            "Installs f's contents as the crontab (replaces the existing one)",
+            "No message when everything is fine — no news is good news",
+          ],
+          examples: [
+            "# installs the nightly backup",
+          ],
+          tip: "If cron refuses your file, the message gives the faulty line number. Cause #1: one of the 5 time fields is missing (“3 * * * cmd” instead of “0 3 * * * cmd”).",
+        },
+        desc: "The <code>sauvegarde.cron</code> file is ready. Install it: starting tonight, the backup will run on its own.",
+        hint: "crontab sauvegarde.cron",
+        explanation: "Installed — silently, therefore without error. From now on, cron will run bash backup.sh every night at 3:00 AM, whether you're logged in or not, on holiday or not. That's the beauty of it: you just made yourself useless at 3 AM.",
+      },
+      76: {
+        name: "Step 4 — Check what cron remembered",
+        lesson: {
+          title: "<code>crontab -l</code> — Re-read your crontab",
+          intro: "How do you know what cron will run tonight? <code>crontab -l</code> (list) shows your crontab as it is really installed — not as you think you wrote it. It's THE audit reflex: on an unknown machine, it's often the first command of an admin investigating “what runs here at night?”.",
+          syntax: "crontab -l",
+          options: [
+            "Shows the current user's installed crontab",
+          ],
+          examples: [
+            "# what is REALLY scheduled?",
+          ],
+          tip: "“no crontab for user” isn't a bug: it just means no job is scheduled for this account. Every user has THEIR crontab — root's is often the most interesting to audit.",
+        },
+        desc: "Install the crontab (if not already done), then check with <code>crontab -l</code> that the 3:00 AM line is properly registered.",
+        hint: "crontab sauvegarde.cron && crontab -l",
+        explanation: "The line is there, confirmed by cron itself. Write → install → re-read: the loop is the same as for the services of scenario 11 — an unverified configuration doesn't exist.",
+      },
+      77: {
+        name: "Step 5 — Every 5 minutes",
+        lesson: {
+          title: "<code>*/N</code> — Frequencies",
+          intro: "Cron can do better than fixed times: <code>*/5</code> in the minute field means “every 5 minutes”. You can combine: <code>*/10 8-18 * * 1-5</code> = every 10 minutes, from 8 AM to 6 PM, Monday through Friday — the typical daytime monitoring of a service. To ADD a line to your file without overwriting the existing one, the redirection becomes <code>&gt;&gt;</code>.",
+          syntax: "*/5 * * * * command",
+          options: [
+            "Every 5 units (here: minutes)",
+            "A range: from 8 AM to 6 PM",
+            "Appends to the end of the file (>> appends, > overwrites!)",
+          ],
+          examples: [
+            "# ADDS the monitoring (>> !)",
+            "# reinstall and check both lines",
+          ],
+          tip: "The > instead of >> trap: a > overwrites the file and makes the 3 AM backup disappear. If crontab -l shows one line instead of two, you know what happened.",
+        },
+        desc: "The server must also be monitored: add (without overwriting!) the line “every 5 minutes, run <code>bash surveille.sh</code>” to the file, reinstall, and check that BOTH jobs are scheduled.",
+        hint: "echo \"*/5 * * * * bash surveille.sh\" >> sauvegarde.cron && crontab sauvegarde.cron && crontab -l",
+        explanation: "Two jobs coexist: the nightly backup and the 5-minute monitoring. Thanks to >>, the old line survived the new one's arrival. Your crontab becomes what it is on every real server: the list of everything the machine does without being asked.",
+      },
+      78: {
+        name: "Step 6 — Unschedule everything",
+        lesson: {
+          title: "<code>crontab -r</code> — Start from scratch",
+          intro: "This test server is headed for the scrapyard: its scheduled jobs must disappear with it. <code>crontab -r</code> (remove) deletes the WHOLE crontab — at once, silently, and <strong>without confirmation</strong>. It's one of this tool's most dangerous commands: -r sits right next to -e on the keyboard, and there is no trash bin.",
+          syntax: "crontab -r",
+          options: [
+            "Removes the user's whole crontab — without asking anything",
+          ],
+          examples: [
+            "# the survival reflex BEFORE a -r: back up",
+            "# delete everything",
+            "# → “no crontab”: the proof",
+          ],
+          tip: "The real pro reflex: crontab -l > secours.cron BEFORE any crontab -r. If it was a mistake, crontab secours.cron restores everything. Without that copy, it's gone — permanently.",
+        },
+        desc: "Last mission: install the crontab, remove it ENTIRELY, then prove with <code>crontab -l</code> that nothing is left.",
+        hint: "crontab sauvegarde.cron && crontab -r && crontab -l",
+        explanation: "“no crontab”: the server won't do anything at night anymore. 5-field syntax, installable file, -l to audit, */N for frequencies, -r to wipe everything (and the -l > secours.cron reflex first!): cron has no secrets left for you. It's the tool that runs the backups, reports and cleanups of half the Internet. ⏰",
+      },
+    },
+  },
+
 };
 
 if (typeof overlayLevels === "function") overlayLevels(LEVELS_EN);

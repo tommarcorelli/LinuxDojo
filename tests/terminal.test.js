@@ -626,6 +626,66 @@ test("id NOM détaille un compte créé ; les comptes sont réinitialisés par l
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+// CRON (crontab -l / -r / fichier)
+// ═══════════════════════════════════════════════════════════════════════
+
+test("crontab -l sans crontab installée → « aucune crontab »", () => {
+  const t = makeTerm({});
+  const r = t.run("crontab -l");
+  assertEqual(r.error, true);
+  assertIncludes(r.output, "aucune crontab");
+});
+
+test("crontab FICHIER installe puis -l relit les tâches", () => {
+  const t = makeTerm({ "sauvegarde.cron": { type: "file", content: "0 3 * * * bash backup.sh" } });
+  const inst = t.run("crontab sauvegarde.cron");
+  assertEqual(inst.error, false, "installation d'un fichier valide");
+  assertEqual(t.state.crontabInstall, "sauvegarde.cron");
+  const l = t.run("crontab -l");
+  assertMatches(l.output, /0 3 \* \* \* bash backup\.sh/, "-l doit restituer la ligne");
+  assertEqual(t.state.crontabL, true);
+});
+
+test("crontab refuse un fichier invalide (champ de temps manquant)", () => {
+  const t = makeTerm({ "mauvais.cron": { type: "file", content: "3 * * * bash backup.sh\n0 3 * * * ok.sh" } });
+  const r = t.run("crontab mauvais.cron");
+  assertEqual(r.error, true, "installation refusée");
+  assertIncludes(r.output, '"mauvais.cron":1', "le numéro de ligne fautive doit être cité");
+  assertEqual(t.run("crontab -l").error, true, "rien ne doit avoir été installé (atomique)");
+});
+
+test("echo \"0 3 * * *\" > fichier n'est pas globbé (étoiles entre guillemets)", () => {
+  const t = makeTerm({ "backup.sh": { type: "file", content: "x" } });
+  runSeq(t, 'echo "0 3 * * * bash backup.sh" > sauvegarde.cron && cat sauvegarde.cron');
+  const r = t.run("cat sauvegarde.cron");
+  assertMatches(r.output, /^0 3 \* \* \* bash backup\.sh$/, "les * doivent rester littérales");
+  assertEqual(t.state.redirect, "sauvegarde.cron");
+});
+
+test("crontab -r supprime tout, sans confirmation", () => {
+  const t = makeTerm({ "s.cron": { type: "file", content: "*/5 * * * * uptime" } });
+  runSeq(t, "crontab s.cron && crontab -r");
+  assertEqual(t.state.crontabR, true);
+  const l = t.run("crontab -l");
+  assertEqual(l.error, true, "après -r, plus de crontab");
+  assertIncludes(l.output, "aucune crontab");
+});
+
+test("crontab sur un fichier inexistant → erreur propre", () => {
+  const t = makeTerm({});
+  const r = t.run("crontab fantome.cron");
+  assertEqual(r.error, true);
+  assertIncludes(r.output, "introuvable");
+});
+
+test("la crontab est réinitialisée par loadFS (isolation entre missions)", () => {
+  const t = makeTerm({ "s.cron": { type: "file", content: "0 3 * * * bash b.sh" } });
+  t.run("crontab s.cron");
+  t.loadFS({});
+  assertEqual(t.run("crontab -l").error, true, "après loadFS, plus de crontab");
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROBUSTESSE
 // ═══════════════════════════════════════════════════════════════════════
 
