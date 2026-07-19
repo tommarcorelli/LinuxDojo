@@ -18,6 +18,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline-offset: 3px;
   border-radius: 4px;
 }
+/* Les champs de commande ci-dessous imposent outline:none dans leur propre
+   règle #id (voir plus bas dans ce fichier) — une règle #id bat toujours la
+   règle générique input:focus-visible ci-dessus, quel que soit l'ordre des
+   déclarations. Sans cet override de même spécificité (#id:focus-visible),
+   les 8 champs les plus utilisés du jeu (terminal, bac à sable, glossaire,
+   défi du jour) n'affichaient AUCUN indicateur de focus clavier. Offset
+   négatif (anneau vers l'intérieur) pour ne pas être rogné par les ancêtres
+   en overflow:hidden (ex. #page-boss). */
+#cmd-input:focus-visible, #explore-cmd:focus-visible, #ch-cmd:focus-visible,
+#bandit-cmd:focus-visible, #boss-cmd:focus-visible, #oncall-cmd:focus-visible,
+#sandbox-cmd:focus-visible, #daily-cmd:focus-visible {
+  outline: 2px solid var(--purple-li);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
 
 :root {
   /* Fond */
@@ -2534,10 +2549,19 @@ body.season-noel {
 .gloss-card.open .gloss-chevron { transform: rotate(180deg); }
 
 .gloss-body {
-  display: none; padding: 6px 18px 16px;
-  border-top: 1px solid var(--glass-border);
+  max-height: 0;
+  opacity: 0;
+  padding: 0 18px;
+  overflow: hidden;
+  border-top: 1px solid transparent;
+  transition: max-height .3s ease, opacity .25s ease, padding .3s ease;
 }
-.gloss-card.open .gloss-body { display: block; }
+.gloss-card.open .gloss-body {
+  max-height: 600px; /* large marge : couvre les entrées les plus longues (options + exemples) */
+  opacity: 1;
+  padding: 6px 18px 16px;
+  border-top-color: var(--glass-border);
+}
 .gloss-syntax {
   font-family: var(--font-mono); font-size: 13px; color: var(--yellow);
   background: rgba(234,179,8,0.06); border: 1px solid rgba(234,179,8,0.2);
